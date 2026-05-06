@@ -50,13 +50,13 @@ def generate_search_queries(profile: str, config: dict) -> list[dict]:
     
     prompt = f"""
 Sei un technical recruiter esperto e un career coach.
-Leggi il seguente profilo del candidato e genera esattamente {max_searches} ricerche di lavoro altamente mirate e adatte alle competenze ed esperienze del candidato.
+Leggi il seguente profilo del candidato e genera esattamente {max_searches} ricerche di lavoro altamente mirate e adatte alle competenze, esperienze, aspirazioni e interessi del candidato.
 
 Profilo Candidato:
 {profile}
 
 Istruzioni:
-1. Fornisci 'keywords' precise basate ESCLUSIVAMENTE sui JOB TITLE (es. "Data Analyst OR Financial Analyst"). NON inserire MAI nomi di tecnologie, linguaggi o competenze (es. NON usare "Python" o "Power BI") per evitare che LinkedIn filtri via troppi annunci.
+1. Fornisci 'keywords' precise basate ESCLUSIVAMENTE sui JOB TITLE (e.g. "Data Analyst OR Financial Analyst"). NON inserire MAI nomi di tecnologie, linguaggi o competenze (e.g. NON usare "Python" o "Power BI") per evitare che LinkedIn filtri via troppi annunci.
 2. Le diverse ricerche che generi devono avere 'keywords' DIVERSE e COMPLEMENTARI tra loro in modo da non sovrapporsi nei risultati, coprendo le varie sfumature del profilo (es. una per ambiti data, una per ambiti strategy, ecc.).
 3. Scrivi in ITALIANO una breve 'reasoning' sul perché hai scelto questa combinazione di parametri.
 
@@ -293,7 +293,7 @@ def main():
     for i, query in enumerate(queries):
         print(f"\n--- Ricerca {i+1}/{len(queries)} ---")
         print(f"Keywords: {query['keywords']}")
-        print(f"Location: {query['location']}")
+        print(f"Location: {config.get('preferences', {}).get('location', 'N/A')}")
         
         jobs = scrape_jobs(query, config)
         for job in jobs:
