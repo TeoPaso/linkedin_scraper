@@ -1,0 +1,22 @@
+# config.yaml
+# I parametri di ricerca vengono generati dinamicamente da Gemini in base al profilo.
+
+# Preferenze per la generazione delle ricerche
+preferences:
+  location: "Milan, Lombardy, Italy" # Location fissa su Milano
+  language: "Italian"
+
+# Configurazione dello scraper
+scraper:
+  max_jobs_per_search: 10 # Limite di lavori scaricati per singola ricerca (es. per test)
+  scrape_company: false
+  max_searches: 1         # Limite di ricerche generate da Gemini (1 per il test)
+  time_filter: "r604800" # Filtro temporale LinkedIn. r2592000 = past month, r604800 = past week, r86400 = past 24h. Vuoto "" = anytime
+
+# Configurazione LLM e filtraggio
+evaluation:
+  min_fit_score: 75
+
+# Configurazione email
+email:
+  send_email: true
