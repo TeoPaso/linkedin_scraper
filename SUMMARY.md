@@ -36,10 +36,14 @@ EMAIL_RECIPIENT=matteo_pasini@outlook.com
 ### 3. Configurazione
 - **Profilo**: Aggiorna `my_profile.md` ogni volta che aggiungi un'esperienza o vuoi cambiare il focus della tua ricerca (es. aggiungere interesse verso "Venture Capital").
 - **Limiti Operativi**: Modifica `config.yaml` per scalare il numero di ricerche (`max_searches`) in base al tuo budget Apify.
+- **Startup Outreach**: Sotto la chiave `outreach` in `config.yaml` puoi gestire la pipeline per le startup:
+  - `run_discovery`: **Attenzione:** impostalo a `true` solo settimanalmente o quando avvii lo script manualmente per cercare nuove startup via Apify e Tavily. Lascialo a `false` durante l'esecuzione quotidiana del cron job in modo da aggiornare solo l'enrichment e non consumare inutilmente token e budget.
 
 ### 4. Esecuzione
-Lancia l'agente con:
+Il processo principale su GitHub Actions o localmente eseguirà in sequenza:
 ```bash
 python main.py
+python startup_outreach.py
 ```
-Se verranno trovati match sopra la soglia stabilita, riceverai una notifica direttamente nella tua casella di posta.
+Riceverai un report per i match standard (tramite main.py) e un report separato per le startup (tramite startup_outreach.py) con relative cover letters salvate in locale.
+

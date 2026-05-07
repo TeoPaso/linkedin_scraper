@@ -26,12 +26,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Run Scraper
+      - name: Run Scraper and Outreach
         env:
           # Queste variabili verranno prese dai GitHub Secrets, non dal file .env
           APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-        run: python main.py
+        run: |
+          python main.py
+          python startup_outreach.py
