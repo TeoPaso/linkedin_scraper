@@ -34,9 +34,10 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 - Startups & Scaleups
 - Venture Capital
 - Butique Investment Funds
-- Consulting (favorably strategy/management consulting)
+
 
 ## Not interested in
 - Investment banking roles
 - Freelance/Self-employed roles
 - Remote roles (hybrid is fine, but not fully remote)
+- Consulting (favorably strategy/management consulting)

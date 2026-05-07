@@ -56,7 +56,7 @@ Profilo Candidato:
 {profile}
 
 Istruzioni:
-1. Fornisci 'keywords' precise basate ESCLUSIVAMENTE sui JOB TITLE. Esempi validi: "Analyst", "Associate", "Consultant", "Specialist", "Graduate", "Graduate Program", "Trainee", "Intern", "Researcher", "Business Partner", "Business Development", "Junior Associate", "Junior Consultant". Puoi usare operatori logici (e.g. "Analyst OR Associate OR Graduate"). NON inserire MAI nomi di tecnologie, linguaggi o competenze (e.g. NON usare "Python" o "Power BI") per evitare che LinkedIn filtri via troppi annunci.
+1. Fornisci 'keywords' precise basate ESCLUSIVAMENTE sui JOB TITLE. Esempi validi: "Analyst", "Associate", "Consultant", "Specialist", "Graduate", "Graduate Program", "Trainee", "Intern", "Researcher", "Business Partner", "Business Development", "Junior Associate", "Junior Consultant", "Strategic". Puoi usare operatori logici (e.g. "Analyst OR Associate OR Graduate"). NON inserire MAI nomi di tecnologie, linguaggi o competenze (e.g. NON usare "Python" o "Power BI") per evitare che LinkedIn filtri via troppi annunci.
 2. Le diverse ricerche che generi devono avere 'keywords' DIVERSE e COMPLEMENTARI tra loro in modo da non sovrapporsi nei risultati, coprendo le varie sfumature del profilo (es. una per ambiti data, una per ambiti strategy, ecc.).
 3. Scrivi in ITALIANO una breve 'reasoning' sul perché hai scelto questa combinazione di parametri.
 

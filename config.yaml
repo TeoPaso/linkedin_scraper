@@ -19,7 +19,7 @@ evaluation:
 
 # Configurazione modulo Startup Outreach
 outreach:
-  run_discovery: true
+  run_discovery: false
   min_signals: 3
   sources:
     - "https://www.p101.it/portfolio"
