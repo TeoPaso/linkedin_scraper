@@ -1,1 +1,74 @@
-[]
+[
+  {
+    "timestamp": "2026-05-08T02:11:52.616627",
+    "execution_id": "2026-05-08T02:11:40.650524",
+    "keyword": "Venture Capital Analyst OR Corporate Development Analyst",
+    "jobs_found_total": 0,
+    "jobs_new_unique": 0,
+    "fruitful": false,
+    "top_titles": [],
+    "avg_fit_score": null
+  },
+  {
+    "timestamp": "2026-05-08T02:12:06.114156",
+    "execution_id": "2026-05-08T02:11:40.650524",
+    "keyword": "Strategic Finance Analyst OR Investment Analyst",
+    "jobs_found_total": 0,
+    "jobs_new_unique": 0,
+    "fruitful": false,
+    "top_titles": [],
+    "avg_fit_score": null
+  },
+  {
+    "timestamp": "2026-05-08T02:12:24.190844",
+    "execution_id": "2026-05-08T02:11:40.650524",
+    "keyword": "Strategy & Operations Analyst",
+    "jobs_found_total": 0,
+    "jobs_new_unique": 0,
+    "fruitful": false,
+    "top_titles": [],
+    "avg_fit_score": null
+  },
+  {
+    "timestamp": "2026-05-08T02:12:47.150664",
+    "execution_id": "2026-05-08T02:11:40.650524",
+    "keyword": "Equity Research Analyst OR Portfolio Analyst",
+    "jobs_found_total": 0,
+    "jobs_new_unique": 0,
+    "fruitful": false,
+    "top_titles": [],
+    "avg_fit_score": null
+  },
+  {
+    "timestamp": "2026-05-08T02:14:31.547068",
+    "execution_id": "2026-05-08T02:13:46.661395",
+    "keyword": "FP&A Analyst OR Finance Business Partner",
+    "jobs_found_total": 10,
+    "jobs_new_unique": 10,
+    "fruitful": true,
+    "top_titles": [
+      "Business Data Analyst (Bangkok Based, relocation provided)",
+      "Remote Business Analyst (Italian) - 54881",
+      "Remote Business Analyst (German) - 54879",
+      "Insurance Business Analyst - suite PASS",
+      "Business Analyst Insurance - Ramo Danni"
+    ],
+    "avg_fit_score": null
+  },
+  {
+    "timestamp": "2026-05-08T02:28:39.647532",
+    "execution_id": "2026-05-08T02:26:51.846678",
+    "keyword": "Valuation Analyst",
+    "jobs_found_total": 11,
+    "jobs_new_unique": 11,
+    "fruitful": true,
+    "top_titles": [
+      "Analyst Capital Markets",
+      "Financial Analyst",
+      "2027 Corporate & Investment Bank - Global Investment Banking Analyst Program - Off-Cycle Internship - Milan",
+      "Analyst, Real Estate Hospitality",
+      "Strategy&Consulting Capital Markets - Consultant Regulation"
+    ],
+    "avg_fit_score": 49.4
+  }
+]

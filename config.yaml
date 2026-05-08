@@ -8,7 +8,7 @@ preferences:
 
 # Configurazione dello scraper
 scraper:
-  jobs_target: 15 # Limite di lavori scaricati per singola ricerca (es. per test)
+  jobs_target: 150 # Limite di lavori scaricati per singola ricerca (es. per test)
   scrape_company: false
   max_retries: 10         # Limite di ricerche generate da Gemini (1 per il test)
   count_per_search: 10    # Numero di job estratti per singola ricerca
