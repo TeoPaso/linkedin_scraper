@@ -811,129 +811,140 @@
         // EVENTS
         // ==========================================
         function attachEvents() {
-            const modal = document.getElementById('desc-modal');
-            const modalReason = document.getElementById('modal-reason');
-            const modalDesc = document.getElementById('modal-desc');
+    // Add event listeners for filters
+    const filterDate = document.getElementById('filter-date');
+    const filterKeyword = document.getElementById('filter-keyword');
+    const filterCategory = document.getElementById('filter-category');
 
-            document.querySelectorAll('.btn-desc').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetId = e.target.getAttribute('data-target');
-                    const data = window[`modalData_${targetId}`];
+    const applyFilters = () => {
+        const selDate = filterDate ? filterDate.value : '';
+        const selKeyword = filterKeyword ? filterKeyword.value : '';
+        const selCategory = filterCategory ? filterCategory.value : '';
 
-                    modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
-                    modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
+        document.querySelectorAll('.job-row').forEach(row => {
+            const rowDate = row.getAttribute('data-date');
+            const rowKeyword = row.getAttribute('data-keyword');
+            const rowCategory = row.getAttribute('data-category');
 
-                    modal.classList.add('active');
-                });
-            });
+            let show = true;
+            if (selDate && rowDate !== selDate) show = false;
+            if (selKeyword && rowKeyword !== selKeyword) show = false;
+            if (selCategory && rowCategory !== selCategory) show = false;
 
-            const closeBtn = document.getElementById('btn-close-modal');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    modal.classList.remove('active');
-                });
-            }
-
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('active');
-                    }
-                });
-            }
-
-            // Add event listeners for filters
-            const filterDate = document.getElementById('filter-date');
-            const filterKeyword = document.getElementById('filter-keyword');
-            const filterCategory = document.getElementById('filter-category');
-
-            const applyFilters = () => {
-                const selDate = filterDate ? filterDate.value : '';
-                const selKeyword = filterKeyword ? filterKeyword.value : '';
-                const selCategory = filterCategory ? filterCategory.value : '';
-
-                document.querySelectorAll('.job-row').forEach(row => {
-                    const rowDate = row.getAttribute('data-date');
-                    const rowKeyword = row.getAttribute('data-keyword');
-                    const rowCategory = row.getAttribute('data-category');
-
-                    let show = true;
-                    if (selDate && rowDate !== selDate) show = false;
-                    if (selKeyword && rowKeyword !== selKeyword) show = false;
-                    if (selCategory && rowCategory !== selCategory) show = false;
-
-                    row.style.display = show ? '' : 'none';
-                });
-            };
-
-            if (filterDate) filterDate.addEventListener('change', applyFilters);
-            if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
-            if (filterCategory) filterCategory.addEventListener('change', applyFilters);
-        }
-
-        const prevBtn = document.getElementById('btn-prev-search');
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                if (currentSearchIndex > 0) {
-                    currentSearchIndex--;
-                    render();
-                }
-            });
-        }
-
-        const nextBtn = document.getElementById('btn-next-search');
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                const maxIdx = (appData.search_memory || []).length - 1;
-                if (currentSearchIndex < maxIdx) {
-                    currentSearchIndex++;
-                    render();
-                }
-            });
-        }
-
-        // Categories Accordion
-        document.querySelectorAll('.category-item').forEach(item => {
-            const header = item.querySelector('.category-header');
-            header.addEventListener('click', () => {
-                const idx = item.getAttribute('data-index');
-                const body = document.getElementById(`cat-body-${idx}`);
-                if (body) body.classList.toggle('expanded');
-            });
+            row.style.display = show ? '' : 'none';
         });
+    };
 
-        // Modal Events
-        const modal = document.getElementById('info-modal');
-        const modalReason = document.getElementById('modal-reasoning');
-        const modalDesc = document.getElementById('modal-description');
+    if (filterDate) filterDate.addEventListener('change', applyFilters);
+    if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
+    if (filterCategory) filterCategory.addEventListener('change', applyFilters);
 
-        document.querySelectorAll('.btn-desc').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const targetId = e.target.getAttribute('data-target');
-                const data = window[`modalData_${targetId}`];
-
-                modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
-                modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
-
-                modal.classList.add('active');
-            });
+    // Prev/Next search logic
+    const prevBtn = document.getElementById('btn-prev-search');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentSearchIndex > 0) {
+                currentSearchIndex--;
+                render();
+            }
         });
+    }
 
-        const closeBtn = document.getElementById('btn-close-modal');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
+    const nextBtn = document.getElementById('btn-next-search');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const maxIdx = (appData.search_memory || []).length - 1;
+            if (currentSearchIndex < maxIdx) {
+                currentSearchIndex++;
+                render();
+            }
+        });
+    }
+
+    // Categories Accordion
+    document.querySelectorAll('.category-item').forEach(item => {
+        const header = item.querySelector('.category-header');
+        header.addEventListener('click', () => {
+            const idx = item.getAttribute('data-index');
+            const body = document.getElementById(`cat-body-${idx}`);
+            if (body) body.classList.toggle('expanded');
+        });
+    });
+
+    // Toggle button for searches
+    const toggleBtn = document.getElementById('btn-toggle-search');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            showAllSearches = !showAllSearches;
+            render();
+        });
+    }
+
+    // Applied toggle logic
+    document.querySelectorAll(".btn-applied").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const docId = btn.getAttribute("data-docid");
+            if (!docId) return;
+            
+            const isCurrentlyApplied = btn.getAttribute("data-applied") === "true";
+            const newAppliedState = !isCurrentlyApplied;
+            
+            btn.setAttribute("data-applied", newAppliedState.toString());
+            btn.style.backgroundColor = newAppliedState ? "#2e7d32" : "#555";
+            btn.textContent = newAppliedState ? "Applicato ✓" : "Non applicato";
+            
+            try {
+                const docRef = window.doc(window.db, "jobs", docId);
+                await window.updateDoc(docRef, { applied: newAppliedState });
+                
+                const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
+                if (url) {
+                    appData.job_store[url].applied = newAppliedState;
+                }
+            } catch(error) {
+                console.error("Error updating document:", error);
+                btn.setAttribute("data-applied", isCurrentlyApplied.toString());
+                btn.style.backgroundColor = isCurrentlyApplied ? "#2e7d32" : "#555";
+                btn.textContent = "Errore!";
+                setTimeout(() => {
+                    btn.textContent = isCurrentlyApplied ? "Applicato ✓" : "Non applicato";
+                }, 2000);
+            }
+        });
+    });
+
+    // Modal logic
+    const modal = document.getElementById('info-modal');
+    const modalReason = document.getElementById('modal-reasoning');
+    const modalDesc = document.getElementById('modal-description');
+    const closeBtn = document.getElementById('btn-close-modal');
+
+    document.querySelectorAll('.btn-desc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.target.getAttribute('data-target');
+            const data = window[`modalData_${targetId}`];
+
+            if(modalReason) modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
+            if(modalDesc) modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
+
+            if(modal) modal.classList.add('active');
+        });
+    });
+
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
                 modal.classList.remove('active');
-            });
-        }
-
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
-                }
-            });
-        }
-
+            }
+        });
+    }
+}
 
         // ==========================================
         // BOOTSTRAP
