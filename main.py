@@ -12,6 +12,7 @@ from apify_client import ApifyClient
 from google import genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
+load_dotenv()
 import db
 
 
