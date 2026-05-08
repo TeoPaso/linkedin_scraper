@@ -384,9 +384,11 @@ def main():
 
     print("[*] Avvio scraping iterativo...")
 
-    while len(job_store) < jobs_target and iteration < max_retries:
+    jobs_scraped_this_run = 0
+
+    while jobs_scraped_this_run < jobs_target and iteration < max_retries:
         print(
-            f"\n--- Iterazione {iteration + 1}/{max_retries} | Lavori in store: {len(job_store)}/{jobs_target} ---"
+            f"\n--- Iterazione {iteration + 1}/{max_retries} | Lavori estratti in questa sessione: {jobs_scraped_this_run}/{jobs_target} ---"
         )
 
         is_core_iteration = iteration < len(core_keywords)
@@ -447,6 +449,7 @@ def main():
                     "keyword": keyword,
                 }
                 new_jobs_count += 1
+                jobs_scraped_this_run += 1
 
         fruitful = new_jobs_count > 0
 
