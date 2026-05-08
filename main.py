@@ -379,6 +379,9 @@ def main():
     iteration = 0
     queries_run = []
 
+    core_keywords = config.get("scraper", {}).get("core_keywords", [])
+    core_time_filter = config.get("scraper", {}).get("core_time_filter", "r86400")
+
     print("[*] Avvio scraping iterativo...")
 
     while len(job_store) < jobs_target and iteration < max_retries:
@@ -386,22 +389,41 @@ def main():
             f"\n--- Iterazione {iteration + 1}/{max_retries} | Lavori in store: {len(job_store)}/{jobs_target} ---"
         )
 
-        query = generate_single_search_query(
-            profile, config, search_memory, len(job_store)
-        )
-        keyword = query.get("keywords", "")
+        is_core_iteration = iteration < len(core_keywords)
+
+        if is_core_iteration:
+            keyword = core_keywords[iteration]
+            print(f"[*] Keyword CORE predefinita: {keyword}")
+            query = {
+                "keywords": keyword,
+                "reasoning": "Keyword predefinita dal config",
+                "is_core": True,
+            }
+        else:
+            query = generate_single_search_query(
+                profile, config, search_memory, len(job_store)
+            )
+            keyword = query.get("keywords", "")
 
         if not keyword:
             print("[!] Keyword non generata o errore. Riprovo...")
             iteration += 1
             continue
 
-        print(
-            f"[*] Keyword generata: {keyword} (Reasoning: {query.get('reasoning', '')})"
-        )
+        if not is_core_iteration:
+            print(
+                f"[*] Keyword generata da AI: {keyword} (Reasoning: {query.get('reasoning', '')})"
+            )
         queries_run.append(query)
 
-        jobs = scrape_jobs(query, config)
+        # Modifica il time_filter temporaneamente se stiamo facendo una query core
+        current_config = dict(config)
+        if is_core_iteration:
+            if "scraper" not in current_config:
+                current_config["scraper"] = {}
+            current_config["scraper"]["time_filter"] = core_time_filter
+
+        jobs = scrape_jobs(query, current_config)
 
         new_jobs_count = 0
         top_titles = []

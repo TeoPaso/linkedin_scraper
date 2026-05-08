@@ -13,6 +13,9 @@ scraper:
   max_retries: 25         # Limite di ricerche generate da Gemini (1 per il test)
   count_per_search: 15    # Numero di job estratti per singola ricerca
   time_filter: "r604800" # Filtro temporale LinkedIn. r2592000 = past month, r604800 = past week, r86400 = past 24h. Vuoto "" = anytime
+  core_keywords:          # Keyword fisse testate ad ogni esecuzione
+    - "Venture Capital Analyst"
+  core_time_filter: "r86400" # Ultime 24h per le core keywords per non duplicare roba vecchia
 
 # Configurazione LLM e filtraggio
 evaluation:
