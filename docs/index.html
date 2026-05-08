@@ -729,7 +729,7 @@
                 <td style="color: var(--text-muted);">${formatDate(rawDate)}</td>
                 <td><a href="${url}" target="_blank">Apri &nearr;</a></td>
                 <td>
-                    <button class="btn-applied" data-docid="${j._doc_id || ''}" data-applied="${j.applied === true ? 'true' : 'false'}" style="background-color: ${j.applied === true ? '#2e7d32' : '#555'}; color: white; border: none;">
+                    <button class="btn-applied" data-docid="${j._doc_id || ''}" data-applied="${j.applied === true ? 'true' : 'false'}" style="background-color: ${j.applied === true ? '#2e7d32' : '#555'}; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
                         ${j.applied === true ? 'Applicato ✓' : 'Non applicato'}
                     </button>
                 </td>
@@ -776,6 +776,7 @@
                         <th>Categoria</th>
                         <th>Date Seen</th>
                         <th>Link</th>
+                        <th>Candidatura</th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
