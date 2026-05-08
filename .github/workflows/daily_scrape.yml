@@ -35,14 +35,8 @@ jobs:
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: python main.py
-
-      - name: Upload Dashboard Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dashboard
-          path: dashboard.html
 
       - name: Run Startup Outreach
         if: always()
@@ -53,13 +47,10 @@ jobs:
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: python startup_outreach.py
 
-      - name: Commit and push state files
-        if: always()
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add search_memory.json job_store.json job_categories.json || true
-          git commit -m "chore: update state files [skip ci]" || echo "No changes to commit"
-          git push
+      
+      # I dati di stato (json) non vengono più committati nel repo.
+      # Tutto viene salvato su Firestore.
+      # La dashboard è ospitata staticamente tramite GitHub Pages (folder /docs).

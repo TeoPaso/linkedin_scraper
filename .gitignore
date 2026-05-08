@@ -2,3 +2,8 @@
 __pycache__/
 reports/
 dashboard.html
+job_store.json
+search_memory.json
+job_categories.json
+dashboard_template.html
+startup_leads.json

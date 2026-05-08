@@ -12,6 +12,7 @@ from apify_client import ApifyClient
 from google import genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import db
 
 
 class JobEvaluation(BaseModel):
@@ -29,23 +30,6 @@ def load_profile(path: str) -> str:
     """Carica il profilo markdown del candidato."""
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
-
-
-def load_json(path: str, default_val: any) -> any:
-    """Carica un file JSON e restituisce default_val se non esiste o è corrotto."""
-    if not os.path.exists(path):
-        return default_val
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return default_val
-
-
-def save_json(data: any, path: str):
-    """Salva i dati in formato JSON con indentazione."""
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
 
 
 def generate_single_search_query(
@@ -329,16 +313,11 @@ def send_email_report(matched_jobs: list, metrics: dict):
     html_content += """
         </div>
         <p style="font-size: 12px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
-            Report completo disponibile in dashboard.html nella root del progetto.
+            Report completo disponibile nella Dashboard.
         </p>
     """
 
-    if os.environ.get("GITHUB_ACTIONS"):
-        html_content += """
-        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 5px;">
-            Il file dashboard.html è disponibile come artifact dello step.
-        </p>
-        """
+
 
     html_content += """
     </body>
@@ -367,9 +346,9 @@ def main():
     config = load_config("config.yaml")
     profile = load_profile("my_profile.md")
 
-    search_memory = load_json("search_memory.json", [])
-    job_store = load_json("job_store.json", {})
-    job_categories = load_json("job_categories.json", [])
+    search_memory = db.load_search_memory()
+    job_store = db.load_job_store()
+    job_categories = db.load_job_categories()
 
     execution_id = datetime.now().isoformat()
 
@@ -465,8 +444,8 @@ def main():
         }
         search_memory.append(memory_entry)
 
-        save_json(search_memory, "search_memory.json")
-        save_json(job_store, "job_store.json")
+        db.save_search_memory(search_memory)
+        db.save_job_store(job_store)
 
         iteration += 1
 
@@ -563,9 +542,9 @@ def main():
     else:
         print("  [-] Nessun lavoro da categorizzare.")
 
-    save_json(search_memory, "search_memory.json")
-    save_json(job_store, "job_store.json")
-    save_json(job_categories, "job_categories.json")
+    db.save_search_memory(search_memory)
+    db.save_job_store(job_store)
+    db.save_job_categories(job_categories)
 
     print("\n[*] Dati salvati con successo. Invio report via email...")
 
