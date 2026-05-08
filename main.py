@@ -547,8 +547,13 @@ def main():
     min_fit_score = config.get("evaluation", {}).get("min_fit_score", 75)
     matched_jobs = []
 
+    today_prefix = execution_id.split("T")[0]
+
     for url, data in job_store.items():
-        if data.get("execution_id") == execution_id:
+        # Include jobs scraped today
+        if data.get("first_seen", "").startswith(today_prefix) or data.get(
+            "execution_id", ""
+        ).startswith(today_prefix):
             score = data.get("fit_score")
             if score is not None and score >= min_fit_score:
                 matched_jobs.append(
@@ -566,15 +571,22 @@ def main():
     best_keyword = "N/A"
     all_scores = []
 
+    loops_today = 0
+
     for mem in search_memory:
-        if mem.get("execution_id") == execution_id:
+        if mem.get("timestamp", "").startswith(today_prefix) or mem.get(
+            "execution_id", ""
+        ).startswith(today_prefix):
+            loops_today += 1
             total_found += mem.get("jobs_found_total", 0)
             if mem.get("jobs_new_unique", 0) >= max_new_unique:
                 max_new_unique = mem.get("jobs_new_unique", 0)
                 best_keyword = mem.get("keyword", "N/A")
 
     for url, data in job_store.items():
-        if data.get("execution_id") == execution_id:
+        if data.get("first_seen", "").startswith(today_prefix) or data.get(
+            "execution_id", ""
+        ).startswith(today_prefix):
             score = data.get("fit_score")
             if score is not None:
                 all_scores.append(score)
@@ -584,7 +596,7 @@ def main():
     metrics_dict = {
         "total_found": total_found,
         "total_above_threshold": len(matched_jobs),
-        "iterations": iteration,
+        "iterations": loops_today,
         "best_keyword": best_keyword,
         "avg_fit_score": avg_fit_score,
     }

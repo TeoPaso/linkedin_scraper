@@ -395,13 +395,26 @@ function render() {
 function renderHeader() {
     const exId = appData.execution_id || 'N/A';
     const tgt = appData.jobs_target || appData.config?.target_jobs || 'N/A';
-    const loops = (appData.search_memory || []).filter(s => s.execution_id === exId).length || appData.metrics?.loops_executed || 0;
+    
+    // Calculate total and useful jobs
+    const totalFound = Object.keys(appData.job_store || {}).length;
+    const totalUseful = Object.values(appData.job_store || {}).filter(j => j.fit_score !== null && j.fit_score >= 75).length;
+    
+    const todayPrefix = exId !== 'N/A' ? exId.split('T')[0] : '';
+    const loops = (appData.search_memory || []).filter(s => {
+        if (!todayPrefix) return s.execution_id === exId;
+        return (s.timestamp && s.timestamp.startsWith(todayPrefix)) || (s.execution_id && s.execution_id.startsWith(todayPrefix));
+    }).length || appData.metrics?.loops_executed || 0;
+    
     const maxLoops = appData.max_retries || appData.config?.max_loops || 'N/A';
     
     // Calculate the avg fit score for this specific execution
     let avgFit = 0.0;
     if (appData.search_memory) {
-         const execMem = appData.search_memory.filter(s => s.execution_id === exId && typeof s.avg_fit_score === 'number');
+         const execMem = appData.search_memory.filter(s => {
+             if (!todayPrefix) return s.execution_id === exId && typeof s.avg_fit_score === 'number';
+             return ((s.timestamp && s.timestamp.startsWith(todayPrefix)) || (s.execution_id && s.execution_id.startsWith(todayPrefix))) && typeof s.avg_fit_score === 'number';
+         });
          if (execMem.length > 0) {
               const sum = execMem.reduce((acc, curr) => acc + curr.avg_fit_score, 0);
               avgFit = sum / execMem.length;
@@ -430,6 +443,10 @@ function renderHeader() {
             <div class="card">
                 <div style="color: var(--text-muted); margin-bottom: 5px;">Target Jobs</div>
                 <div class="metric">${tgt}</div>
+            </div>
+            <div class="card">
+                <div style="color: var(--text-muted); margin-bottom: 5px;">Total Jobs (Found/Useful)</div>
+                <div class="metric">${totalFound} / ${totalUseful}</div>
             </div>
             <div class="card">
                 <div style="color: var(--text-muted); margin-bottom: 5px;">Loops Executed</div>
@@ -503,7 +520,8 @@ function getSearchCardHtml(s) {
     if (!s) return '';
     const badgeClass = s.fruitful ? 'fruitful' : 'unfruitful';
     const badgeText = s.fruitful ? 'Fruitful' : 'Unfruitful';
-    const avgFit = typeof s.avg_fit_score === 'number' ? s.avg_fit_score.toFixed(1) : (typeof s.avg_fit === 'number' ? s.avg_fit.toFixed(1) : 'N/A');
+    const avgFitValue = typeof s.avg_fit_score === 'number' ? s.avg_fit_score : (typeof s.avg_fit === 'number' ? s.avg_fit : null);
+    const avgFit = avgFitValue !== null ? avgFitValue.toFixed(1) : '<span style="color: var(--text-muted);">N/A</span>';
     
     // Convert ISO datetime to something more readable
     let displayTs = s.timestamp;
