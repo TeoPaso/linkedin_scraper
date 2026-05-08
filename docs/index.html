@@ -764,6 +764,9 @@
                     ${categoryOptions}
                 </select>
             </div>
+            <div style="margin-left: auto; align-self: flex-end; padding-bottom: 5px;">
+                <span id="jobs-counter" class="metric" style="font-size: 1.1em;">${urls.length}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte visibili</span>
+            </div>
         </div>
         <div class="card table-responsive">
             <table>
@@ -827,13 +830,20 @@
             const rowKeyword = row.getAttribute('data-keyword');
             const rowCategory = row.getAttribute('data-category');
 
+        let visibleCount = 0;
             let show = true;
             if (selDate && rowDate !== selDate) show = false;
             if (selKeyword && rowKeyword !== selKeyword) show = false;
             if (selCategory && rowCategory !== selCategory) show = false;
 
             row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
         });
+        
+        const counterEl = document.getElementById('jobs-counter');
+        if (counterEl) {
+            counterEl.textContent = visibleCount;
+        }
     };
 
     if (filterDate) filterDate.addEventListener('change', applyFilters);
