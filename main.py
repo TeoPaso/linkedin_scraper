@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import yaml
 import urllib.parse
 from datetime import datetime
@@ -12,95 +13,122 @@ from google import genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+
 class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
 
-class SearchQuery(BaseModel):
-    keywords: str
-    location: str
-    contract_type: str
-    reasoning: str
-    
-class SearchPlan(BaseModel):
-    queries: list[SearchQuery]
 
 def load_config(path: str) -> dict:
     """Carica la configurazione yaml."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
 
 def load_profile(path: str) -> str:
     """Carica il profilo markdown del candidato."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         return f.read()
 
-import json
 
-def generate_search_queries(profile: str, config: dict) -> list[dict]:
+def load_json(path: str, default_val: any) -> any:
+    """Carica un file JSON e restituisce default_val se non esiste o è corrotto."""
+    if not os.path.exists(path):
+        return default_val
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default_val
+
+
+def save_json(data: any, path: str):
+    """Salva i dati in formato JSON con indentazione."""
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def generate_single_search_query(
+    profile: str, config: dict, search_memory: list, jobs_count: int
+) -> dict:
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
         print("ERRORE: Variabile d'ambiente GEMINI_API_KEY non impostata.")
         sys.exit(1)
-        
-    client = genai.Client(api_key=gemini_key)
-    
-    max_searches = config.get("scraper", {}).get("max_searches", 1)
-    location_pref = config.get("preferences", {}).get("location", "Milan, Italy")
-    
-    prompt = f"""
-Sei un technical recruiter esperto e un career coach.
-Leggi il seguente profilo del candidato e genera esattamente {max_searches} ricerche di lavoro altamente mirate e adatte alle competenze, esperienze, aspirazioni e interessi del candidato.
 
-Profilo Candidato:
+    client = genai.Client(api_key=gemini_key)
+
+    memory_summary = ""
+    if search_memory:
+        memory_summary = "Ricerche precedenti (con risultati):\n"
+        for mem in search_memory[-15:]:
+            avg = mem.get("avg_fit_score")
+            avg_str = f"{avg}/100" if avg is not None else "non valutato"
+            memory_summary += (
+                f'- "{mem.get("keyword")}" → '
+                f"{mem.get('jobs_new_unique', 0)} job unici, "
+                f"fit score medio: {avg_str}, "
+                f"titoli trovati: {mem.get('top_titles', [])}\n"
+            )
+
+    prompt = f"""
+Sei un recruiter specializzato che aiuta candidati a trovare posizioni ad alto fit.
+Il tuo obiettivo è generare UNA SOLA keyword di ricerca LinkedIn estremamente precisa e mirata.
+
+Profilo del candidato:
 {profile}
 
-Istruzioni:
-1. Fornisci 'keywords' precise basate ESCLUSIVAMENTE sui JOB TITLE. Esempi validi: "Analyst", "Associate", "Consultant", "Specialist", "Graduate", "Graduate Program", "Trainee", "Intern", "Researcher", "Business Partner", "Business Development", "Junior Associate", "Junior Consultant", "Strategic". Puoi usare operatori logici (e.g. "Analyst OR Associate OR Graduate"). NON inserire MAI nomi di tecnologie, linguaggi o competenze (e.g. NON usare "Python" o "Power BI") per evitare che LinkedIn filtri via troppi annunci.
-2. Le diverse ricerche che generi devono avere 'keywords' DIVERSE e COMPLEMENTARI tra loro in modo da non sovrapporsi nei risultati, coprendo le varie sfumature del profilo (es. una per ambiti data, una per ambiti strategy, ecc.).
-3. Scrivi in ITALIANO una breve 'reasoning' sul perché hai scelto questa combinazione di parametri.
+Ricerche già effettuate (NON ripetere nessuna di queste, né variazioni simili):
+{memory_summary}
 
-DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
+REGOLE OBBLIGATORIE per la keyword:
+1. Usa AL MASSIMO 2 job title collegati da un singolo OR. Preferisci UN SOLO titolo preciso.
+   CORRETTO: "Venture Capital Analyst"
+   CORRETTO: "FP&A Analyst OR Finance Business Partner"
+   SBAGLIATO: "Analyst OR Associate OR Consultant OR Specialist OR Graduate"
+2. Scegli titoli il più specifici possibile per il profilo del candidato. Titoli generici come
+   "Business Analyst" o "Financial Analyst" da soli producono risultati troppo eterogenei — evitali
+   a meno che non siano accompagnati da un modificatore (es. "Junior Financial Analyst", "Strategy Analyst").
+3. NON usare mai nomi di tecnologie, linguaggi o tool (no "Python", "Power BI", "Excel").
+4. Guarda i top_titles delle ricerche precedenti: se una keyword ha prodotto titoli lontani
+   dal profilo (es. "Regional Sales Manager", "Customer Marketing"), quella direzione è da evitare.
+5. Ogni nuova keyword deve esplorare un'area DIVERSA da quelle già coperte.
+
+DEVI RESTITUIRE SOLO questo JSON, senza testo aggiuntivo:
 {{
-  "queries": [
-    {{
-      "keywords": "la stringa con le keywords",
-      "reasoning": "la motivazione in italiano"
-    }}
-  ]
+  "keywords": "una keyword precisa, max 2 titoli in OR",
+  "reasoning": "una frase in italiano che spiega perché questa keyword è mirata per questo profilo"
 }}
-Non aggiungere nessun altro testo fuori dal JSON.
 """
     try:
         response = client.models.generate_content(
-            model='gemini-3-flash-preview',
+            model="gemini-3-flash-preview",
             contents=prompt,
-            config={
-                'response_mime_type': 'application/json',
-                'temperature': 0.2
-            },
+            config={"response_mime_type": "application/json", "temperature": 0.2},
         )
-        plan_dict = json.loads(response.text)
-        return plan_dict.get("queries", [])
+        return json.loads(response.text)
     except Exception as e:
-        print(f"[!] ERRORE durante la generazione delle query con Gemini: {e}")
-        return []
+        print(f"[!] ERRORE durante la generazione della query con Gemini: {e}")
+        return {"keywords": "", "reasoning": ""}
 
-def construct_linkedin_url(params: dict, location: str, time_filter: str = "r604800") -> str:
+
+def construct_linkedin_url(
+    params: dict, location: str, time_filter: str = "r604800"
+) -> str:
     """Costruisce un URL di ricerca per LinkedIn basandosi sui parametri."""
     base_url = "https://www.linkedin.com/jobs/search/?"
     query_params = {}
     if params.get("keywords"):
         query_params["keywords"] = params["keywords"]
-    
+
     if location:
         query_params["location"] = location
-    
-    # Filtro temporale configurabile (default past month)
+
     if time_filter:
         query_params["f_TPR"] = time_filter
-    
+
     return base_url + urllib.parse.urlencode(query_params)
+
 
 def scrape_jobs(query_params: dict, config: dict) -> list:
     """Lancia l'Actor di Apify per lo scraping dei job post."""
@@ -108,37 +136,39 @@ def scrape_jobs(query_params: dict, config: dict) -> list:
     if not apify_token:
         print("ERRORE: Variabile d'ambiente APIFY_API_TOKEN non impostata.")
         sys.exit(1)
-        
+
     client = ApifyClient(apify_token)
-    
+
     time_filter = config.get("scraper", {}).get("time_filter", "r604800")
     location = config.get("preferences", {}).get("location", "Milan, Lombardy, Italy")
     url = construct_linkedin_url(query_params, location, time_filter)
     print(f"[*] Avvio scraper su URL: {url}")
-    
+
     run_input = {
         "urls": [url],
-        "count": config.get("scraper", {}).get("max_jobs_per_search", 10),
+        "count": config.get("scraper", {}).get("count_per_search", 25),
         "scrapeCompany": config.get("scraper", {}).get("scrape_company", False),
     }
-    
+
     try:
-        # Chiamata all'Actor Curious Coder per LinkedIn Jobs
         run = client.actor("hKByXkMQaC5Qt9UMN").call(run_input=run_input)
         dataset_id = run["defaultDatasetId"]
-        
+
         items = client.dataset(dataset_id).list_items().items
-        print(f"[*] Scraper completato. Trovati {len(items)} job post per la query corrente.")
+        print(
+            f"[*] Scraper completato. Trovati {len(items)} job post per la query corrente."
+        )
         return items
     except Exception as e:
         print(f"[!] ERRORE durante l'esecuzione di Apify: {e}")
         return []
 
+
 def evaluate_job_with_gemini(job: dict, profile: str) -> JobEvaluation:
     """Valuta il fit tra l'offerta di lavoro e il profilo del candidato usando Gemini."""
     gemini_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=gemini_key)
-    
+
     prompt = f"""
 Sei un technical recruiter esperto e un career coach.
 Valuta l'aderenza del candidato alla seguente offerta di lavoro.
@@ -147,9 +177,9 @@ Profilo Candidato:
 {profile}
 
 Descrizione Lavoro:
-Titolo: {job.get('title', 'Unknown')}
-Azienda: {job.get('companyName', 'Unknown')}
-Descrizione: {job.get('descriptionText', '')}
+Titolo: {job.get("title", "Unknown")}
+Azienda: {job.get("companyName", "Unknown")}
+Descrizione: {job.get("descriptionText", "")}
 
 Istruzioni:
 1. Valuta l'aderenza del candidato per questo ruolo e assegna un 'fit_score' da 0 a 100.
@@ -159,12 +189,12 @@ Istruzioni:
 """
     try:
         response = client.models.generate_content(
-            model='gemini-3-flash-preview',
+            model="gemini-3-flash-preview",
             contents=prompt,
             config={
-                'response_mime_type': 'application/json',
-                'response_schema': JobEvaluation,
-                'temperature': 0.1
+                "response_mime_type": "application/json",
+                "response_schema": JobEvaluation,
+                "temperature": 0.1,
             },
         )
         return JobEvaluation.model_validate_json(response.text)
@@ -172,95 +202,151 @@ Istruzioni:
         print(f"[!] ERRORE durante la valutazione con Gemini: {e}")
         return JobEvaluation(fit_score=0, reasoning=f"Errore di valutazione: {str(e)}")
 
-def send_email_report(matched_jobs: list, queries: list):
+
+def categorize_jobs_with_gemini(
+    uncategorized_jobs: dict, current_categories: list
+) -> dict:
+    if not uncategorized_jobs:
+        return {"job_labels": {}, "new_categories": []}
+
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    client = genai.Client(api_key=gemini_key)
+
+    jobs_text = ""
+    for i, (url, job) in enumerate(uncategorized_jobs.items()):
+        title = job.get("title", "Unknown")
+        company = job.get("companyName", "Unknown")
+        desc = job.get("descriptionText", "")[:300]
+        jobs_text += f"URL: {url}\nTitolo: {title}\nAzienda: {company}\nSnippet Descrizione: {desc}...\n---\n"
+
+    # Convert current categories to list of labels for prompt
+    cat_labels = [
+        c["label"] for c in current_categories if isinstance(c, dict) and "label" in c
+    ]
+
+    prompt = f"""
+Sei un HR esperto nel categorizzare le offerte di lavoro.
+Hai a disposizione le seguenti categorie attuali (labels): {cat_labels}
+
+Ecco una lista di offerte di lavoro non ancora categorizzate:
+{jobs_text}
+
+Istruzioni:
+1. Assegna ogni lavoro a una delle categorie attuali, se pertinente.
+2. Se nessuna delle categorie attuali è pertinente per un lavoro, crea una NUOVA categoria. Evita di creare troppe categorie specifiche; raggruppa in macro-aree (es. "Data Analytics", "Finance", "Marketing & Sales", "Operations").
+3. Restituisci una mappa "job_labels" dove le chiavi sono gli URL dei lavori e i valori le categorie (stringhe).
+4. Restituisci una lista "new_categories" contenente OGGETTI JSON per le nuove categorie create (con "label" e "description"). Non includere categorie che esistevano già.
+
+DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
+{{
+  "job_labels": {{"URL_DEL_LAVORO": "NOME CATEGORIA"}},
+  "new_categories": [
+    {{"label": "NOME NUOVA CATEGORIA", "description": "Breve descrizione di 1 frase"}}
+  ]
+}}
+"""
+    try:
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+            config={"response_mime_type": "application/json", "temperature": 0.1},
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"[!] ERRORE durante la categorizzazione con Gemini: {e}")
+        return {"job_labels": {}, "new_categories": []}
+
+
+def send_email_report(matched_jobs: list, metrics: dict):
     """Genera e invia il report in formato HTML via Email."""
     sender = os.environ.get("EMAIL_SENDER")
     password = os.environ.get("EMAIL_PASSWORD")
     recipient = os.environ.get("EMAIL_RECIPIENT")
-    
+
     if not sender or not password or not recipient or password == "tua_app_password":
-        print("[!] Credenziali email non configurate nel file .env (o password di default). Salto l'invio dell'email.")
+        print(
+            "[!] Credenziali email non configurate nel file .env. Salto l'invio dell'email."
+        )
         return
-        
+
     today_str = datetime.now().strftime("%d/%m/%Y")
-    
+
+    total_matched = metrics.get("total_above_threshold", 0)
+    total_found = metrics.get("total_found", 0)
+
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"LinkedIn Job Matches - {today_str}"
+    msg["Subject"] = (
+        f"LinkedIn Job Report — {today_str} — {total_matched} job matched/{total_found} trovati"
+    )
     msg["From"] = sender
     msg["To"] = recipient
-    
+
     html_content = f"""
     <html>
     <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; max-width: 800px; margin: auto;">
-        <h2 style="color: #0a66c2; border-bottom: 2px solid #0a66c2; padding-bottom: 10px;">LinkedIn Job Matches</h2>
-        <p>Ecco le offerte di lavoro altamente in target analizzate per te in data <strong>{today_str}</strong>.</p>
+        <h2 style="color: #0a66c2; border-bottom: 2px solid #0a66c2; padding-bottom: 10px;">LinkedIn Job Report</h2>
         
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0a66c2;">
-            <h4 style="margin-top: 0; margin-bottom: 10px; color: #444;">Ricerca effettuata da Gemini:</h4>
-            <ul style="margin-bottom: 0; padding-left: 20px;">
-    """
-    
-    for q in queries:
-        html_content += f"""
-                <li style="margin-bottom: 10px;">
-                    <strong>Keywords:</strong> <code>{q.get('keywords', 'N/A')}</code><br>
-                    <em style="color: #666; font-size: 0.9em;">Motivazione Ricerca: {q.get('reasoning', 'N/A')}</em>
-                </li>
-        """
-        
-    html_content += """
-            </ul>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 4px 0; width: 60%;"><strong>Totale offerte trovate:</strong></td><td>{total_found}</td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Nuovi job sopra soglia:</strong></td><td>{total_matched}</td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Iterazioni effettuate:</strong></td><td>{metrics.get("iterations", 0)}</td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Keyword migliore:</strong></td><td><code>{metrics.get("best_keyword", "N/A")}</code></td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Fit score medio:</strong></td><td>{round(metrics.get("avg_fit_score", 0), 1)}/100</td></tr>
+            </table>
         </div>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <h3>Nuovi job sopra soglia</h3>
         <div style="margin-top: 20px;">
     """
-    
+
     if not matched_jobs:
-        html_content += "<p style='color: #666; font-style: italic;'>Nessuna offerta ha superato la soglia minima specificata per oggi.</p>"
+        html_content += "<p style='color: #666; font-style: italic;'>Nessuna nuova offerta ha superato la soglia minima per oggi.</p>"
     else:
         for item in matched_jobs:
             job = item["job"]
             title = job.get("title", "Titolo Sconosciuto")
             company = job.get("companyName", "Azienda Sconosciuta")
-            location = job.get("location", "N/A")
             url = job.get("link", "#")
             score = item["score"]
             reasoning = item["reasoning"]
-            
+
             color = "#2e7d32" if score >= 85 else "#d32f2f" if score < 75 else "#f57c00"
-            
+
             html_content += f"""
             <div style="margin-bottom: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 18px;">
                     <a href="{url}" style="color: #0a66c2; text-decoration: none;">{title}</a> 
                     <span style="color: #666; font-weight: normal; font-size: 16px;">presso {company}</span>
+                    <span style="float: right; font-size: 14px; font-weight: 600; color: {color};">Score: {score}/100</span>
                 </h3>
-                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
-                    <span style="background-color: #f3f2ef; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: 600; color: {color};">
-                        Fit Score: {score}/100
-                    </span>
-                    <span style="background-color: #f3f2ef; padding: 4px 8px; border-radius: 4px; font-size: 14px; color: #555;">
-                        📍 {location}
-                    </span>
-                </div>
-                <div style="padding-top: 12px; border-top: 1px solid #eaeaea;">
-                    <strong style="color: #444; font-size: 14px;">Perché questo ruolo:</strong><br>
+                <div style="padding-top: 8px;">
                     <span style="color: #555; font-size: 14px;">{reasoning}</span>
                 </div>
             </div>
             """
-            
+
     html_content += """
         </div>
         <p style="font-size: 12px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
-            Generato automaticamente da LinkedIn Job Scraper Agent.
+            Report completo disponibile in dashboard.html nella root del progetto.
         </p>
+    """
+
+    if os.environ.get("GITHUB_ACTIONS"):
+        html_content += """
+        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 5px;">
+            Il file dashboard.html è disponibile come artifact dello step.
+        </p>
+        """
+
+    html_content += """
     </body>
     </html>
     """
-    
+
     msg.attach(MIMEText(html_content, "html"))
-    
+
     try:
         print(f"[*] Invio email a {recipient}...")
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
@@ -270,69 +356,266 @@ def send_email_report(matched_jobs: list, queries: list):
     except Exception as e:
         print(f"[!] ERRORE durante l'invio dell'email: {e}")
 
+
 def main():
     load_dotenv()
-    
+
     if not os.path.exists("config.yaml") or not os.path.exists("my_profile.md"):
         print("ERRORE: File config.yaml o my_profile.md mancanti.")
         sys.exit(1)
-        
+
     config = load_config("config.yaml")
     profile = load_profile("my_profile.md")
-    
-    print("[*] Generazione parametri di ricerca tramite Gemini in base al profilo...")
-    queries = generate_search_queries(profile, config)
-    
-    if not queries:
-        print("[!] Nessuna query generata. Esco.")
-        sys.exit(1)
-        
-    print(f"[*] Generate {len(queries)} query di ricerca. Avvio scraping...")
-    
-    all_unique_jobs = {}
-    for i, query in enumerate(queries):
-        print(f"\n--- Ricerca {i+1}/{len(queries)} ---")
-        print(f"Keywords: {query['keywords']}")
-        print(f"Location: {config.get('preferences', {}).get('location', 'N/A')}")
-        
+
+    search_memory = load_json("search_memory.json", [])
+    job_store = load_json("job_store.json", {})
+    job_categories = load_json("job_categories.json", [])
+
+    execution_id = datetime.now().isoformat()
+
+    jobs_target = config.get("scraper", {}).get("jobs_target", 50)
+    max_retries = config.get("scraper", {}).get("max_retries", 10)
+
+    iteration = 0
+    queries_run = []
+
+    print("[*] Avvio scraping iterativo...")
+
+    while len(job_store) < jobs_target and iteration < max_retries:
+        print(
+            f"\n--- Iterazione {iteration + 1}/{max_retries} | Lavori in store: {len(job_store)}/{jobs_target} ---"
+        )
+
+        query = generate_single_search_query(
+            profile, config, search_memory, len(job_store)
+        )
+        keyword = query.get("keywords", "")
+
+        if not keyword:
+            print("[!] Keyword non generata o errore. Riprovo...")
+            iteration += 1
+            continue
+
+        print(
+            f"[*] Keyword generata: {keyword} (Reasoning: {query.get('reasoning', '')})"
+        )
+        queries_run.append(query)
+
         jobs = scrape_jobs(query, config)
+
+        new_jobs_count = 0
+        top_titles = []
         for job in jobs:
-            job_url = job.get('link', job.get('url', ''))
-            if job_url and job_url not in all_unique_jobs:
-                all_unique_jobs[job_url] = job
-                
-    unique_jobs_list = list(all_unique_jobs.values())
-    print(f"\n[*] Scraping completato. Trovati {len(unique_jobs_list)} job post unici in totale.")
-    
-    if not unique_jobs_list:
-        print("[!] Nessun job trovato. Invio email vuota.")
-        send_email_report([], queries)
-        sys.exit(0)
-        
+            job_url = job.get("link", job.get("url", ""))
+            if not job_url:
+                continue
+
+            title = job.get("title", "Unknown Title")
+            if len(top_titles) < 5 and title not in top_titles:
+                top_titles.append(title)
+
+            if job_url not in job_store:
+                job_store[job_url] = {
+                    "job_data": job,
+                    "fit_score": None,
+                    "reasoning": None,
+                    "category": None,
+                    "first_seen": execution_id,
+                    "execution_id": execution_id,
+                    "keyword": keyword,
+                }
+                new_jobs_count += 1
+
+        fruitful = new_jobs_count > 0
+
+        memory_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "execution_id": execution_id,
+            "keyword": keyword,
+            "jobs_found_total": len(jobs),
+            "jobs_new_unique": new_jobs_count,
+            "fruitful": fruitful,
+            "top_titles": top_titles,
+            "avg_fit_score": None,
+        }
+        search_memory.append(memory_entry)
+
+        save_json(search_memory, "search_memory.json")
+        save_json(job_store, "job_store.json")
+
+        iteration += 1
+
+    print(
+        "\n[*] Loop iterativo completato. Procedo alla valutazione dei lavori non ancora valutati..."
+    )
+
+    jobs_to_evaluate = {
+        url: data for url, data in job_store.items() if data.get("fit_score") is None
+    }
+
+    if jobs_to_evaluate:
+        for i, (url, data) in enumerate(jobs_to_evaluate.items()):
+            job = data["job_data"]
+            title = job.get("title", "Unknown Title")
+            company = job.get("companyName", "Unknown Company")
+            print(
+                f"  [{i + 1}/{len(jobs_to_evaluate)}] Valutazione: {title} @ {company}..."
+            )
+
+            evaluation = evaluate_job_with_gemini(job, profile)
+            data["fit_score"] = evaluation.fit_score
+            data["reasoning"] = evaluation.reasoning
+            print(f"      -> Score: {evaluation.fit_score}")
+    else:
+        print("  [-] Nessun lavoro da valutare.")
+
+    for mem_entry in search_memory:
+        if (
+            mem_entry.get("execution_id") == execution_id
+            and mem_entry.get("avg_fit_score") is None
+        ):
+            kw = mem_entry.get("keyword")
+
+            scores = []
+            for url, data in job_store.items():
+                if (
+                    data.get("execution_id") == execution_id
+                    and data.get("keyword") == kw
+                ):
+                    score = data.get("fit_score")
+                    if score is not None:
+                        scores.append(score)
+
+            if scores:
+                mem_entry["avg_fit_score"] = round(sum(scores) / len(scores), 1)
+            else:
+                mem_entry["avg_fit_score"] = 0
+
+    print("\n[*] Categorizzazione dei lavori non categorizzati...")
+    jobs_to_categorize = {
+        url: data["job_data"]
+        for url, data in job_store.items()
+        if data.get("category") is None
+    }
+
+    if jobs_to_categorize:
+        cat_result = categorize_jobs_with_gemini(jobs_to_categorize, job_categories)
+        job_labels = cat_result.get("job_labels", {})
+        new_cats = cat_result.get("new_categories", [])
+
+        for url, category in job_labels.items():
+            if url in job_store:
+                job_store[url]["category"] = category
+
+        # Extract current category labels for check
+        cat_labels_set = {
+            c["label"] for c in job_categories if isinstance(c, dict) and "label" in c
+        }
+
+        for nc in new_cats:
+            if isinstance(nc, dict) and "label" in nc and "description" in nc:
+                if nc["label"] not in cat_labels_set:
+                    # Add an empty list for job_urls when creating
+                    nc["job_urls"] = []
+                    job_categories.append(nc)
+                    cat_labels_set.add(nc["label"])
+
+        # Populate job_urls for UI
+        for i, cat in enumerate(job_categories):
+            if isinstance(cat, str):
+                # Convert legacy string categories to dict
+                job_categories[i] = {"label": cat, "description": "Legacy category"}
+                cat = job_categories[i]
+
+            cat["job_urls"] = []
+            for url, data in job_store.items():
+                if data.get("category") == cat["label"]:
+                    cat["job_urls"].append(url)
+
+        print(
+            f"  [-] Trovate/assegnate categorie. Nuove categorie aggiunte: {len(new_cats)}"
+        )
+    else:
+        print("  [-] Nessun lavoro da categorizzare.")
+
+    save_json(search_memory, "search_memory.json")
+    save_json(job_store, "job_store.json")
+    save_json(job_categories, "job_categories.json")
+
+    print("\n[*] Dati salvati con successo. Invio report via email...")
+
     min_fit_score = config.get("evaluation", {}).get("min_fit_score", 75)
     matched_jobs = []
-    
-    print(f"\n[*] Inizio valutazione delle offerte tramite Gemini (Soglia: {min_fit_score})...")
-    for i, job in enumerate(unique_jobs_list):
-        title = job.get("title", "Unknown Title")
-        company = job.get("companyName", "Unknown Company")
-        print(f"  [{i+1}/{len(unique_jobs_list)}] Analisi: {title} @ {company}...")
-        
-        evaluation = evaluate_job_with_gemini(job, profile)
-        print(f"      -> Score: {evaluation.fit_score}")
-        
-        if evaluation.fit_score >= min_fit_score:
-            matched_jobs.append({
-                "job": job,
-                "score": evaluation.fit_score,
-                "reasoning": evaluation.reasoning
-            })
-            
-    # Ordiniamo i job dal punteggio più alto a quello più basso
+
+    for url, data in job_store.items():
+        if data.get("execution_id") == execution_id:
+            score = data.get("fit_score")
+            if score is not None and score >= min_fit_score:
+                matched_jobs.append(
+                    {
+                        "job": data["job_data"],
+                        "score": score,
+                        "reasoning": data.get("reasoning", ""),
+                    }
+                )
+
     matched_jobs.sort(key=lambda x: x["score"], reverse=True)
-    
-    print(f"\n[*] Trovate {len(matched_jobs)} offerte con score >= {min_fit_score}. Invio report via email...")
-    send_email_report(matched_jobs, queries)
+
+    total_found = 0
+    max_new_unique = -1
+    best_keyword = "N/A"
+    all_scores = []
+
+    for mem in search_memory:
+        if mem.get("execution_id") == execution_id:
+            total_found += mem.get("jobs_found_total", 0)
+            if mem.get("jobs_new_unique", 0) >= max_new_unique:
+                max_new_unique = mem.get("jobs_new_unique", 0)
+                best_keyword = mem.get("keyword", "N/A")
+
+    for url, data in job_store.items():
+        if data.get("execution_id") == execution_id:
+            score = data.get("fit_score")
+            if score is not None:
+                all_scores.append(score)
+
+    avg_fit_score = sum(all_scores) / len(all_scores) if all_scores else 0.0
+
+    metrics_dict = {
+        "total_found": total_found,
+        "total_above_threshold": len(matched_jobs),
+        "iterations": iteration,
+        "best_keyword": best_keyword,
+        "avg_fit_score": avg_fit_score,
+    }
+
+    send_email_report(matched_jobs, metrics_dict)
+
+    print("\n[*] Generazione della dashboard in corso...")
+    try:
+        dashboard_data = {
+            "execution_id": execution_id,
+            "jobs_target": config.get("scraper", {}).get("jobs_target", 50),
+            "max_retries": config.get("scraper", {}).get("max_retries", 10),
+            "search_memory": search_memory,
+            "job_categories": job_categories,
+            "job_store": job_store,
+        }
+
+        with open("dashboard_template.html", "r", encoding="utf-8") as f:
+            template = f.read()
+
+        dashboard_html = template.replace(
+            "__DATA_PLACEHOLDER__", json.dumps(dashboard_data)
+        )
+
+        with open("dashboard.html", "w", encoding="utf-8") as f:
+            f.write(dashboard_html)
+
+        print("[*] Dashboard generata con successo: dashboard.html")
+    except Exception as e:
+        print(f"[!] ERRORE durante la generazione della dashboard: {e}")
+
 
 if __name__ == "__main__":
     main()

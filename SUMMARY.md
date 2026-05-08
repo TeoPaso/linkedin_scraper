@@ -1,17 +1,18 @@
 # LinkedIn Job Scraper, Matcher & Email Reporter
 
-Questo progetto è un'automazione avanzata che analizza il tuo profilo, delega all'Intelligenza Artificiale (Google Gemini) la creazione autonoma delle migliori ricerche di lavoro su LinkedIn, estrae le offerte tramite Apify, le valuta rigorosamente, e ti invia un report via Email solo per le posizioni ad alto "fit score".
+Questo progetto è un'automazione avanzata che analizza il tuo profilo, delega all'Intelligenza Artificiale (Google Gemini) la creazione autonoma delle migliori ricerche di lavoro su LinkedIn, estrae le offerte tramite Apify, le valuta rigorosamente, le categorizza e genera una dashboard locale e un report via Email per le posizioni ad alto "fit score".
 
 ## Componenti del Sistema
 
 1. **`my_profile.md`**: Il cuore dell'applicazione. Contiene le tue esperienze, studi e interessi. Gemini lo legge per capire *chi sei* e formulare chiavi di ricerca mirate (Job Titles) e per valutare le offerte.
-2. **`config.yaml`**: Il pannello di controllo operativo. Non contiene più chiavi di ricerca statiche, ma serve a definire i "limiti" per tenere sotto controllo i costi: numero massimo di ricerche da far generare a Gemini (`max_searches`), numero di risultati da scaricare per query (`max_jobs_per_search`), soglia minima di score (`min_fit_score`) e preferenza fissa di location.
-3. **`main.py`**: L'orchestratore. 
-    - **Fase 1 (Generazione Dinamica)**: Chiede a Gemini di generare X query di ricerca in formato JSON.
-    - **Fase 2 (Scraping)**: Costruisce un URL LinkedIn dinamico in base alle keyword e alla location scelte dall'AI e avvia l'actor di Apify.
-    - **Fase 3 (Valutazione)**: Passa la descrizione di ogni lavoro a Gemini, imponendo vincoli severi contro lavori fuori target (es. Marketing/HR o con troppa seniority richiesta).
-    - **Fase 4 (Notifica)**: Formatta i risultati e i parametri di ricerca in HTML e li invia tramite email SMTP.
-4. **`requirements.txt`**: Dipendenze necessarie (`apify-client`, `google-genai`, `pydantic`, `python-dotenv`, `pyyaml`).
+2. **`config.yaml`**: Il pannello di controllo operativo. Definisce il target di job post da raccogliere complessivamente (`jobs_target`), i tentativi massimi che Gemini può fare in un'esecuzione (`max_retries`), i risultati per ogni singola query (`count_per_search`), e la soglia minima di score (`min_fit_score`).
+3. **`main.py`**: L'orchestratore iterativo. 
+    - **Fase 1 (Generazione Dinamica & Scraping Iterativo)**: Legge lo storico delle ricerche (`search_memory.json`) e il totale dei lavori finora scaricati (`job_store.json`). Continua a generare nuove query con Gemini, esplorando titoli sempre nuovi e scaricando i risultati tramite Apify, finché non si raggiunge il target di `jobs_target`.
+    - **Fase 2 (Valutazione)**: Passa a Gemini la descrizione di tutti i nuovi job scaricati per ottenere un punteggio di aderenza da 0 a 100 con relativo ragionamento.
+    - **Fase 3 (Categorizzazione)**: Categorizza automaticamente le nuove offerte per facilitarne la consultazione (`job_categories.json`).
+    - **Fase 4 (Dashboard e Notifica)**: Genera la `dashboard.html` visualizzabile localmente o via artefatto GitHub, ed invia un riepilogo tramite email SMTP con i ruoli migliori.
+4. **File di Stato JSON**: `search_memory.json`, `job_store.json`, `job_categories.json` funzionano come una memoria permanente a lungo termine, rendendo il sistema più "intelligente" di run in run.
+5. **`requirements.txt`**: Dipendenze necessarie.
 
 ## Istruzioni di Setup
 
@@ -31,19 +32,15 @@ EMAIL_SENDER=la_tua_email_mittente@gmail.com
 EMAIL_PASSWORD=app_password_google_senza_spazi
 EMAIL_RECIPIENT=matteo_pasini@outlook.com
 ```
-*(Nota: il programma caricherà automaticamente queste variabili ad ogni esecuzione grazie alla libreria python-dotenv).*
 
 ### 3. Configurazione
 - **Profilo**: Aggiorna `my_profile.md` ogni volta che aggiungi un'esperienza o vuoi cambiare il focus della tua ricerca (es. aggiungere interesse verso "Venture Capital").
-- **Limiti Operativi**: Modifica `config.yaml` per scalare il numero di ricerche (`max_searches`) in base al tuo budget Apify.
-- **Startup Outreach**: Sotto la chiave `outreach` in `config.yaml` puoi gestire la pipeline per le startup:
-  - `run_discovery`: **Attenzione:** impostalo a `true` solo settimanalmente o quando avvii lo script manualmente per cercare nuove startup via Apify e Tavily. Lascialo a `false` durante l'esecuzione quotidiana del cron job in modo da aggiornare solo l'enrichment e non consumare inutilmente token e budget.
+- **Limiti Operativi**: Modifica `config.yaml` per cambiare la dimensione del batch quotidiano di job scaricati (`jobs_target`), ad esempio se vuoi estrarre 50 o 100 lavori nuovi per sessione.
+- **Startup Outreach**: Sotto la chiave `outreach` in `config.yaml` puoi gestire la pipeline per le startup se prevista nel workflow secondario.
 
 ### 4. Esecuzione
-Il processo principale su GitHub Actions o localmente eseguirà in sequenza:
+Avvia lo script principal in locale o tramite action:
 ```bash
 python main.py
-python startup_outreach.py
 ```
-Riceverai un report per i match standard (tramite main.py) e un report separato per le startup (tramite startup_outreach.py) con relative cover letters salvate in locale.
-
+A fine esecuzione verrà inviata un'email, e sarà aggiornata la **`dashboard.html`** da aprire per vedere i KPI, tutti i lavori filtrati e lo score di ciascuno.
