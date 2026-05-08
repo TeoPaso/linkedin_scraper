@@ -10,8 +10,8 @@ preferences:
 scraper:
   jobs_target: 150 # Limite di lavori scaricati per singola ricerca (es. per test)
   scrape_company: false
-  max_retries: 10         # Limite di ricerche generate da Gemini (1 per il test)
-  count_per_search: 10    # Numero di job estratti per singola ricerca
+  max_retries: 25         # Limite di ricerche generate da Gemini (1 per il test)
+  count_per_search: 15    # Numero di job estratti per singola ricerca
   time_filter: "r604800" # Filtro temporale LinkedIn. r2592000 = past month, r604800 = past week, r86400 = past 24h. Vuoto "" = anytime
 
 # Configurazione LLM e filtraggio

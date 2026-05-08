@@ -607,8 +607,6 @@ def main():
     try:
         dashboard_data = {
             "execution_id": execution_id,
-            "jobs_target": config.get("scraper", {}).get("jobs_target", 50),
-            "max_retries": config.get("scraper", {}).get("max_retries", 10),
             "search_memory": search_memory,
             "job_categories": job_categories,
             "job_store": job_store,

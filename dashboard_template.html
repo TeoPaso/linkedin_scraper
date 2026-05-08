@@ -394,19 +394,12 @@ function render() {
 
 function renderHeader() {
     const exId = appData.execution_id || 'N/A';
-    const tgt = appData.jobs_target || appData.config?.target_jobs || 'N/A';
     
     // Calculate total and useful jobs
     const totalFound = Object.keys(appData.job_store || {}).length;
     const totalUseful = Object.values(appData.job_store || {}).filter(j => j.fit_score !== null && j.fit_score >= 75).length;
     
     const todayPrefix = exId !== 'N/A' ? exId.split('T')[0] : '';
-    const loops = (appData.search_memory || []).filter(s => {
-        if (!todayPrefix) return s.execution_id === exId;
-        return (s.timestamp && s.timestamp.startsWith(todayPrefix)) || (s.execution_id && s.execution_id.startsWith(todayPrefix));
-    }).length || appData.metrics?.loops_executed || 0;
-    
-    const maxLoops = appData.max_retries || appData.config?.max_loops || 'N/A';
     
     // Calculate the avg fit score for this specific execution
     let avgFit = 0.0;
@@ -441,16 +434,8 @@ function renderHeader() {
                 <div class="metric" style="font-size: 1em;">${displayExId}</div>
             </div>
             <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Target Jobs</div>
-                <div class="metric">${tgt}</div>
-            </div>
-            <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Total Jobs (Found/Useful)</div>
-                <div class="metric">${totalFound} / ${totalUseful}</div>
-            </div>
-            <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Loops Executed</div>
-                <div class="metric">${loops} / ${maxLoops}</div>
+                <div style="color: var(--text-muted); margin-bottom: 5px;">Total Jobs (Useful/Found)</div>
+                <div class="metric">${totalUseful} / ${totalFound}</div>
             </div>
             <div class="card">
                 <div style="color: var(--text-muted); margin-bottom: 5px;">Avg Fit Score</div>
@@ -611,11 +596,45 @@ function escapeHtml(str) {
          .replace(/'/g, "&#039;");
 }
 
+function formatDate(isoString) {
+    if (!isoString || isoString === 'N/A') return 'N/A';
+    try {
+        const dt = new Date(isoString);
+        if (!isNaN(dt)) {
+            return dt.toLocaleString('it-IT', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+    } catch(e) {}
+    return isoString;
+}
+
 function renderJobStore() {
     const jobs = appData.job_store || {};
     const urls = Object.keys(jobs);
     
     if (!urls.length) return '<div class="card">Nessuna offerta salvata.</div>';
+
+    const uniqueDates = new Set();
+    const uniqueKeywords = new Set();
+    const uniqueCategories = new Set();
+
+    urls.forEach(url => {
+        const j = jobs[url];
+        const dateStr = j.first_seen || j.date_seen || '';
+        if (dateStr) uniqueDates.add(dateStr.split('T')[0]);
+        if (j.keyword) uniqueKeywords.add(j.keyword);
+        if (j.category) uniqueCategories.add(j.category);
+    });
+
+    const dateOptions = Array.from(uniqueDates).sort().reverse().map(d => `<option value="${d}">${d}</option>`).join('');
+    const keywordOptions = Array.from(uniqueKeywords).sort().map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+    const categoryOptions = Array.from(uniqueCategories).sort().map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
     const rows = urls.map(url => {
         const j = jobs[url];
@@ -633,14 +652,19 @@ function renderJobStore() {
             reason: j.reasoning || j.fit_reasoning || ''
         };
         
+        const rawDate = j.first_seen || j.date_seen || '';
+        const dayDate = rawDate ? rawDate.split('T')[0] : '';
+        const keywordVal = j.keyword || '';
+        const categoryVal = j.category || '';
+        
         return `
-            <tr>
+            <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}">
                 <td><strong>${escapeHtml(title)}</strong></td>
                 <td>${escapeHtml(company)}</td>
                 <td>${escapeHtml(location)}</td>
                 <td class="metric" style="text-align: center;">${scoreHtml}</td>
                 <td>${escapeHtml(j.category)}</td>
-                <td style="color: var(--text-muted);">${escapeHtml(j.first_seen || j.date_seen)}</td>
+                <td style="color: var(--text-muted);">${formatDate(rawDate)}</td>
                 <td><a href="${url}" target="_blank">Apri &nearr;</a></td>
                 <td>
                     <button class="btn-desc" data-target="${descId}">📄 Descrizione</button>
@@ -651,21 +675,44 @@ function renderJobStore() {
 
     return `
         <h2>Tutte le Offerte Salvate</h2>
+        <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data</label>
+                <select id="filter-date" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
+                    <option value="">Tutte</option>
+                    ${dateOptions}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query (Keyword)</label>
+                <select id="filter-keyword" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
+                    <option value="">Tutte</option>
+                    ${keywordOptions}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Categoria</label>
+                <select id="filter-category" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
+                    <option value="">Tutte</option>
+                    ${categoryOptions}
+                </select>
+            </div>
+        </div>
         <div class="card table-responsive">
             <table>
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Company</th>
-                        <th>Location</th>
-                        <th style="text-align: center;">Fit Score</th>
-                        <th>Category</th>
+                        <th>Titolo</th>
+                        <th>Azienda</th>
+                        <th>Luogo</th>
+                        <th style="text-align: center;">Score</th>
+                        <th>Categoria</th>
                         <th>Date Seen</th>
                         <th>Link</th>
-                        <th>Azione</th>
+                        <th>Azioni</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="job-table-body">
                     ${rows}
                 </tbody>
             </table>
@@ -697,15 +744,65 @@ function renderModal() {
 // EVENTS
 // ==========================================
 function attachEvents() {
-    // Search Pagination
-    const toggleBtn = document.getElementById('btn-toggle-search');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            showAllSearches = !showAllSearches;
-            currentSearchIndex = 0;
-            render();
+    const modal = document.getElementById('desc-modal');
+    const modalReason = document.getElementById('modal-reason');
+    const modalDesc = document.getElementById('modal-desc');
+    
+    document.querySelectorAll('.btn-desc').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.target.getAttribute('data-target');
+            const data = window[`modalData_${targetId}`];
+            
+            modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
+            modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
+            
+            modal.classList.add('active');
+        });
+    });
+
+    const closeBtn = document.getElementById('btn-close-modal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
         });
     }
+
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    }
+    
+    // Add event listeners for filters
+    const filterDate = document.getElementById('filter-date');
+    const filterKeyword = document.getElementById('filter-keyword');
+    const filterCategory = document.getElementById('filter-category');
+    
+    const applyFilters = () => {
+        const selDate = filterDate ? filterDate.value : '';
+        const selKeyword = filterKeyword ? filterKeyword.value : '';
+        const selCategory = filterCategory ? filterCategory.value : '';
+        
+        document.querySelectorAll('.job-row').forEach(row => {
+            const rowDate = row.getAttribute('data-date');
+            const rowKeyword = row.getAttribute('data-keyword');
+            const rowCategory = row.getAttribute('data-category');
+            
+            let show = true;
+            if (selDate && rowDate !== selDate) show = false;
+            if (selKeyword && rowKeyword !== selKeyword) show = false;
+            if (selCategory && rowCategory !== selCategory) show = false;
+            
+            row.style.display = show ? '' : 'none';
+        });
+    };
+
+    if (filterDate) filterDate.addEventListener('change', applyFilters);
+    if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
+    if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+}
 
     const prevBtn = document.getElementById('btn-prev-search');
     if (prevBtn) {
