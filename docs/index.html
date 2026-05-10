@@ -121,9 +121,42 @@
         }
 
         /* --- Categorie --- */
+        .categories-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar styles for horizontal scroll */
+        .categories-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .categories-container::-webkit-scrollbar-track {
+            background: var(--bg-main);
+            border-radius: 4px;
+        }
+
+        .categories-container::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .categories-container::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
         .category-item {
             cursor: pointer;
             transition: background 0.2s;
+            min-width: 300px;
+            max-width: 350px;
+            flex-shrink: 0;
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .category-item:hover {
@@ -679,9 +712,9 @@
                         <h4 style="margin: 0; color: var(--accent);">${c.label}</h4>
                         <div style="font-size: 0.9em; color: var(--text-muted); margin-top: 5px;">${c.description}</div>
                     </div>
-                    <div class="metric">${displayStr}</div>
+                    <div class="metric" style="align-self: flex-start; margin-left: 15px;">${displayStr}</div>
                 </div>
-                <div class="category-body" id="cat-body-${idx}">
+                <div class="category-body" id="cat-body-${idx}" style="flex-grow: 1; overflow-y: auto; max-height: 250px;">
                     <ul class="job-urls">
                         ${urls.map(u => { const t = appData.job_store[u]?.job_data?.title || u; return `<li><a href="${u}" target="_blank">${t}</a></li>`; }).join('')}
                     </ul>
@@ -692,7 +725,9 @@
 
             return `
         <h2>Job Categories</h2>
-        ${html}
+        <div class="categories-container">
+            ${html}
+        </div>
     `;
         }
 
