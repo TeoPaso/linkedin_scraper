@@ -1057,11 +1057,13 @@
             // Categories Accordion
             document.querySelectorAll('.category-item').forEach(item => {
                 const header = item.querySelector('.category-header');
-                header.addEventListener('click', () => {
-                    const idx = item.getAttribute('data-index');
-                    const body = document.getElementById(`cat-body-${idx}`);
-                    if (body) body.classList.toggle('expanded');
-                });
+                if (header) {
+                    header.addEventListener('click', () => {
+                        const idx = item.getAttribute('data-index');
+                        const body = document.getElementById(`cat-body-${idx}`);
+                        if (body) body.classList.toggle('expanded');
+                    });
+                }
             });
 
             // Toggle button for searches
