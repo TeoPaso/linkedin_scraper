@@ -797,7 +797,7 @@
 
         function renderModal() {
             return `
-                <div class="modal-overlay" id="info-modal">
+                        <div class="modal-overlay" id="info-modal">
             <div class="modal-container">
                 <div class="modal-header">
                     <h3 style="margin: 0; color: var(--accent);">Dettagli Offerta</h3>
@@ -809,6 +809,19 @@
                     
                     <h4 style="margin-bottom: 10px;">Description text</h4>
                     <div class="desc-box" id="modal-description"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="score-modal">
+            <div class="modal-container" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--accent);">Perché questo punteggio?</h3>
+                    <button class="modal-close" id="btn-close-score-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <ul style="padding-left: 20px; line-height: 1.8; color: var(--text-light);" id="score-reasoning-list">
+                    </ul>
                 </div>
             </div>
         </div>
@@ -838,6 +851,7 @@
     const filterCategory = document.getElementById('filter-category');
 
     const applyFilters = () => {
+        let visibleCount = 0;
         let visibleCount = 0;
         const selDate = filterDate ? filterDate.value : '';
         const selKeyword = filterKeyword ? filterKeyword.value : '';
@@ -946,6 +960,34 @@
     const modalReason = document.getElementById('modal-reasoning');
     const modalDesc = document.getElementById('modal-description');
     const closeBtn = document.getElementById('btn-close-modal');
+
+    // Score click logic
+    document.querySelectorAll('.score-link').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.currentTarget.getAttribute('data-target');
+            const data = window[`modalData_${targetId}`];
+            const reasonText = data.reason || 'Nessuna informazione disponibile.';
+            
+            // Split reasoning into sentences for bullet points
+            const sentences = reasonText.split(/.s+/).filter(s => s.trim().length > 0);
+            const listHtml = sentences.map(s => `<li>${s}${s.endsWith('.') ? '' : '.'}</li>`).join('');
+            
+            const scoreList = document.getElementById('score-reasoning-list');
+            if (scoreList) scoreList.innerHTML = listHtml;
+            
+            const scoreModal = document.getElementById('score-modal');
+            if (scoreModal) scoreModal.classList.add('active');
+        });
+    });
+
+    const scoreModal = document.getElementById('score-modal');
+    const closeScoreBtn = document.getElementById('btn-close-score-modal');
+    if (closeScoreBtn && scoreModal) {
+        closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
+        scoreModal.addEventListener('click', (e) => {
+            if (e.target === scoreModal) scoreModal.classList.remove('active');
+        });
+    }
 
     // Score click logic
     document.querySelectorAll('.score-link').forEach(btn => {
