@@ -5,6 +5,10 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 
 ## Professional Experience
 - **Finance Analyst (Intern)** @ Genio Diligence (05/2025 – 06/2025). Part-time (2d/week), Finance Laboratory related, during the Master's Degree.
+- **Equity Research Analyst** @ CFA Institute Research Challenge (10/2024 – 03/2025). 6-month full-time technical project. Collaborated in a team to win the Italian Championship against ~10 top universities. Performed end-to-end equity research on Industrie De Nora (BIT: DNR), specifically:
+  - Developed complex valuation models (DCF, SOTP) and implemented an innovative Real Options approach for the Green Hydrogen segment.
+  - Conducted primary due diligence through channel checks with industry experts and integrated ESG factors into the valuation.
+  - Used Python and Bloomberg/FactSet to automate sensitivity analysis and data gathering.
 - **Working Student / Supervisor** @ Iper La Grande i (07/2020 – 04/2024): Demonstrated strong time management and leadership skills by working continuously throughout my academic studies.
 - **Barista Maestro** @ Costa Coffee, Brighton UK (03/2019 – 09/2019). During a Gap Year before university.
 - **Operations & Logistics** @ Terzo Girone (09/2017 – 11/2019). During High School.
