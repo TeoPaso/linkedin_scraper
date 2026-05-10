@@ -656,6 +656,22 @@
 
             const html = cats.map((c, idx) => {
                 const urls = c.job_urls || [];
+                
+                let useful = 0;
+                let found = urls.length;
+                urls.forEach(u => {
+                    const j = appData.job_store ? appData.job_store[u] : null;
+                    if (j && j.fit_score !== null && j.fit_score >= 75) {
+                        useful++;
+                    }
+                });
+                
+                let displayStr = `${useful}/${found}`;
+                if (found > 20) {
+                    const pct = Math.round((useful / found) * 100);
+                    displayStr = `${useful}/${found} (${pct}%)`;
+                }
+
                 return `
             <div class="card category-item" data-index="${idx}">
                 <div class="category-header">
@@ -663,7 +679,7 @@
                         <h4 style="margin: 0; color: var(--accent);">${c.label}</h4>
                         <div style="font-size: 0.9em; color: var(--text-muted); margin-top: 5px;">${c.description}</div>
                     </div>
-                    <div class="metric">${urls.length} jobs</div>
+                    <div class="metric">${displayStr}</div>
                 </div>
                 <div class="category-body" id="cat-body-${idx}">
                     <ul class="job-urls">
