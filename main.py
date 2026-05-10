@@ -528,6 +528,33 @@ def main():
     }
 
     if jobs_to_evaluate:
+        # Recupera lo storico dei like e dislike per migliorare le valutazioni future
+        liked_jobs = [
+            data for url, data in job_store.items() if data.get("liked") is True
+        ]
+        disliked_jobs = [
+            data for url, data in job_store.items() if data.get("liked") is False
+        ]
+
+        # Crea stringhe di contesto (max ultime 10 per non sforare token limit)
+        liked_history = ""
+        for j in sorted(liked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[
+            :10
+        ]:
+            title = j.get("job_data", {}).get("title", "")
+            company = j.get("job_data", {}).get("companyName", "")
+            desc = j.get("job_data", {}).get("descriptionText", "")[:300]
+            liked_history += f"- {title} presso {company}. (Snippet: {desc}...)\n"
+
+        disliked_history = ""
+        for j in sorted(
+            disliked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True
+        )[:10]:
+            title = j.get("job_data", {}).get("title", "")
+            company = j.get("job_data", {}).get("companyName", "")
+            desc = j.get("job_data", {}).get("descriptionText", "")[:300]
+            disliked_history += f"- {title} presso {company}. (Snippet: {desc}...)\n"
+
         for i, (url, data) in enumerate(jobs_to_evaluate.items()):
             job = data["job_data"]
             title = job.get("title", "Unknown Title")
@@ -536,7 +563,9 @@ def main():
                 f"  [{i + 1}/{len(jobs_to_evaluate)}] Valutazione: {title} @ {company}..."
             )
 
-            evaluation = evaluate_job_with_gemini(job, profile)
+            evaluation = evaluate_job_with_gemini(
+                job, profile, liked_history, disliked_history
+            )
             data["fit_score"] = evaluation.fit_score
             data["reasoning"] = evaluation.reasoning
             print(f"      -> Score: {evaluation.fit_score}")

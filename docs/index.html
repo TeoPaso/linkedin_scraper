@@ -813,9 +813,13 @@
                 if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
                     scoreType = j.fit_score >= 75 ? 'positivo' : 'negativo';
                 }
+                
+                let likedType = '';
+                if (j.liked === true) likedType = 'liked';
+                if (j.liked === false) likedType = 'disliked';
 
                 return `
-            <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}" data-score="${scoreType}">
+            <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}" data-score="${scoreType}" data-liked="${likedType}">
                 <td><strong>${escapeHtml(title)}</strong></td>
                 <td>${escapeHtml(company)}</td>
                 <td>${escapeHtml(location)}</td>
@@ -827,6 +831,12 @@
                 <td>${escapeHtml(j.category)}</td>
                 <td style="color: var(--text-muted);">${formatDate(rawDate)}</td>
                 <td><a href="${url}" target="_blank">Apri &nearr;</a></td>
+                <td style="text-align: center;">
+                    <div style="display: flex; gap: 5px; justify-content: center;">
+                        <button class="btn-like" data-docid="${j._doc_id || ''}" data-like="true" data-current="${j.liked === true ? 'true' : 'false'}" style="background-color: ${j.liked === true ? '#2e7d32' : 'transparent'}; color: ${j.liked === true ? '#fff' : 'var(--text-muted)'}; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Like">👍</button>
+                        <button class="btn-like" data-docid="${j._doc_id || ''}" data-like="false" data-current="${j.liked === false ? 'true' : 'false'}" style="background-color: ${j.liked === false ? '#c62828' : 'transparent'}; color: ${j.liked === false ? '#fff' : 'var(--text-muted)'}; border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Dislike">👎</button>
+                    </div>
+                </td>
                 <td>
                     <button class="btn-applied" data-docid="${j._doc_id || ''}" data-applied="${j.applied === true ? 'true' : 'false'}" style="background-color: ${j.applied === true ? '#2e7d32' : '#555'}; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
                         ${j.applied === true ? 'Applicato ✓' : 'Non applicato'}
@@ -872,6 +882,14 @@
                     <option value="non-valutato">Non Valutati</option>
                 </select>
             </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Preferenza</label>
+                <select id="filter-liked" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
+                    <option value="">Tutte</option>
+                    <option value="liked">Solo Piaciute (👍)</option>
+                    <option value="disliked">Solo Scartate (👎)</option>
+                </select>
+            </div>
             <div style="margin-left: auto; align-self: flex-end; padding-bottom: 5px;">
                 <span id="jobs-counter" class="metric" style="font-size: 1.1em;">${urls.length}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte visibili</span>
             </div>
@@ -887,6 +905,7 @@
                         <th>Categoria</th>
                         <th>Date Seen</th>
                         <th>Link</th>
+                        <th style="text-align: center;">Preferenza</th>
                         <th>Candidatura</th>
                         <th>Azioni</th>
                     </tr>
@@ -944,6 +963,7 @@
     const filterKeyword = document.getElementById('filter-keyword');
     const filterCategory = document.getElementById('filter-category');
     const filterScore = document.getElementById('filter-score');
+    const filterLiked = document.getElementById('filter-liked');
 
     const applyFilters = () => {
         let visibleCount = 0;
@@ -951,18 +971,21 @@
         const selKeyword = filterKeyword ? filterKeyword.value : '';
         const selCategory = filterCategory ? filterCategory.value : '';
         const selScore = filterScore ? filterScore.value : '';
+        const selLiked = filterLiked ? filterLiked.value : '';
 
         document.querySelectorAll('.job-row').forEach(row => {
             const rowDate = row.getAttribute('data-date');
             const rowKeyword = row.getAttribute('data-keyword');
             const rowCategory = row.getAttribute('data-category');
             const rowScore = row.getAttribute('data-score');
+            const rowLiked = row.getAttribute('data-liked');
             
             let show = true;
             if (selDate && rowDate !== selDate) show = false;
             if (selKeyword && rowKeyword !== selKeyword) show = false;
             if (selCategory && rowCategory !== selCategory) show = false;
             if (selScore && rowScore !== selScore) show = false;
+            if (selLiked && rowLiked !== selLiked) show = false;
 
             row.style.display = show ? '' : 'none';
             if (show) visibleCount++;
@@ -978,6 +1001,7 @@
     if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
     if (filterCategory) filterCategory.addEventListener('change', applyFilters);
     if (filterScore) filterScore.addEventListener('change', applyFilters);
+    if (filterLiked) filterLiked.addEventListener('change', applyFilters);
 
     
     
@@ -1042,6 +1066,70 @@
     }
 
     // Applied toggle logic
+    document.querySelectorAll(".btn-like").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const docId = btn.getAttribute("data-docid");
+            if (!docId) return;
+            
+            const isLikeBtn = btn.getAttribute("data-like") === "true";
+            const isCurrentlyActive = btn.getAttribute("data-current") === "true";
+            
+            // if clicking an active button, we unset it (null). otherwise we set it to isLikeBtn (true/false)
+            const newLikedState = isCurrentlyActive ? null : isLikeBtn;
+            
+            // Update UI optimistically
+            const row = btn.closest('tr');
+            if (row) {
+                const likeBtn = row.querySelector('.btn-like[data-like="true"]');
+                const dislikeBtn = row.querySelector('.btn-like[data-like="false"]');
+                
+                if (newLikedState === true) {
+                    likeBtn.setAttribute("data-current", "true");
+                    likeBtn.style.backgroundColor = "#2e7d32";
+                    likeBtn.style.color = "#fff";
+                    
+                    dislikeBtn.setAttribute("data-current", "false");
+                    dislikeBtn.style.backgroundColor = "transparent";
+                    dislikeBtn.style.color = "var(--text-muted)";
+                    
+                    row.setAttribute("data-liked", "liked");
+                } else if (newLikedState === false) {
+                    likeBtn.setAttribute("data-current", "false");
+                    likeBtn.style.backgroundColor = "transparent";
+                    likeBtn.style.color = "var(--text-muted)";
+                    
+                    dislikeBtn.setAttribute("data-current", "true");
+                    dislikeBtn.style.backgroundColor = "#c62828";
+                    dislikeBtn.style.color = "#fff";
+                    
+                    row.setAttribute("data-liked", "disliked");
+                } else {
+                    likeBtn.setAttribute("data-current", "false");
+                    likeBtn.style.backgroundColor = "transparent";
+                    likeBtn.style.color = "var(--text-muted)";
+                    
+                    dislikeBtn.setAttribute("data-current", "false");
+                    dislikeBtn.style.backgroundColor = "transparent";
+                    dislikeBtn.style.color = "var(--text-muted)";
+                    
+                    row.setAttribute("data-liked", "");
+                }
+            }
+            
+            try {
+                const docRef = window.doc(window.db, "jobs", docId);
+                await window.updateDoc(docRef, { liked: newLikedState });
+                
+                const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
+                if (url) {
+                    appData.job_store[url].liked = newLikedState;
+                }
+            } catch(error) {
+                console.error("Error updating document:", error);
+            }
+        });
+    });
+
     document.querySelectorAll(".btn-applied").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             const docId = btn.getAttribute("data-docid");
