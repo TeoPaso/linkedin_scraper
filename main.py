@@ -569,32 +569,63 @@ def main():
     }
 
     if jobs_to_categorize:
-        cat_result = categorize_jobs_with_gemini(jobs_to_categorize, job_categories)
-        job_labels = cat_result.get("job_labels", {})
-        new_cats = cat_result.get("new_categories", [])
+        # Preveniamo timeout processando in blocchi di 50 job alla volta
+        urls_list = list(jobs_to_categorize.keys())
+        chunk_size = 50
 
-        for url, category in job_labels.items():
-            if url in job_store:
-                job_store[url]["category"] = category
+        job_labels_total = {}
+        new_cats_total = []
 
-        # Extract current category labels for check
+        for i in range(0, len(urls_list), chunk_size):
+            chunk_urls = urls_list[i : i + chunk_size]
+            chunk_jobs = {u: jobs_to_categorize[u] for u in chunk_urls}
+
+            print(
+                f"  [-] Categorizzazione blocco {i // chunk_size + 1} ({len(chunk_urls)} jobs)..."
+            )
+            cat_result = categorize_jobs_with_gemini(chunk_jobs, job_categories)
+            job_labels_total.update(cat_result.get("job_labels", {}))
+            new_cats_total.extend(cat_result.get("new_categories", []))
+
+        # Estrai le vecchie categorie come set per il confronto
         cat_labels_set = {
-            c["label"] for c in job_categories if isinstance(c, dict) and "label" in c
+            c["label"].lower()
+            for c in job_categories
+            if isinstance(c, dict) and "label" in c
         }
 
-        for nc in new_cats:
+        # Aggiungi le nuove categorie all'elenco se non esistono
+        for nc in new_cats_total:
             if isinstance(nc, dict) and "label" in nc and "description" in nc:
-                if nc["label"] not in cat_labels_set:
-                    # Add an empty list for job_urls when creating
+                if nc["label"].lower() not in cat_labels_set:
                     nc["job_urls"] = []
                     job_categories.append(nc)
-                    cat_labels_set.add(nc["label"])
+                    cat_labels_set.add(nc["label"].lower())
 
-        # Populate job_urls for UI
+        # Mappa i nomi delle categorie restituiti da Gemini ai nomi esatti nel config (se ignorando case combaciano)
+        # Questo previene discrepanze di case-sensitivity (es. "Data analytics" vs "Data Analytics")
+        label_mapping = {
+            c["label"].lower(): c["label"]
+            for c in job_categories
+            if isinstance(c, dict) and "label" in c
+        }
+
+        for url, category in job_labels_total.items():
+            if url in job_store:
+                normalized_cat = category.lower() if category else None
+                if normalized_cat in label_mapping:
+                    job_store[url]["category"] = label_mapping[normalized_cat]
+                else:
+                    job_store[url]["category"] = category
+
+        # Popola/aggiorna le associazioni job_urls all'interno delle job_categories (utili per l'UI)
         for i, cat in enumerate(job_categories):
             if isinstance(cat, str):
-                # Convert legacy string categories to dict
-                job_categories[i] = {"label": cat, "description": "Legacy category"}
+                job_categories[i] = {
+                    "label": cat,
+                    "description": "Legacy category",
+                    "job_urls": [],
+                }
                 cat = job_categories[i]
 
             cat["job_urls"] = []
@@ -603,7 +634,7 @@ def main():
                     cat["job_urls"].append(url)
 
         print(
-            f"  [-] Trovate/assegnate categorie. Nuove categorie aggiunte: {len(new_cats)}"
+            f"  [-] Trovate/assegnate categorie. Nuove categorie aggiunte: {len(new_cats_total)}"
         )
     else:
         print("  [-] Nessun lavoro da categorizzare.")
