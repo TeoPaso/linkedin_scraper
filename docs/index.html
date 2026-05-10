@@ -1,520 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Execution Dashboard</title>
-    <style>
-        :root {
-            --bg-main: #0f0f0f;
-            --bg-card: #1c1c1c;
-            --bg-hover: #2a2a2a;
-            --text-light: #e0e0e0;
-            --text-muted: #888888;
-            --accent: #00ffcc;
-            /* Electric Green / Cyan */
-            --accent-hover: #00e6b8;
-            --border: #333333;
-
-            --score-good: #00ffcc;
-            --score-ok: #ffaa00;
-            --score-bad: #ff4444;
-            --score-none: #777777;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-light);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 30px;
-            line-height: 1.6;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4 {
-            color: var(--text-light);
-            margin-top: 0;
-            font-weight: 600;
-        }
-
-        .metric {
-            font-family: 'Courier New', Courier, monospace;
-            color: var(--accent);
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        /* --- Layout --- */
-        .grid-header {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        /* --- Buttons --- */
-        button {
-            background-color: transparent;
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.9em;
-            transition: all 0.2s ease;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: var(--accent);
-            color: var(--bg-main);
-        }
-
-        button:disabled {
-            border-color: var(--text-muted);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        /* --- Ricerche --- */
-        .search-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .search-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .badge.fruitful {
-            background-color: var(--accent);
-            color: var(--bg-main);
-        }
-
-        .badge.unfruitful {
-            background-color: var(--score-none);
-            color: var(--text-light);
-        }
-
-        /* --- Categorie --- */
-        .category-item {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .category-item:hover {
-            background-color: var(--bg-hover);
-        }
-
-        .category-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .category-body {
-            display: none;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px dashed var(--border);
-        }
-
-        .category-body.expanded {
-            display: block;
-        }
-
-        .job-urls {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .job-urls li {
-            margin-bottom: 6px;
-        }
-
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        /* --- Tutte le offerte (Table) --- */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-            text-align: left;
-        }
-
-        th,
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            color: var(--text-muted);
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background-color: var(--bg-hover);
-        }
-
-        .score-green {
-            color: var(--score-good);
-            font-weight: bold;
-        }
-
-        .score-orange {
-            color: var(--score-ok);
-            font-weight: bold;
-        }
-
-        .score-red {
-            color: var(--score-bad);
-            font-weight: bold;
-        }
-
-        .score-grey {
-            color: var(--score-none);
-        }
-
-        /* --- Modal --- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-container {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            width: 100%;
-            max-width: 800px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.5em;
-            padding: 0;
-        }
-
-        .modal-close:hover {
-            color: var(--text-light);
-            background: none;
-        }
-
-        .reasoning-box {
-            background-color: rgba(255, 170, 0, 0.1);
-            border-left: 3px solid var(--score-ok);
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
-        .desc-box {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9em;
-            white-space: pre-wrap;
-            color: var(--text-muted);
-        }
-
-        /* --- Keyword Map --- */
-        .bar-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .bar-label {
-            resize: horizontal;
-            min-width: 150px;
-            max-width: 600px;
-            /* Per renderlo visibile aggiungo un bordino a destra */
-            border-right: 2px solid var(--border);
-            width: 250px;
-            font-size: 0.9em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: ew-resize;
-            padding-right: 10px;
-        }
-
-        .bar-track {
-            flex-grow: 1;
-            background-color: var(--border);
-            height: 10px;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            background-color: var(--accent);
-            height: 100%;
-            transition: width 0.5s ease;
-        }
-
-        .bar-value {
-            width: 50px;
-            text-align: right;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9em;
-            color: var(--accent);
-        }
-    </style>
-
-    <!-- Firebase JS SDK (v10 modular) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-
-        // REPLACE WITH YOUR FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "AIzaSyBEFKDxMGMzT39UZvIpIjtNCpsL4pXyks4",
-            authDomain: "beaming-figure-468411-h5.firebaseapp.com",
-            projectId: "beaming-figure-468411-h5",
-            storageBucket: "beaming-figure-468411-h5.firebasestorage.app",
-            messagingSenderId: "704412197642",
-            appId: "1:704412197642:web:33aa11acdd88ba898990f3",
-            measurementId: "G-MMGH2LRG9B"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // Export to window to make it accessible to legacy scripts
-        window.db = db;
-        window.collection = collection;
-        window.getDocs = getDocs;
-        window.doc = doc;
-        window.updateDoc = updateDoc;
-    </script>
-
-</head>
-
-<body>
-
-    <div id="app"></div>
-
-    <script>
-        // ==========================================
-        // DATA PLACEHOLDER
-        // ==========================================
-        let appData = {};
-
-        // ==========================================
-        // MOCK DATA FOR LOCAL TESTING
-        // ==========================================
-
-
-        // ==========================================
-        // STATE
-        // ==========================================
-
-        let showAllSearches = false;
-        let currentSearchIndex = 0;
-        let keywordLabelWidth = "";
-
-        async function loadDataFromFirestore() {
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = '<div style="text-align:center; padding: 50px;"><h2 style="color: var(--accent);">Loading data from Firestore...</h2></div>';
-
-            try {
-                const jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
-                const memorySnapshot = await window.getDocs(window.collection(window.db, "search_memory"));
-                const catsSnapshot = await window.getDocs(window.collection(window.db, "job_categories"));
-
-                let job_store = {};
-                jobsSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    // L'ID del documento è un hash, ma l'URL è salvato dentro.
-                    // Se manca usiamo l'ID come chiave per non far fallire la dashboard.
-                    const key = data.url || doc.id;
-                    // Salviamo anche doc.id per poter fare updateDoc
-                    data._doc_id = doc.id;
-                    job_store[key] = data;
-                });
-
-                let search_memory = [];
-                memorySnapshot.forEach(doc => {
-                    search_memory.push(doc.data());
-                });
-                // Ordina memory per timestamp
-                search_memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
-
-                let job_categories = [];
-                catsSnapshot.forEach(doc => {
-                    job_categories.push(doc.data());
-                });
-
-                // Trova l'execution_id più recente basato sulla memory
-                let execution_id = "N/A";
-                if (search_memory.length > 0) {
-                    execution_id = search_memory[search_memory.length - 1].execution_id || "N/A";
+<html lang="efunction renderKeywordMap() {
+            const keywordsMap = {};
+            Object.values(appData.job_store || {}).forEach(j => {
+                const kw = j.keyword;
+                if (!kw) return;
+                if (!keywordsMap[kw]) keywordsMap[kw] = { useful: 0, found: 0 };
+                keywordsMap[kw].found++;
+                if (j.fit_score !== null && j.fit_score >= 75) {
+                    keywordsMap[kw].useful++;
                 }
+            });
 
-                appData = {
-                    execution_id,
-                    job_store,
-                    search_memory,
-                    job_categories
-                };
-
-                render();
-            } catch (e) {
-                console.error(e);
-                appDiv.innerHTML = `<div style="text-align:center; padding: 50px; color: var(--score-bad);"><h2>Errore di connessione a Firestore</h2><p>${e.message}</p></div>`;
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            // Wait slightly for module import to complete, or use interval to check window.db
-            const checkDb = setInterval(() => {
-                if (window.db) {
-                    clearInterval(checkDb);
-                    loadDataFromFirestore();
+            const kwStats = Object.keys(keywordsMap).map(kw => {
+                const stat = keywordsMap[kw];
+                stat.keyword = kw;
+                if (stat.found > 20) {
+                    stat.kpi = (stat.useful / stat.found) * 100;
+                    stat.display = `${stat.useful}/${stat.found} (${Math.round(stat.kpi)}%)`;
+                } else {
+                    stat.kpi = stat.useful;
+                    stat.display = `${stat.useful}/${stat.found}`;
                 }
-            }, 100);
-        });
+                return stat;
+            });
 
+            kwStats.sort((a, b) => b.kpi - a.kpi);
 
-        // ==========================================
-        // RENDER FUNCTIONS
-        // ==========================================
-        function render() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-        ${renderHeader()}
-        ${renderKeywordMap()}
-        ${renderRicerche()}
-        ${renderCategorie()}
-        ${renderJobStore()}
-        ${renderModal()}
-    `;
-            attachEvents();
-        }
+            if (!kwStats.length) return '<div class="card">Nessuna keyword trovata.</div>';
 
-        function renderHeader() {
-            const exId = appData.execution_id || 'N/A';
+            const maxKpi = Math.max(...kwStats.map(s => s.kpi), 1);
 
-            // Calculate total and useful jobs
-            const totalFound = Object.keys(appData.job_store || {}).length;
-            const totalUseful = Object.values(appData.job_store || {}).filter(j => j.fit_score !== null && j.fit_score >= 75).length;
-
-            const todayPrefix = exId !== 'N/A' ? exId.split('T')[0] : '';
-
-            // Calculate the avg fit score for this specific execution
-            let avgFit = 0.0;
-            if (appData.search_memory) {
-                const execMem = appData.search_memory.filter(s => {
-                    if (!todayPrefix) return s.execution_id === exId && typeof s.avg_fit_score === 'number';
-                    return ((s.timestamp && s.timestamp.startsWith(todayPrefix)) || (s.execution_id && s.execution_id.startsWith(todayPrefix))) && typeof s.avg_fit_score === 'number';
-                });
-                if (execMem.length > 0) {
-                    const sum = execMem.reduce((acc, curr) => acc + curr.avg_fit_score, 0);
-                    avgFit = sum / execMem.length;
-                }
-            } else {
-                avgFit = appData.metrics?.avg_fit_score || 0;
-            }
-
-            let displayExId = exId;
-            try {
-                if (exId !== 'N/A') {
-                    const dt = new Date(exId);
-                    if (!isNaN(dt)) {
-                        displayExId = dt.toLocaleString();
-                    }
-                }
-            } catch (e) { }
+            const bars = kwStats.map(s => {
+                const pct = (s.kpi / maxKpi) * 100;
+                const styleAttr = keywordLabelWidth ? `width: ${keywordLabelWidth};` : '';
+                return `
+            <div class="bar-row">
+                <div class="bar-label" title="${s.keyword}" style="${styleAttr}">${s.keyword}</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: ${pct}%;"></div>
+                </div>
+                <div class="bar-value" style="width: 80px; text-align: right;">${s.display}</div>
+            </div>
+        `;
+            }).join('');
 
             return `
-        <h2>Execution Overview</h2>
-        <div class="grid-header">
-            <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Execution ID</div>
-                <div class="metric" style="font-size: 1em;">${displayExId}</div>
-            </div>
-            <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Total Jobs (Useful/Found)</div>
-                <div class="metric">${totalUseful} / ${totalFound}</div>
-            </div>
-            <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Avg Fit Score</div>
-                <div class="metric">${typeof avgFit === 'number' ? avgFit.toFixed(1) : avgFit}</div>
-            </div>
+        <h2>Keyword Performance Map</h2>
+        <div class="card">
+            ${bars}
         </div>
     `;
-        }
-
-        function renderKeywordMap() {
+        }function renderKeywordMap() {
             const searches = appData.search_memory || [];
             if (!searches.length) return '';
 
