@@ -322,7 +322,7 @@
         }
 
         .bar-value {
-            width: 50px;
+            min-width: 90px;
             text-align: right;
             font-family: 'Courier New', Courier, monospace;
             font-size: 0.9em;
@@ -515,21 +515,53 @@
         }
 
         function renderKeywordMap() {
-            const searches = appData.search_memory || [];
-            if (!searches.length) return '';
+            const jobs = Object.values(appData.job_store || {});
+            if (!jobs.length) return '';
 
-            const maxUnique = Math.max(...searches.map(s => s.jobs_new_unique || 0), 1);
+            // Group by keyword
+            const keywordStats = {};
+            jobs.forEach(j => {
+                const kw = j.keyword || "Unknown";
+                if (!keywordStats[kw]) {
+                    keywordStats[kw] = { found: 0, useful: 0 };
+                }
+                keywordStats[kw].found += 1;
+                if (j.fit_score !== null && j.fit_score >= 75) {
+                    keywordStats[kw].useful += 1;
+                }
+            });
 
-            const bars = searches.map(s => {
-                const val = s.jobs_new_unique || 0;
-                const pct = (val / maxUnique) * 100;
+            const statsList = Object.keys(keywordStats).map(kw => {
+                const stat = keywordStats[kw];
+                let kpi = 0;
+                let display = "";
+                if (stat.found > 20) {
+                    const pct = (stat.useful / stat.found) * 100;
+                    kpi = pct;
+                    display = `${stat.useful}/${stat.found} (${Math.round(pct)}%)`;
+                } else {
+                    kpi = stat.useful;
+                    display = `${stat.useful}/${stat.found}`;
+                }
+                return { keyword: kw, ...stat, kpi, display };
+            });
+
+            // Sort by KPI descending
+            statsList.sort((a, b) => b.kpi - a.kpi);
+
+            if (!statsList.length) return '';
+
+            const maxKpi = Math.max(...statsList.map(s => s.kpi), 1);
+
+            const bars = statsList.map(s => {
+                const pct = maxKpi > 0 ? (s.kpi / maxKpi) * 100 : 0;
                 return `
             <div class="bar-row">
                 <div class="bar-label" title="${s.keyword}" style="${keywordLabelWidth ? `width: ${keywordLabelWidth};` : ''}">${s.keyword}</div>
                 <div class="bar-track">
                     <div class="bar-fill" style="width: ${pct}%;"></div>
                 </div>
-                <div class="bar-value">${val}</div>
+                <div class="bar-value">${s.display}</div>
             </div>
         `;
             }).join('');
@@ -725,9 +757,14 @@
                 const dayDate = rawDate ? rawDate.split('T')[0] : '';
                 const keywordVal = j.keyword || '';
                 const categoryVal = j.category || '';
+                
+                let scoreType = 'non-valutato';
+                if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
+                    scoreType = j.fit_score >= 75 ? 'positivo' : 'negativo';
+                }
 
                 return `
-            <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}">
+            <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}" data-score="${scoreType}">
                 <td><strong>${escapeHtml(title)}</strong></td>
                 <td>${escapeHtml(company)}</td>
                 <td>${escapeHtml(location)}</td>
@@ -773,6 +810,15 @@
                 <select id="filter-category" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="">Tutte</option>
                     ${categoryOptions}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Fit Score</label>
+                <select id="filter-score" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
+                    <option value="">Tutti</option>
+                    <option value="positivo">Solo Positivi (>= 75)</option>
+                    <option value="negativo">Solo Negativi (< 75)</option>
+                    <option value="non-valutato">Non Valutati</option>
                 </select>
             </div>
             <div style="margin-left: auto; align-self: flex-end; padding-bottom: 5px;">
@@ -830,21 +876,26 @@
     const filterDate = document.getElementById('filter-date');
     const filterKeyword = document.getElementById('filter-keyword');
     const filterCategory = document.getElementById('filter-category');
+    const filterScore = document.getElementById('filter-score');
 
     const applyFilters = () => {
         let visibleCount = 0;
         const selDate = filterDate ? filterDate.value : '';
         const selKeyword = filterKeyword ? filterKeyword.value : '';
         const selCategory = filterCategory ? filterCategory.value : '';
+        const selScore = filterScore ? filterScore.value : '';
 
         document.querySelectorAll('.job-row').forEach(row => {
             const rowDate = row.getAttribute('data-date');
             const rowKeyword = row.getAttribute('data-keyword');
             const rowCategory = row.getAttribute('data-category');
+            const rowScore = row.getAttribute('data-score');
+            
             let show = true;
             if (selDate && rowDate !== selDate) show = false;
             if (selKeyword && rowKeyword !== selKeyword) show = false;
             if (selCategory && rowCategory !== selCategory) show = false;
+            if (selScore && rowScore !== selScore) show = false;
 
             row.style.display = show ? '' : 'none';
             if (show) visibleCount++;
@@ -859,6 +910,7 @@
     if (filterDate) filterDate.addEventListener('change', applyFilters);
     if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
     if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+    if (filterScore) filterScore.addEventListener('change', applyFilters);
 
     
     

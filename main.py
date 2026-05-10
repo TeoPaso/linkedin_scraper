@@ -12,6 +12,7 @@ from apify_client import ApifyClient
 from google import genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
+
 load_dotenv()
 import db
 
@@ -320,8 +321,6 @@ def send_email_report(matched_jobs: list, metrics: dict):
         </p>
     """
 
-
-
     html_content += """
     </body>
     </html>
@@ -337,6 +336,56 @@ def send_email_report(matched_jobs: list, metrics: dict):
         print("[*] Email inviata con successo!")
     except Exception as e:
         print(f"[!] ERRORE durante l'invio dell'email: {e}")
+
+
+def get_best_keyword_to_repeat(
+    search_memory: list, iteration: int, core_keywords_count: int, threshold: int
+) -> dict:
+    """
+    Seleziona la keyword migliore da ripetere se si supera la soglia.
+    Ritorna un dizionario query o None se la condizione non è soddisfatta.
+    """
+    unique_kws = set(m.get("keyword") for m in search_memory if m.get("keyword"))
+
+    if len(unique_kws) < threshold:
+        return None
+
+    kw_stats = {}
+    for mem in search_memory:
+        kw = mem.get("keyword")
+        if not kw:
+            continue
+        score = mem.get("avg_fit_score")
+        if score is None:
+            continue
+
+        jobs = mem.get("jobs_new_unique", 0)
+
+        if kw not in kw_stats:
+            kw_stats[kw] = {"score": score, "jobs": jobs}
+        else:
+            if score > kw_stats[kw]["score"]:
+                kw_stats[kw] = {"score": score, "jobs": jobs}
+            elif score == kw_stats[kw]["score"] and jobs > kw_stats[kw]["jobs"]:
+                kw_stats[kw] = {"score": score, "jobs": jobs}
+
+    if not kw_stats:
+        return None
+
+    sorted_kws = sorted(
+        kw_stats.items(),
+        key=lambda item: (item[1]["score"], item[1]["jobs"]),
+        reverse=True,
+    )
+
+    non_core_index = iteration - core_keywords_count
+    best_kw = sorted_kws[non_core_index % len(sorted_kws)][0]
+
+    return {
+        "keywords": best_kw,
+        "reasoning": "Ripetizione keyword ad alto fit score",
+        "is_core": False,
+    }
 
 
 def main():
@@ -384,10 +433,21 @@ def main():
                 "is_core": True,
             }
         else:
-            query = generate_single_search_query(
-                profile, config, search_memory, len(job_store)
+            unique_keyword_threshold = config.get("scraper", {}).get(
+                "unique_keyword_threshold", 50
             )
-            keyword = query.get("keywords", "")
+            repeat_query = get_best_keyword_to_repeat(
+                search_memory, iteration, len(core_keywords), unique_keyword_threshold
+            )
+
+            if repeat_query:
+                query = repeat_query
+                keyword = query.get("keywords", "")
+            else:
+                query = generate_single_search_query(
+                    profile, config, search_memory, len(job_store)
+                )
+                keyword = query.get("keywords", "")
 
         if not keyword:
             print("[!] Keyword non generata o errore. Riprovo...")
@@ -395,9 +455,12 @@ def main():
             continue
 
         if not is_core_iteration:
-            print(
-                f"[*] Keyword generata da AI: {keyword} (Reasoning: {query.get('reasoning', '')})"
-            )
+            if query.get("reasoning") == "Ripetizione keyword ad alto fit score":
+                print(f"[*] Keyword ripetuta: {keyword}")
+            else:
+                print(
+                    f"[*] Keyword generata da AI: {keyword} (Reasoning: {query.get('reasoning', '')})"
+                )
         queries_run.append(query)
 
         # Modifica il time_filter temporaneamente se stiamo facendo una query core

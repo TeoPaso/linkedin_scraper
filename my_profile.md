@@ -35,6 +35,7 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 - Venture Capital
 - Butique Investment Funds
 - Strategy
+- Big 3 strategic consulting firms (McKinsey, Boston Consulting Group, Bain & Company)
 
 
 
@@ -42,5 +43,6 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 - Investment banking roles
 - Freelance/Self-employed roles
 - Remote roles (hybrid is fine, but not fully remote)
-- Consulting (favorably strategy/management consulting)
+- Big 4 Consulting
+- Insurance
 - Dev roles
