@@ -90,7 +90,7 @@ DEVI RESTITUIRE SOLO questo JSON, senza testo aggiuntivo:
 """
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.1-flash-lite",
             contents=prompt,
             config={"response_mime_type": "application/json", "temperature": 0.2},
         )
@@ -188,7 +188,7 @@ Istruzioni:
 """
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.1-flash-lite",
             contents=prompt,
             config={
                 "response_mime_type": "application/json",
@@ -246,7 +246,7 @@ DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
 """
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.1-flash-lite",
             contents=prompt,
             config={"response_mime_type": "application/json", "temperature": 0.1},
         )
@@ -456,7 +456,7 @@ def main():
             keyword = query.get("keywords", "")
             if keyword:
                 print(
-                    f"[*] Keyword generata da AI: {keyword} "
+                    f"[*] Keyword generata da Gemini 3.1 flash lite: {keyword} "
                     f"(Reasoning: {query.get('reasoning', '')})"
                 )
                 # Aggiorna la lista di keyword scoperte

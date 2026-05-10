@@ -21,7 +21,6 @@ scraper:
     - "Investment Analyst"
     - "Graduate Program"
     - "Private Equity"
-    
   core_time_filter: "r86400" # Ultime 24h per le core keywords per non duplicare roba vecchia
 
 # Configurazione LLM e filtraggio
