@@ -40,13 +40,14 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 - Butique Investment Funds
 - Strategy
 - Big 3 strategic consulting firms (McKinsey, Boston Consulting Group, Bain & Company)
-
+- I don't like internships, I'd prefer a full-time role, but I'm open to internships if they are very valuable and align with my interests.
 
 
 ## Not interested in
 - Investment banking roles
 - Freelance/Self-employed roles
 - Remote roles (hybrid is fine, but not fully remote)
-- Big 4 Consulting
+- Big 4 & Accenture Consulting
 - Insurance
 - Dev roles
+- Banking roles
