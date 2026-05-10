@@ -611,27 +611,12 @@
             const searches = appData.search_memory || [];
             if (!searches.length) return `<div class="card">Nessuna ricerca trovata in memoria.</div>`;
 
-            let html = '';
-
-            if (showAllSearches) {
-                html = searches.map(s => getSearchCardHtml(s)).join('');
-            } else {
-                html = getSearchCardHtml(searches[currentSearchIndex]);
-            }
+            // Mostriamo sempre tutte le ricerche per sfruttare lo scroll orizzontale
+            const html = searches.map(s => getSearchCardHtml(s)).join('');
 
             return `
-        <div style="display: flex; justify-content: space-between; align-items: baseline;">
-            <h2>Cronologia Ricerche</h2>
-            <div class="search-controls" style="margin-bottom: 0;">
-                <button id="btn-toggle-search">${showAllSearches ? 'Mostra Prima' : 'Mostra Tutte'}</button>
-                ${!showAllSearches ? `
-                    <button id="btn-prev-search" ${currentSearchIndex === 0 ? 'disabled' : ''}>&larr; Prev</button>
-                    <span class="metric" style="font-size: 1em;">${currentSearchIndex + 1} / ${searches.length}</span>
-                    <button id="btn-next-search" ${currentSearchIndex === searches.length - 1 ? 'disabled' : ''}>Next &rarr;</button>
-                ` : ''}
-            </div>
-        </div>
-        <div class="${showAllSearches ? 'categories-container' : ''}" style="margin-top: 15px;">
+        <h2>Cronologia Ricerche</h2>
+        <div class="categories-container" style="margin-top: 15px;">
             ${html}
         </div>
     `;
@@ -1032,28 +1017,6 @@
                 barLabels.forEach(label => resizeObserver.observe(label));
             }
 
-            // Prev/Next search logic
-            const prevBtn = document.getElementById('btn-prev-search');
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    if (currentSearchIndex > 0) {
-                        currentSearchIndex--;
-                        render();
-                    }
-                });
-            }
-
-            const nextBtn = document.getElementById('btn-next-search');
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    const maxIdx = (appData.search_memory || []).length - 1;
-                    if (currentSearchIndex < maxIdx) {
-                        currentSearchIndex++;
-                        render();
-                    }
-                });
-            }
-
             // Categories Accordion
             document.querySelectorAll('.category-item').forEach(item => {
                 const header = item.querySelector('.category-header');
@@ -1065,15 +1028,6 @@
                     });
                 }
             });
-
-            // Toggle button for searches
-            const toggleBtn = document.getElementById('btn-toggle-search');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', () => {
-                    showAllSearches = !showAllSearches;
-                    render();
-                });
-            }
 
             // Applied toggle logic
             document.querySelectorAll(".btn-like").forEach(btn => {
