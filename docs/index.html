@@ -901,6 +901,7 @@
 
         function renderModal() {
             return `
+        <!-- Info Modal -->
         <div class="modal-overlay" id="info-modal">
             <div class="modal-container">
                 <div class="modal-header">
@@ -913,6 +914,21 @@
                     
                     <h4 style="margin-bottom: 10px;">Description text</h4>
                     <div class="desc-box" id="modal-description"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Modal -->
+        <div class="modal-overlay" id="score-modal">
+            <div class="modal-container" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--accent);">Fit Score Reasoning</h3>
+                    <button class="modal-close" id="btn-close-score-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="reasoning-box">
+                        <ul id="score-reasoning-list" style="margin: 0; padding-left: 20px;"></ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1072,7 +1088,7 @@
             const reasonText = data.reason || 'Nessuna informazione disponibile.';
             
             // Split reasoning into sentences for bullet points
-            const sentences = reasonText.split(/(?<=[.!?])s+/).filter(s => s.trim().length > 0);
+            const sentences = reasonText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
             const listHtml = sentences.map(s => `<li>${s}</li>`).join('');
             
             const scoreList = document.getElementById('score-reasoning-list');
