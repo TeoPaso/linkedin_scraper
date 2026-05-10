@@ -475,9 +475,13 @@ def main():
         new_jobs_count = 0
         top_titles = []
         for job in jobs:
-            job_url = job.get("link", job.get("url", ""))
-            if not job_url:
+            raw_url = job.get("link", job.get("url", ""))
+            if not raw_url:
                 continue
+
+            job_url = db.normalize_linkedin_url(raw_url)
+            job["link"] = job_url
+            job["url"] = job_url
 
             title = job.get("title", "Unknown Title")
             if len(top_titles) < 5 and title not in top_titles:

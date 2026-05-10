@@ -3,6 +3,7 @@ import json
 import hashlib
 import firebase_admin
 from firebase_admin import credentials, firestore
+from urllib.parse import urlparse, urlunparse
 
 # Initialize Firebase only once
 if not firebase_admin._apps:
@@ -22,9 +23,21 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 
+def normalize_linkedin_url(url: str) -> str:
+    """Strip query params e fragment, tieni solo path del job."""
+    if not url:
+        return url
+    parsed = urlparse(url)
+    # Ricostruisce senza query string e fragment
+    return urlunparse(
+        (parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", "", "")
+    )
+
+
 def get_job_id(url: str) -> str:
     """Restituisce l'hash SHA1 dell'URL come ID documento."""
-    return hashlib.sha1(url.encode("utf-8")).hexdigest()
+    clean_url = normalize_linkedin_url(url)
+    return hashlib.sha1(clean_url.encode("utf-8")).hexdigest()
 
 
 def get_category_id(label: str) -> str:
@@ -46,9 +59,9 @@ def load_job_store() -> dict:
         data = doc.to_dict()
         url = data.get("url")
         if url:
-            # Per evitare di inquinare il payload usato in business logic,
-            # url_hash è già l'ID, ma teniamo l'url nei dati per comodità.
-            job_store[url] = data
+            clean_url = normalize_linkedin_url(url)
+            data["url"] = clean_url  # Aggiorna il payload
+            job_store[clean_url] = data
     return job_store
 
 
