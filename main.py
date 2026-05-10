@@ -152,10 +152,21 @@ def scrape_jobs(query_params: dict, config: dict) -> list:
         return []
 
 
-def evaluate_job_with_gemini(job: dict, profile: str) -> JobEvaluation:
+def evaluate_job_with_gemini(
+    job: dict, profile: str, liked_history: str = "", disliked_history: str = ""
+) -> JobEvaluation:
     """Valuta il fit tra l'offerta di lavoro e il profilo del candidato usando Gemini."""
     gemini_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=gemini_key)
+
+    preferences_section = ""
+    if liked_history or disliked_history:
+        preferences_section = "\nPreferenze del candidato (basate sui feedback precedenti):\n"
+        if liked_history:
+            preferences_section += f"Lavori apprezzati (LIKE):\n{liked_history}\n"
+        if disliked_history:
+            preferences_section += f"Lavori scartati (DISLIKE):\n{disliked_history}\n"
+        preferences_section += "Usa queste preferenze per influenzare il punteggio: alza il punteggio per lavori molto simili a quelli apprezzati e abbassalo drasticamente per lavori simili a quelli scartati.\n"
 
     prompt = f"""
 Sei un technical recruiter esperto e un career coach.
@@ -163,7 +174,7 @@ Valuta l'aderenza del candidato alla seguente offerta di lavoro.
 
 Profilo Candidato:
 {profile}
-
+{preferences_section}
 Descrizione Lavoro:
 Titolo: {job.get("title", "Unknown")}
 Azienda: {job.get("companyName", "Unknown")}
@@ -338,56 +349,6 @@ def send_email_report(matched_jobs: list, metrics: dict):
         print(f"[!] ERRORE durante l'invio dell'email: {e}")
 
 
-def get_best_keyword_to_repeat(
-    search_memory: list, iteration: int, core_keywords_count: int, threshold: int
-) -> dict:
-    """
-    Seleziona la keyword migliore da ripetere se si supera la soglia.
-    Ritorna un dizionario query o None se la condizione non è soddisfatta.
-    """
-    unique_kws = set(m.get("keyword") for m in search_memory if m.get("keyword"))
-
-    if len(unique_kws) < threshold:
-        return None
-
-    kw_stats = {}
-    for mem in search_memory:
-        kw = mem.get("keyword")
-        if not kw:
-            continue
-        score = mem.get("avg_fit_score")
-        if score is None:
-            continue
-
-        jobs = mem.get("jobs_new_unique", 0)
-
-        if kw not in kw_stats:
-            kw_stats[kw] = {"score": score, "jobs": jobs}
-        else:
-            if score > kw_stats[kw]["score"]:
-                kw_stats[kw] = {"score": score, "jobs": jobs}
-            elif score == kw_stats[kw]["score"] and jobs > kw_stats[kw]["jobs"]:
-                kw_stats[kw] = {"score": score, "jobs": jobs}
-
-    if not kw_stats:
-        return None
-
-    sorted_kws = sorted(
-        kw_stats.items(),
-        key=lambda item: (item[1]["score"], item[1]["jobs"]),
-        reverse=True,
-    )
-
-    non_core_index = iteration - core_keywords_count
-    best_kw = sorted_kws[non_core_index % len(sorted_kws)][0]
-
-    return {
-        "keywords": best_kw,
-        "reasoning": "Ripetizione keyword ad alto fit score",
-        "is_core": False,
-    }
-
-
 def main():
     load_dotenv()
 
@@ -401,6 +362,7 @@ def main():
     search_memory = db.load_search_memory()
     job_store = db.load_job_store()
     job_categories = db.load_job_categories()
+    cycle_state = db.load_cycle_state()
 
     execution_id = datetime.now().isoformat()
 
@@ -413,18 +375,53 @@ def main():
     core_keywords = config.get("scraper", {}).get("core_keywords", [])
     core_time_filter = config.get("scraper", {}).get("core_time_filter", "r86400")
 
+    unique_keyword_threshold = config.get("scraper", {}).get(
+        "unique_keyword_threshold", 40
+    )
+
+    # Calcola le keyword uniche già scoperte dalla memoria
+    all_discovered_keywords = list(
+        dict.fromkeys(
+            m.get("keyword") for m in search_memory if m.get("keyword")
+        )
+    )
+
+    # Determina se siamo in modalità ciclaggio
+    is_cycling_mode = len(all_discovered_keywords) >= unique_keyword_threshold
+
+    if is_cycling_mode:
+        # Sincronizza la lista nel cycle_state con le keyword effettivamente scoperte
+        cycle_state["keyword_list"] = all_discovered_keywords
+        cycle_index = cycle_state.get("cycle_index", 0)
+        # Se l'indice è oltre la lista (es. keyword rimosse), resetta
+        if cycle_index >= len(all_discovered_keywords):
+            cycle_index = 0
+        print(
+            f"[*] Modalità CICLAGGIO attiva ({len(all_discovered_keywords)} keyword). "
+            f"Riparto dall'indice {cycle_index}."
+        )
+    else:
+        cycle_index = 0
+        print(
+            f"[*] Modalità ESPLORAZIONE attiva "
+            f"({len(all_discovered_keywords)}/{unique_keyword_threshold} keyword scoperte)."
+        )
+
     print("[*] Avvio scraping iterativo...")
 
     jobs_scraped_this_run = 0
+    keywords_cycled_this_run = 0
 
     while jobs_scraped_this_run < jobs_target and iteration < max_retries:
         print(
-            f"\n--- Iterazione {iteration + 1}/{max_retries} | Lavori estratti in questa sessione: {jobs_scraped_this_run}/{jobs_target} ---"
+            f"\n--- Iterazione {iteration + 1}/{max_retries} | "
+            f"Lavori estratti: {jobs_scraped_this_run}/{jobs_target} ---"
         )
 
         is_core_iteration = iteration < len(core_keywords)
 
         if is_core_iteration:
+            # Fase 1: Core keywords
             keyword = core_keywords[iteration]
             print(f"[*] Keyword CORE predefinita: {keyword}")
             query = {
@@ -432,35 +429,54 @@ def main():
                 "reasoning": "Keyword predefinita dal config",
                 "is_core": True,
             }
-        else:
-            unique_keyword_threshold = config.get("scraper", {}).get(
-                "unique_keyword_threshold", 50
-            )
-            repeat_query = get_best_keyword_to_repeat(
-                search_memory, iteration, len(core_keywords), unique_keyword_threshold
-            )
+        elif is_cycling_mode:
+            # Fase 3: Ciclaggio round-robin
+            if keywords_cycled_this_run >= len(all_discovered_keywords):
+                print("[*] Tutte le keyword del ciclo sono state esaurite. Stop.")
+                break
 
-            if repeat_query:
-                query = repeat_query
-                keyword = query.get("keywords", "")
-            else:
-                query = generate_single_search_query(
-                    profile, config, search_memory, len(job_store)
+            keyword = all_discovered_keywords[cycle_index]
+            print(
+                f"[*] Keyword CICLAGGIO [{cycle_index + 1}/{len(all_discovered_keywords)}]: {keyword}"
+            )
+            query = {
+                "keywords": keyword,
+                "reasoning": "Ciclaggio round-robin",
+                "is_core": False,
+            }
+
+            # Avanza l'indice circolarmente
+            cycle_index = (cycle_index + 1) % len(all_discovered_keywords)
+            keywords_cycled_this_run += 1
+        else:
+            # Fase 2: Esplorazione con Gemini
+            query = generate_single_search_query(
+                profile, config, search_memory, len(job_store)
+            )
+            keyword = query.get("keywords", "")
+            if keyword:
+                print(
+                    f"[*] Keyword generata da AI: {keyword} "
+                    f"(Reasoning: {query.get('reasoning', '')})"
                 )
-                keyword = query.get("keywords", "")
+                # Aggiorna la lista di keyword scoperte
+                if keyword not in all_discovered_keywords:
+                    all_discovered_keywords.append(keyword)
+                    # Controlla se abbiamo appena raggiunto la soglia
+                    if len(all_discovered_keywords) >= unique_keyword_threshold:
+                        is_cycling_mode = True
+                        cycle_state["keyword_list"] = all_discovered_keywords
+                        cycle_index = 0
+                        print(
+                            f"[*] Soglia di {unique_keyword_threshold} keyword raggiunta! "
+                            f"Passo alla modalità CICLAGGIO dalla prossima iterazione."
+                        )
 
         if not keyword:
             print("[!] Keyword non generata o errore. Riprovo...")
             iteration += 1
             continue
 
-        if not is_core_iteration:
-            if query.get("reasoning") == "Ripetizione keyword ad alto fit score":
-                print(f"[*] Keyword ripetuta: {keyword}")
-            else:
-                print(
-                    f"[*] Keyword generata da AI: {keyword} (Reasoning: {query.get('reasoning', '')})"
-                )
         queries_run.append(query)
 
         # Modifica il time_filter temporaneamente se stiamo facendo una query core
@@ -518,6 +534,11 @@ def main():
         db.save_job_store(job_store)
 
         iteration += 1
+
+    # Salva lo stato del ciclo per la prossima run
+    cycle_state["cycle_index"] = cycle_index
+    cycle_state["keyword_list"] = all_discovered_keywords
+    db.save_cycle_state(cycle_state)
 
     print(
         "\n[*] Loop iterativo completato. Procedo alla valutazione dei lavori non ancora valutati..."

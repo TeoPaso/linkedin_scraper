@@ -8,7 +8,7 @@ preferences:
 
 # Configurazione dello scraper
 scraper:
-  unique_keyword_threshold: 50 # Soglia oltre cui si entra in modalità "repeat best"
+  unique_keyword_threshold: 40 # Soglia di keyword scoperte oltre cui si passa al ciclaggio round-robin
   jobs_target: 100 # Limite di lavori scaricati per singola ricerca (es. per test)
   scrape_company: false
   max_retries: 100         # Limite di ricerche generate da Gemini (1 per il test)
@@ -17,6 +17,11 @@ scraper:
   core_keywords:          # Keyword fisse testate ad ogni esecuzione
     - "Venture Capital Analyst"
     - "Founder Associate"
+    - "Strategic Finance"
+    - "Investment Analyst"
+    - "Graduate Program"
+    - "Private Equity"
+    
   core_time_filter: "r86400" # Ultime 24h per le core keywords per non duplicare roba vecchia
 
 # Configurazione LLM e filtraggio

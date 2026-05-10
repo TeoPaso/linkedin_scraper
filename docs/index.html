@@ -414,6 +414,12 @@
         let showAllSearches = false;
         let currentSearchIndex = 0;
         let keywordLabelWidth = "";
+        let searchSortOrder = 'chronological';
+
+        window.toggleSearchSort = function() {
+            searchSortOrder = searchSortOrder === 'chronological' ? 'useful_percent' : 'chronological';
+            render();
+        };
 
         async function loadDataFromFirestore() {
             const appDiv = document.getElementById('app');
@@ -549,7 +555,8 @@
 
         function renderKeywordMap() {
             const jobs = Object.values(appData.job_store || {});
-            if (!jobs.length) return '';
+            const searches = appData.search_memory || [];
+            if (!jobs.length && !searches.length) return '';
 
             // Group by keyword
             const keywordStats = {};
@@ -558,10 +565,17 @@
                 if (!keywordStats[kw]) {
                     keywordStats[kw] = { found: 0, useful: 0 };
                 }
-                keywordStats[kw].found += 1;
                 if (j.fit_score !== null && j.fit_score >= 75) {
                     keywordStats[kw].useful += 1;
                 }
+            });
+
+            searches.forEach(s => {
+                const kw = s.keyword || "Unknown";
+                if (!keywordStats[kw]) {
+                    keywordStats[kw] = { found: 0, useful: 0 };
+                }
+                keywordStats[kw].found += (s.jobs_found_total || s.total_found || 0);
             });
 
             const statsList = Object.keys(keywordStats).map(kw => {
@@ -608,14 +622,38 @@
         }
 
         function renderRicerche() {
-            const searches = appData.search_memory || [];
+            let searches = [...(appData.search_memory || [])];
             if (!searches.length) return `<div class="card">Nessuna ricerca trovata in memoria.</div>`;
 
-            // Mostriamo sempre tutte le ricerche per sfruttare lo scroll orizzontale
+            searches.forEach(s => {
+                let usefulCount = 0;
+                if (appData.job_store) {
+                    Object.values(appData.job_store).forEach(j => {
+                        if (j.execution_id === s.execution_id && j.keyword === s.keyword && j.fit_score !== null && j.fit_score >= 75) {
+                            usefulCount++;
+                        }
+                    });
+                }
+                s._usefulCount = usefulCount;
+                let foundCount = s.jobs_found_total || s.total_found || 0;
+                s._usefulPct = foundCount > 0 ? (usefulCount / foundCount) * 100 : 0;
+            });
+
+            if (searchSortOrder === 'useful_percent') {
+                searches.sort((a, b) => b._usefulPct - a._usefulPct);
+            } else {
+                searches.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+            }
+
             const html = searches.map(s => getSearchCardHtml(s)).join('');
 
             return `
-        <h2>Cronologia Ricerche</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+            <h2 style="margin: 0;">Cronologia Ricerche</h2>
+            <button onclick="toggleSearchSort()" title="Cambia ordinamento">
+                Ordina per: ${searchSortOrder === 'chronological' ? 'Data' : '% Useful'}
+            </button>
+        </div>
         <div class="categories-container" style="margin-top: 15px;">
             ${html}
         </div>
@@ -640,6 +678,15 @@
                 }
             } catch (e) { }
 
+            let usefulCount = s._usefulCount !== undefined ? s._usefulCount : 0;
+            let foundCount = s.jobs_found_total || s.total_found || 0;
+            
+            let usefulDisplay = `${usefulCount}`;
+            if (foundCount > 0) {
+                let pct = Math.round((usefulCount / foundCount) * 100);
+                usefulDisplay += `<span style="font-size: 0.75em; color: var(--text-muted);">(${pct}%)</span>`;
+            }
+
             return `
         <div class="card category-item">
             <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
@@ -653,11 +700,11 @@
                     <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                         <div>
                             <div style="color: var(--text-muted); font-size: 0.8em;">Found</div>
-                            <div class="metric" style="font-size: 1.1em;">${s.jobs_found_total || s.total_found || 0}</div>
+                            <div class="metric" style="font-size: 1.1em;">${foundCount}</div>
                         </div>
                         <div>
-                            <div style="color: var(--text-muted); font-size: 0.8em;">Unique</div>
-                            <div class="metric" style="font-size: 1.1em;">${s.jobs_new_unique || 0}</div>
+                            <div style="color: var(--text-muted); font-size: 0.8em;">Useful</div>
+                            <div class="metric" style="font-size: 1.1em; display: flex; align-items: baseline; gap: 5px;">${usefulDisplay}</div>
                         </div>
                         <div>
                             <div style="color: var(--text-muted); font-size: 0.8em;">Avg Fit</div>

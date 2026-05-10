@@ -152,3 +152,16 @@ def save_job_categories(categories: list):
                 count = 0
     if count > 0:
         batch.commit()
+
+
+def load_cycle_state() -> dict:
+    """Legge lo stato del ciclo round-robin delle keyword da Firestore."""
+    doc = db.collection("app_state").document("keyword_cycle").get()
+    if doc.exists:
+        return doc.to_dict()
+    return {"cycle_index": 0, "keyword_list": []}
+
+
+def save_cycle_state(state: dict):
+    """Salva lo stato del ciclo round-robin delle keyword su Firestore."""
+    db.collection("app_state").document("keyword_cycle").set(state)
