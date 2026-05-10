@@ -380,6 +380,7 @@
 
         let showAllSearches = false;
         let currentSearchIndex = 0;
+        let keywordLabelWidth = "";
 
         async function loadDataFromFirestore() {
             const appDiv = document.getElementById('app');
@@ -524,7 +525,7 @@
                 const pct = (val / maxUnique) * 100;
                 return `
             <div class="bar-row">
-                <div class="bar-label" title="${s.keyword}">${s.keyword}</div>
+                <div class="bar-label" title="${s.keyword}" style="${keywordLabelWidth ? `width: ${keywordLabelWidth};` : ''}">${s.keyword}</div>
                 <div class="bar-track">
                     <div class="bar-fill" style="width: ${pct}%;"></div>
                 </div>
@@ -858,6 +859,27 @@
     if (filterDate) filterDate.addEventListener('change', applyFilters);
     if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
     if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+
+    
+    
+    
+    // Sincronizza lo slider delle keyword
+    const barLabels = document.querySelectorAll('.bar-label');
+    if (barLabels.length > 0) {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                if (entry.target.style.width && entry.target.style.width !== keywordLabelWidth) {
+                    keywordLabelWidth = entry.target.style.width;
+                    barLabels.forEach(label => {
+                        if (label !== entry.target) {
+                            label.style.width = keywordLabelWidth;
+                        }
+                    });
+                }
+            }
+        });
+        barLabels.forEach(label => resizeObserver.observe(label));
+    }
 
     // Prev/Next search logic
     const prevBtn = document.getElementById('btn-prev-search');
