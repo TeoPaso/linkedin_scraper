@@ -813,7 +813,11 @@
 
                 return `
             <tr class="job-row" data-date="${dayDate}" data-keyword="${escapeHtml(keywordVal)}" data-category="${escapeHtml(categoryVal)}" data-score="${scoreType}" data-liked="${likedType}">
-                <td><strong>${escapeHtml(title)}</strong></td>
+                <td>
+                    <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: var(--accent); font-weight: bold;" title="Mostra descrizione">
+                        ${escapeHtml(title)}
+                    </a>
+                </td>
                 <td>${escapeHtml(company)}</td>
                 <td>${escapeHtml(location)}</td>
                 <td class="metric" style="text-align: center;">
@@ -834,9 +838,6 @@
                     <button class="btn-applied" data-docid="${j._doc_id || ''}" data-applied="${j.applied === true ? 'true' : 'false'}" style="background-color: ${j.applied === true ? '#2e7d32' : '#555'}; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">
                         ${j.applied === true ? 'Applicato ✓' : 'Non applicato'}
                     </button>
-                </td>
-                <td>
-                    <button class="btn-desc" data-target="${descId}">📄 Descrizione</button>
                 </td>
             </tr>
         `;
@@ -900,7 +901,6 @@
                         <th>Link</th>
                         <th style="text-align: center;">Preferenza</th>
                         <th>Candidatura</th>
-                        <th>Azioni</th>
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
