@@ -7,6 +7,8 @@ from datetime import datetime
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import concurrent.futures
+import threading
 
 from apify_client import ApifyClient
 from google import genai
@@ -47,7 +49,7 @@ def generate_single_search_query(
     memory_summary = ""
     if search_memory:
         memory_summary = "Ricerche precedenti (con risultati):\n"
-        for mem in search_memory[-15:]:
+        for mem in search_memory[-40:]:
             avg = mem.get("avg_fit_score")
             avg_str = f"{avg}/100" if avg is not None else "non valutato"
             memory_summary += (
@@ -201,6 +203,24 @@ Istruzioni:
         print(f"[!] ERRORE durante la valutazione con Gemini: {e}")
         return JobEvaluation(fit_score=0, reasoning=f"Errore di valutazione: {str(e)}")
 
+def process_and_evaluate_job(url: str, job_store: dict, profile: str, liked_history: str, disliked_history: str):
+    """Esegue la valutazione in background e salva su db."""
+    data = job_store.get(url)
+    if not data or data.get("fit_score") is not None:
+        return
+    
+    job_data = data["job_data"]
+    title = job_data.get("title", "Unknown Title")
+    company = job_data.get("companyName", "Unknown Company")
+    
+    print(f"  [Background] Valutazione: {title} @ {company}...")
+    evaluation = evaluate_job_with_gemini(job_data, profile, liked_history, disliked_history)
+    
+    data["fit_score"] = evaluation.fit_score
+    data["reasoning"] = evaluation.reasoning
+    
+    db.save_single_job(url, data)
+    print(f"  [Background] -> Score {evaluation.fit_score} ({title})")
 
 def categorize_jobs_with_gemini(
     uncategorized_jobs: dict, current_categories: list
@@ -407,7 +427,26 @@ def main():
             f"({len(all_discovered_keywords)}/{unique_keyword_threshold} keyword scoperte)."
         )
 
-    print("[*] Avvio scraping iterativo...")
+    print("[*] Recupero storico valutazioni per personalizzare i risultati...")
+    liked_jobs = [data for url, data in job_store.items() if data.get("liked") is True]
+    disliked_jobs = [data for url, data in job_store.items() if data.get("liked") is False]
+
+    liked_history = ""
+    for j in sorted(liked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[:10]:
+        t = j.get("job_data", {}).get("title", "")
+        c = j.get("job_data", {}).get("companyName", "")
+        d = j.get("job_data", {}).get("descriptionText", "")[:300]
+        liked_history += f"- {t} presso {c}. (Snippet: {d}...)\n"
+
+    disliked_history = ""
+    for j in sorted(disliked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[:10]:
+        t = j.get("job_data", {}).get("title", "")
+        c = j.get("job_data", {}).get("companyName", "")
+        d = j.get("job_data", {}).get("descriptionText", "")[:300]
+        disliked_history += f"- {t} presso {c}. (Snippet: {d}...)\n"
+
+    print("[*] Avvio scraping iterativo con valutazione in background...")
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
     jobs_scraped_this_run = 0
     keywords_cycled_this_run = 0
@@ -504,7 +543,7 @@ def main():
                 top_titles.append(title)
 
             if job_url not in job_store:
-                job_store[job_url] = {
+                new_data = {
                     "job_data": job,
                     "fit_score": None,
                     "reasoning": None,
@@ -513,6 +552,14 @@ def main():
                     "execution_id": execution_id,
                     "keyword": keyword,
                 }
+                job_store[job_url] = new_data
+                
+                # Invia il lavoro alla coda per la valutazione in background
+                executor.submit(
+                    process_and_evaluate_job, 
+                    job_url, job_store, profile, liked_history, disliked_history
+                )
+                
                 new_jobs_count += 1
                 jobs_scraped_this_run += 1
 
@@ -531,7 +578,6 @@ def main():
         search_memory.append(memory_entry)
 
         db.save_search_memory(search_memory)
-        db.save_job_store(job_store)
 
         iteration += 1
 
@@ -540,58 +586,9 @@ def main():
     cycle_state["keyword_list"] = all_discovered_keywords
     db.save_cycle_state(cycle_state)
 
-    print(
-        "\n[*] Loop iterativo completato. Procedo alla valutazione dei lavori non ancora valutati..."
-    )
-
-    jobs_to_evaluate = {
-        url: data for url, data in job_store.items() if data.get("fit_score") is None
-    }
-
-    if jobs_to_evaluate:
-        # Recupera lo storico dei like e dislike per migliorare le valutazioni future
-        liked_jobs = [
-            data for url, data in job_store.items() if data.get("liked") is True
-        ]
-        disliked_jobs = [
-            data for url, data in job_store.items() if data.get("liked") is False
-        ]
-
-        # Crea stringhe di contesto (max ultime 10 per non sforare token limit)
-        liked_history = ""
-        for j in sorted(liked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[
-            :10
-        ]:
-            title = j.get("job_data", {}).get("title", "")
-            company = j.get("job_data", {}).get("companyName", "")
-            desc = j.get("job_data", {}).get("descriptionText", "")[:300]
-            liked_history += f"- {title} presso {company}. (Snippet: {desc}...)\n"
-
-        disliked_history = ""
-        for j in sorted(
-            disliked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True
-        )[:10]:
-            title = j.get("job_data", {}).get("title", "")
-            company = j.get("job_data", {}).get("companyName", "")
-            desc = j.get("job_data", {}).get("descriptionText", "")[:300]
-            disliked_history += f"- {title} presso {company}. (Snippet: {desc}...)\n"
-
-        for i, (url, data) in enumerate(jobs_to_evaluate.items()):
-            job = data["job_data"]
-            title = job.get("title", "Unknown Title")
-            company = job.get("companyName", "Unknown Company")
-            print(
-                f"  [{i + 1}/{len(jobs_to_evaluate)}] Valutazione: {title} @ {company}..."
-            )
-
-            evaluation = evaluate_job_with_gemini(
-                job, profile, liked_history, disliked_history
-            )
-            data["fit_score"] = evaluation.fit_score
-            data["reasoning"] = evaluation.reasoning
-            print(f"      -> Score: {evaluation.fit_score}")
-    else:
-        print("  [-] Nessun lavoro da valutare.")
+    print("\n[*] Attendo il completamento delle valutazioni in background...")
+    executor.shutdown(wait=True)
+    print("[*] Valutazioni in background completate.")
 
     for mem_entry in search_memory:
         if (
@@ -614,6 +611,8 @@ def main():
                 mem_entry["avg_fit_score"] = round(sum(scores) / len(scores), 1)
             else:
                 mem_entry["avg_fit_score"] = 0
+
+    db.save_search_memory(search_memory)
 
     print("\n[*] Categorizzazione dei lavori non categorizzati...")
     jobs_to_categorize = {

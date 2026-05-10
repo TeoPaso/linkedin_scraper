@@ -65,6 +65,16 @@ def load_job_store() -> dict:
     return job_store
 
 
+def save_single_job(url: str, data: dict):
+    """Esegue l'upsert di un singolo job, utile per i thread in background."""
+    doc_id = get_job_id(url)
+    doc_ref = db.collection("jobs").document(doc_id)
+    payload = data.copy()
+    payload["url"] = url
+    if "applied" not in payload:
+        payload["applied"] = False
+    doc_ref.set(payload, merge=True)
+
 def save_job_store(job_store: dict):
     """Esegue un upsert di ogni job modificato. In batch."""
     batch = db.batch()
