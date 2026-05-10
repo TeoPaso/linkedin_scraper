@@ -529,10 +529,10 @@
             } catch (e) { }
 
             return `
-        <h2>Execution Overview</h2>
+        <h2>Overview</h2>
         <div class="grid-header">
             <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Execution ID</div>
+                <div style="color: var(--text-muted); margin-bottom: 5px;">Ultima run</div>
                 <div class="metric" style="font-size: 1em;">${displayExId}</div>
             </div>
             <div class="card">
@@ -600,7 +600,7 @@
             }).join('');
 
             return `
-        <h2>Keyword Performance Map</h2>
+        <h2>Migliori Keyword</h2>
         <div class="card">
             ${bars}
         </div>
@@ -620,16 +620,18 @@
             }
 
             return `
-        <h2>Ricerche in Memoria</h2>
-        <div class="search-controls">
-            <button id="btn-toggle-search">${showAllSearches ? 'Mostra Una alla Volta' : 'Mostra Tutte'}</button>
-            ${!showAllSearches ? `
-                <button id="btn-prev-search" ${currentSearchIndex === 0 ? 'disabled' : ''}>&larr; Prev</button>
-                <span class="metric" style="font-size: 1em;">${currentSearchIndex + 1} / ${searches.length}</span>
-                <button id="btn-next-search" ${currentSearchIndex === searches.length - 1 ? 'disabled' : ''}>Next &rarr;</button>
-            ` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <h2>Cronologia Ricerche</h2>
+            <div class="search-controls" style="margin-bottom: 0;">
+                <button id="btn-toggle-search">${showAllSearches ? 'Mostra Prima' : 'Mostra Tutte'}</button>
+                ${!showAllSearches ? `
+                    <button id="btn-prev-search" ${currentSearchIndex === 0 ? 'disabled' : ''}>&larr; Prev</button>
+                    <span class="metric" style="font-size: 1em;">${currentSearchIndex + 1} / ${searches.length}</span>
+                    <button id="btn-next-search" ${currentSearchIndex === searches.length - 1 ? 'disabled' : ''}>Next &rarr;</button>
+                ` : ''}
+            </div>
         </div>
-        <div>
+        <div class="${showAllSearches ? 'categories-container' : ''}" style="margin-top: 15px;">
             ${html}
         </div>
     `;
@@ -654,30 +656,36 @@
             } catch (e) { }
 
             return `
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-                <div style="max-width: 65%;">
-                    <h3 style="margin: 0; margin-bottom: 5px;">${s.keyword} <span class="badge ${badgeClass}">${badgeText}</span></h3>
-                    <div style="color: var(--text-muted); font-size: 0.9em;">${displayTs}</div>
+        <div class="card category-item">
+            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <h3 style="margin: 0; font-size: 1.1em; line-height: 1.2;">${s.keyword}</h3>
+                        <span class="badge ${badgeClass}" style="flex-shrink: 0; margin-left: 10px;">${badgeText}</span>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.85em; margin-bottom: 15px;">${displayTs}</div>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.8em;">Found</div>
+                            <div class="metric" style="font-size: 1.1em;">${s.jobs_found_total || s.total_found || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.8em;">Unique</div>
+                            <div class="metric" style="font-size: 1.1em;">${s.jobs_new_unique || 0}</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.8em;">Avg Fit</div>
+                            <div class="metric" style="font-size: 1.1em;">${avgFit}</div>
+                        </div>
+                    </div>
                 </div>
-                <div style="text-align: right; display: flex; gap: 20px;">
-                    <div>
-                        <div style="color: var(--text-muted); font-size: 0.8em;">Total Found</div>
-                        <div class="metric">${s.jobs_found_total || s.total_found || 0}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--text-muted); font-size: 0.8em;">New Unique</div>
-                        <div class="metric">${s.jobs_new_unique || 0}</div>
-                    </div>
-                    <div>
-                        <div style="color: var(--text-muted); font-size: 0.8em;">Avg Fit</div>
-                        <div class="metric">${avgFit}</div>
-                    </div>
+                <div style="border-top: 1px dashed var(--border); padding-top: 10px; font-size: 0.85em;">
+                    <strong style="color: var(--text-muted);">Top Titles:</strong><br>
+                    <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="${(s.top_titles || []).join(', ')}">
+                        ${(s.top_titles || []).join(', ')}
+                    </span>
                 </div>
-            </div>
-            <div>
-                <strong style="color: var(--text-muted); font-size: 0.9em;">Top Titles:</strong> 
-                <span style="font-size: 0.9em;">${(s.top_titles || []).join(', ')}</span>
             </div>
         </div>
     `;
@@ -689,7 +697,7 @@
 
             const html = cats.map((c, idx) => {
                 const urls = c.job_urls || [];
-                
+
                 let useful = 0;
                 let found = urls.length;
                 urls.forEach(u => {
@@ -698,7 +706,7 @@
                         useful++;
                     }
                 });
-                
+
                 let displayStr = `${useful}/${found}`;
                 if (found > 20) {
                     const pct = Math.round((useful / found) * 100);
@@ -724,7 +732,7 @@
             }).join('');
 
             return `
-        <h2>Job Categories</h2>
+        <h2>Categorie (create da Gemini)</h2>
         <div class="categories-container">
             ${html}
         </div>
@@ -808,12 +816,12 @@
                 const dayDate = rawDate ? rawDate.split('T')[0] : '';
                 const keywordVal = j.keyword || '';
                 const categoryVal = j.category || '';
-                
+
                 let scoreType = 'non-valutato';
                 if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
                     scoreType = j.fit_score >= 75 ? 'positivo' : 'negativo';
                 }
-                
+
                 let likedType = '';
                 if (j.liked === true) likedType = 'liked';
                 if (j.liked === false) likedType = 'disliked';
@@ -958,270 +966,270 @@
         // EVENTS
         // ==========================================
         function attachEvents() {
-    // Add event listeners for filters
-    const filterDate = document.getElementById('filter-date');
-    const filterKeyword = document.getElementById('filter-keyword');
-    const filterCategory = document.getElementById('filter-category');
-    const filterScore = document.getElementById('filter-score');
-    const filterLiked = document.getElementById('filter-liked');
+            // Add event listeners for filters
+            const filterDate = document.getElementById('filter-date');
+            const filterKeyword = document.getElementById('filter-keyword');
+            const filterCategory = document.getElementById('filter-category');
+            const filterScore = document.getElementById('filter-score');
+            const filterLiked = document.getElementById('filter-liked');
 
-    const applyFilters = () => {
-        let visibleCount = 0;
-        const selDate = filterDate ? filterDate.value : '';
-        const selKeyword = filterKeyword ? filterKeyword.value : '';
-        const selCategory = filterCategory ? filterCategory.value : '';
-        const selScore = filterScore ? filterScore.value : '';
-        const selLiked = filterLiked ? filterLiked.value : '';
+            const applyFilters = () => {
+                let visibleCount = 0;
+                const selDate = filterDate ? filterDate.value : '';
+                const selKeyword = filterKeyword ? filterKeyword.value : '';
+                const selCategory = filterCategory ? filterCategory.value : '';
+                const selScore = filterScore ? filterScore.value : '';
+                const selLiked = filterLiked ? filterLiked.value : '';
 
-        document.querySelectorAll('.job-row').forEach(row => {
-            const rowDate = row.getAttribute('data-date');
-            const rowKeyword = row.getAttribute('data-keyword');
-            const rowCategory = row.getAttribute('data-category');
-            const rowScore = row.getAttribute('data-score');
-            const rowLiked = row.getAttribute('data-liked');
-            
-            let show = true;
-            if (selDate && rowDate !== selDate) show = false;
-            if (selKeyword && rowKeyword !== selKeyword) show = false;
-            if (selCategory && rowCategory !== selCategory) show = false;
-            if (selScore && rowScore !== selScore) show = false;
-            if (selLiked && rowLiked !== selLiked) show = false;
+                document.querySelectorAll('.job-row').forEach(row => {
+                    const rowDate = row.getAttribute('data-date');
+                    const rowKeyword = row.getAttribute('data-keyword');
+                    const rowCategory = row.getAttribute('data-category');
+                    const rowScore = row.getAttribute('data-score');
+                    const rowLiked = row.getAttribute('data-liked');
 
-            row.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
-        });
-        
-        const counterEl = document.getElementById('jobs-counter');
-        if (counterEl) {
-            counterEl.textContent = visibleCount;
-        }
-    };
+                    let show = true;
+                    if (selDate && rowDate !== selDate) show = false;
+                    if (selKeyword && rowKeyword !== selKeyword) show = false;
+                    if (selCategory && rowCategory !== selCategory) show = false;
+                    if (selScore && rowScore !== selScore) show = false;
+                    if (selLiked && rowLiked !== selLiked) show = false;
 
-    if (filterDate) filterDate.addEventListener('change', applyFilters);
-    if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
-    if (filterCategory) filterCategory.addEventListener('change', applyFilters);
-    if (filterScore) filterScore.addEventListener('change', applyFilters);
-    if (filterLiked) filterLiked.addEventListener('change', applyFilters);
+                    row.style.display = show ? '' : 'none';
+                    if (show) visibleCount++;
+                });
 
-    
-    
-    
-    // Sincronizza lo slider delle keyword
-    const barLabels = document.querySelectorAll('.bar-label');
-    if (barLabels.length > 0) {
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                if (entry.target.style.width && entry.target.style.width !== keywordLabelWidth) {
-                    keywordLabelWidth = entry.target.style.width;
-                    barLabels.forEach(label => {
-                        if (label !== entry.target) {
-                            label.style.width = keywordLabelWidth;
+                const counterEl = document.getElementById('jobs-counter');
+                if (counterEl) {
+                    counterEl.textContent = visibleCount;
+                }
+            };
+
+            if (filterDate) filterDate.addEventListener('change', applyFilters);
+            if (filterKeyword) filterKeyword.addEventListener('change', applyFilters);
+            if (filterCategory) filterCategory.addEventListener('change', applyFilters);
+            if (filterScore) filterScore.addEventListener('change', applyFilters);
+            if (filterLiked) filterLiked.addEventListener('change', applyFilters);
+
+
+
+
+            // Sincronizza lo slider delle keyword
+            const barLabels = document.querySelectorAll('.bar-label');
+            if (barLabels.length > 0) {
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        if (entry.target.style.width && entry.target.style.width !== keywordLabelWidth) {
+                            keywordLabelWidth = entry.target.style.width;
+                            barLabels.forEach(label => {
+                                if (label !== entry.target) {
+                                    label.style.width = keywordLabelWidth;
+                                }
+                            });
                         }
-                    });
-                }
+                    }
+                });
+                barLabels.forEach(label => resizeObserver.observe(label));
             }
-        });
-        barLabels.forEach(label => resizeObserver.observe(label));
-    }
 
-    // Prev/Next search logic
-    const prevBtn = document.getElementById('btn-prev-search');
-    if (prevBtn) {
-        prevBtn.addEventListener('click', () => {
-            if (currentSearchIndex > 0) {
-                currentSearchIndex--;
-                render();
+            // Prev/Next search logic
+            const prevBtn = document.getElementById('btn-prev-search');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (currentSearchIndex > 0) {
+                        currentSearchIndex--;
+                        render();
+                    }
+                });
             }
-        });
-    }
 
-    const nextBtn = document.getElementById('btn-next-search');
-    if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-            const maxIdx = (appData.search_memory || []).length - 1;
-            if (currentSearchIndex < maxIdx) {
-                currentSearchIndex++;
-                render();
+            const nextBtn = document.getElementById('btn-next-search');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    const maxIdx = (appData.search_memory || []).length - 1;
+                    if (currentSearchIndex < maxIdx) {
+                        currentSearchIndex++;
+                        render();
+                    }
+                });
             }
-        });
-    }
 
-    // Categories Accordion
-    document.querySelectorAll('.category-item').forEach(item => {
-        const header = item.querySelector('.category-header');
-        header.addEventListener('click', () => {
-            const idx = item.getAttribute('data-index');
-            const body = document.getElementById(`cat-body-${idx}`);
-            if (body) body.classList.toggle('expanded');
-        });
-    });
+            // Categories Accordion
+            document.querySelectorAll('.category-item').forEach(item => {
+                const header = item.querySelector('.category-header');
+                header.addEventListener('click', () => {
+                    const idx = item.getAttribute('data-index');
+                    const body = document.getElementById(`cat-body-${idx}`);
+                    if (body) body.classList.toggle('expanded');
+                });
+            });
 
-    // Toggle button for searches
-    const toggleBtn = document.getElementById('btn-toggle-search');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            showAllSearches = !showAllSearches;
-            render();
-        });
-    }
-
-    // Applied toggle logic
-    document.querySelectorAll(".btn-like").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            const docId = btn.getAttribute("data-docid");
-            if (!docId) return;
-            
-            const isLikeBtn = btn.getAttribute("data-like") === "true";
-            const isCurrentlyActive = btn.getAttribute("data-current") === "true";
-            
-            // if clicking an active button, we unset it (null). otherwise we set it to isLikeBtn (true/false)
-            const newLikedState = isCurrentlyActive ? null : isLikeBtn;
-            
-            // Update UI optimistically
-            const row = btn.closest('tr');
-            if (row) {
-                const likeBtn = row.querySelector('.btn-like[data-like="true"]');
-                const dislikeBtn = row.querySelector('.btn-like[data-like="false"]');
-                
-                if (newLikedState === true) {
-                    likeBtn.setAttribute("data-current", "true");
-                    likeBtn.style.backgroundColor = "#2e7d32";
-                    likeBtn.style.color = "#fff";
-                    
-                    dislikeBtn.setAttribute("data-current", "false");
-                    dislikeBtn.style.backgroundColor = "transparent";
-                    dislikeBtn.style.color = "var(--text-muted)";
-                    
-                    row.setAttribute("data-liked", "liked");
-                } else if (newLikedState === false) {
-                    likeBtn.setAttribute("data-current", "false");
-                    likeBtn.style.backgroundColor = "transparent";
-                    likeBtn.style.color = "var(--text-muted)";
-                    
-                    dislikeBtn.setAttribute("data-current", "true");
-                    dislikeBtn.style.backgroundColor = "#c62828";
-                    dislikeBtn.style.color = "#fff";
-                    
-                    row.setAttribute("data-liked", "disliked");
-                } else {
-                    likeBtn.setAttribute("data-current", "false");
-                    likeBtn.style.backgroundColor = "transparent";
-                    likeBtn.style.color = "var(--text-muted)";
-                    
-                    dislikeBtn.setAttribute("data-current", "false");
-                    dislikeBtn.style.backgroundColor = "transparent";
-                    dislikeBtn.style.color = "var(--text-muted)";
-                    
-                    row.setAttribute("data-liked", "");
-                }
+            // Toggle button for searches
+            const toggleBtn = document.getElementById('btn-toggle-search');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    showAllSearches = !showAllSearches;
+                    render();
+                });
             }
-            
-            try {
-                const docRef = window.doc(window.db, "jobs", docId);
-                await window.updateDoc(docRef, { liked: newLikedState });
-                
-                const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
-                if (url) {
-                    appData.job_store[url].liked = newLikedState;
-                }
-            } catch(error) {
-                console.error("Error updating document:", error);
-            }
-        });
-    });
 
-    document.querySelectorAll(".btn-applied").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-            const docId = btn.getAttribute("data-docid");
-            if (!docId) return;
-            
-            const isCurrentlyApplied = btn.getAttribute("data-applied") === "true";
-            const newAppliedState = !isCurrentlyApplied;
-            
-            btn.setAttribute("data-applied", newAppliedState.toString());
-            btn.style.backgroundColor = newAppliedState ? "#2e7d32" : "#555";
-            btn.textContent = newAppliedState ? "Applicato ✓" : "Non applicato";
-            
-            try {
-                const docRef = window.doc(window.db, "jobs", docId);
-                await window.updateDoc(docRef, { applied: newAppliedState });
-                
-                const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
-                if (url) {
-                    appData.job_store[url].applied = newAppliedState;
-                }
-            } catch(error) {
-                console.error("Error updating document:", error);
-                btn.setAttribute("data-applied", isCurrentlyApplied.toString());
-                btn.style.backgroundColor = isCurrentlyApplied ? "#2e7d32" : "#555";
-                btn.textContent = "Errore!";
-                setTimeout(() => {
-                    btn.textContent = isCurrentlyApplied ? "Applicato ✓" : "Non applicato";
-                }, 2000);
-            }
-        });
-    });
+            // Applied toggle logic
+            document.querySelectorAll(".btn-like").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    const docId = btn.getAttribute("data-docid");
+                    if (!docId) return;
 
-    // Modal logic
-    const modal = document.getElementById('info-modal');
-    const modalReason = document.getElementById('modal-reasoning');
-    const modalDesc = document.getElementById('modal-description');
-    const closeBtn = document.getElementById('btn-close-modal');
+                    const isLikeBtn = btn.getAttribute("data-like") === "true";
+                    const isCurrentlyActive = btn.getAttribute("data-current") === "true";
 
-    // Score click logic
-    document.querySelectorAll('.score-link').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const targetId = e.currentTarget.getAttribute('data-target');
-            const data = window[`modalData_${targetId}`];
-            const reasonText = data.reason || 'Nessuna informazione disponibile.';
-            
-            // Split reasoning into sentences for bullet points
-            const sentences = reasonText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-            const listHtml = sentences.map(s => `<li>${s}</li>`).join('');
-            
-            const scoreList = document.getElementById('score-reasoning-list');
-            if (scoreList) scoreList.innerHTML = listHtml;
-            
+                    // if clicking an active button, we unset it (null). otherwise we set it to isLikeBtn (true/false)
+                    const newLikedState = isCurrentlyActive ? null : isLikeBtn;
+
+                    // Update UI optimistically
+                    const row = btn.closest('tr');
+                    if (row) {
+                        const likeBtn = row.querySelector('.btn-like[data-like="true"]');
+                        const dislikeBtn = row.querySelector('.btn-like[data-like="false"]');
+
+                        if (newLikedState === true) {
+                            likeBtn.setAttribute("data-current", "true");
+                            likeBtn.style.backgroundColor = "#2e7d32";
+                            likeBtn.style.color = "#fff";
+
+                            dislikeBtn.setAttribute("data-current", "false");
+                            dislikeBtn.style.backgroundColor = "transparent";
+                            dislikeBtn.style.color = "var(--text-muted)";
+
+                            row.setAttribute("data-liked", "liked");
+                        } else if (newLikedState === false) {
+                            likeBtn.setAttribute("data-current", "false");
+                            likeBtn.style.backgroundColor = "transparent";
+                            likeBtn.style.color = "var(--text-muted)";
+
+                            dislikeBtn.setAttribute("data-current", "true");
+                            dislikeBtn.style.backgroundColor = "#c62828";
+                            dislikeBtn.style.color = "#fff";
+
+                            row.setAttribute("data-liked", "disliked");
+                        } else {
+                            likeBtn.setAttribute("data-current", "false");
+                            likeBtn.style.backgroundColor = "transparent";
+                            likeBtn.style.color = "var(--text-muted)";
+
+                            dislikeBtn.setAttribute("data-current", "false");
+                            dislikeBtn.style.backgroundColor = "transparent";
+                            dislikeBtn.style.color = "var(--text-muted)";
+
+                            row.setAttribute("data-liked", "");
+                        }
+                    }
+
+                    try {
+                        const docRef = window.doc(window.db, "jobs", docId);
+                        await window.updateDoc(docRef, { liked: newLikedState });
+
+                        const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
+                        if (url) {
+                            appData.job_store[url].liked = newLikedState;
+                        }
+                    } catch (error) {
+                        console.error("Error updating document:", error);
+                    }
+                });
+            });
+
+            document.querySelectorAll(".btn-applied").forEach(btn => {
+                btn.addEventListener("click", async (e) => {
+                    const docId = btn.getAttribute("data-docid");
+                    if (!docId) return;
+
+                    const isCurrentlyApplied = btn.getAttribute("data-applied") === "true";
+                    const newAppliedState = !isCurrentlyApplied;
+
+                    btn.setAttribute("data-applied", newAppliedState.toString());
+                    btn.style.backgroundColor = newAppliedState ? "#2e7d32" : "#555";
+                    btn.textContent = newAppliedState ? "Applicato ✓" : "Non applicato";
+
+                    try {
+                        const docRef = window.doc(window.db, "jobs", docId);
+                        await window.updateDoc(docRef, { applied: newAppliedState });
+
+                        const url = Object.keys(appData.job_store).find(k => appData.job_store[k]._doc_id === docId);
+                        if (url) {
+                            appData.job_store[url].applied = newAppliedState;
+                        }
+                    } catch (error) {
+                        console.error("Error updating document:", error);
+                        btn.setAttribute("data-applied", isCurrentlyApplied.toString());
+                        btn.style.backgroundColor = isCurrentlyApplied ? "#2e7d32" : "#555";
+                        btn.textContent = "Errore!";
+                        setTimeout(() => {
+                            btn.textContent = isCurrentlyApplied ? "Applicato ✓" : "Non applicato";
+                        }, 2000);
+                    }
+                });
+            });
+
+            // Modal logic
+            const modal = document.getElementById('info-modal');
+            const modalReason = document.getElementById('modal-reasoning');
+            const modalDesc = document.getElementById('modal-description');
+            const closeBtn = document.getElementById('btn-close-modal');
+
+            // Score click logic
+            document.querySelectorAll('.score-link').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetId = e.currentTarget.getAttribute('data-target');
+                    const data = window[`modalData_${targetId}`];
+                    const reasonText = data.reason || 'Nessuna informazione disponibile.';
+
+                    // Split reasoning into sentences for bullet points
+                    const sentences = reasonText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+                    const listHtml = sentences.map(s => `<li>${s}</li>`).join('');
+
+                    const scoreList = document.getElementById('score-reasoning-list');
+                    if (scoreList) scoreList.innerHTML = listHtml;
+
+                    const scoreModal = document.getElementById('score-modal');
+                    if (scoreModal) scoreModal.classList.add('active');
+                });
+            });
+
             const scoreModal = document.getElementById('score-modal');
-            if (scoreModal) scoreModal.classList.add('active');
-        });
-    });
-
-    const scoreModal = document.getElementById('score-modal');
-    const closeScoreBtn = document.getElementById('btn-close-score-modal');
-    if (closeScoreBtn && scoreModal) {
-        closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
-        scoreModal.addEventListener('click', (e) => {
-            if (e.target === scoreModal) scoreModal.classList.remove('active');
-        });
-    }
-
-    document.querySelectorAll('.btn-desc').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const targetId = e.target.getAttribute('data-target');
-            const data = window[`modalData_${targetId}`];
-
-            if(modalReason) modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
-            if(modalDesc) modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
-
-            if(modal) modal.classList.add('active');
-        });
-    });
-
-    if (closeBtn && modal) {
-        closeBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
-        });
-    }
-
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
+            const closeScoreBtn = document.getElementById('btn-close-score-modal');
+            if (closeScoreBtn && scoreModal) {
+                closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
+                scoreModal.addEventListener('click', (e) => {
+                    if (e.target === scoreModal) scoreModal.classList.remove('active');
+                });
             }
-        });
-    }
-}
+
+            document.querySelectorAll('.btn-desc').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetId = e.target.getAttribute('data-target');
+                    const data = window[`modalData_${targetId}`];
+
+                    if (modalReason) modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
+                    if (modalDesc) modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
+
+                    if (modal) modal.classList.add('active');
+                });
+            });
+
+            if (closeBtn && modal) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+            }
+
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            }
+        }
 
         // ==========================================
         // BOOTSTRAP
