@@ -67,10 +67,12 @@ Ricerche già effettuate (NON ripetere nessuna di queste, né variazioni simili)
 {memory_summary}
 
 REGOLE OBBLIGATORIE per la keyword:
-1. Usa AL MASSIMO 2 job title collegati da un singolo OR. Preferisci UN SOLO titolo preciso.
-   CORRETTO: "Venture Capital Analyst"
-   CORRETTO: "FP&A Analyst OR Finance Business Partner"
-   SBAGLIATO: "Analyst OR Associate OR Consultant OR Specialist OR Graduate"
+1. DEVI generare SEMPRE UN SOLO job title preciso. NON USARE MAI l'operatore "OR" o le doppie virgolette.
+   La query deve essere una singola stringa pulita.
+   CORRETTO: Venture Capital Analyst
+   CORRETTO: FP&A Analyst
+   SBAGLIATO: "Venture Capital Analyst"
+   SBAGLIATO: Strategic Finance Analyst OR Corporate Development
 2. Scegli titoli il più specifici possibile per il profilo del candidato. Titoli generici come
    "Business Analyst" o "Financial Analyst" da soli producono risultati troppo eterogenei — evitali
    a meno che non siano accompagnati da un modificatore (es. "Junior Financial Analyst", "Strategy Analyst").

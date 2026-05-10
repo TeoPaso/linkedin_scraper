@@ -293,11 +293,17 @@
         }
 
         .bar-label {
+            resize: horizontal;
+            min-width: 150px;
+            max-width: 600px;
+            /* Per renderlo visibile aggiungo un bordino a destra */
+            border-right: 2px solid var(--border);
             width: 250px;
             font-size: 0.9em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: ew-resize;
             padding-right: 10px;
         }
 
