@@ -175,3 +175,44 @@ def load_cycle_state() -> dict:
 def save_cycle_state(state: dict):
     """Salva lo stato del ciclo round-robin delle keyword su Firestore."""
     db.collection("app_state").document("keyword_cycle").set(state)
+
+
+def load_config_from_db() -> dict:
+    """Legge la configurazione da Firestore."""
+    doc = db.collection("app_state").document("config").get()
+    if doc.exists:
+        return doc.to_dict()
+    return {}
+
+
+def save_config_to_db(config: dict):
+    """Salva la configurazione su Firestore."""
+    db.collection("app_state").document("config").set(config)
+
+def get_trigger():
+    """Controlla se c'è un trigger per avviare la ricerca."""
+    doc = db.collection("app_state").document("trigger").get()
+    if doc.exists:
+        return doc.to_dict()
+    return None
+
+def set_trigger(status, execution_id=None, stop=False, current_query=None):
+    """Imposta lo stato del trigger (es. 'pending', 'running', 'idle')."""
+    data = {
+        "status": status,
+        "timestamp": firestore.SERVER_TIMESTAMP,
+        "stop": stop
+    }
+    if execution_id:
+        data["execution_id"] = execution_id
+    if current_query:
+        data["current_query"] = current_query
+    db.collection("app_state").document("trigger").set(data)
+
+def is_stop_requested():
+    """Controlla se è stato richiesto lo stop della ricerca."""
+    doc = db.collection("app_state").document("trigger").get()
+    if doc.exists:
+        data = doc.to_dict()
+        return data.get("stop") is True
+    return False

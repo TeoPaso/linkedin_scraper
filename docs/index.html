@@ -204,6 +204,12 @@
             overflow-x: auto;
         }
 
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -361,12 +367,234 @@
             font-size: 0.9em;
             color: var(--accent);
         }
+        /* --- Toast --- */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 2000;
+        }
+
+        .toast.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* --- Navigation --- */
+        nav {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--accent);
+            background: rgba(0, 255, 204, 0.05);
+        }
+
+        .nav-link.active {
+            color: var(--accent);
+            background: rgba(0, 255, 204, 0.1);
+        }
+
+        /* --- Settings Form --- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        /* --- Modern Scrollbar Styling --- */
+        .scroll-area-container {
+            height: calc(100vh - 250px); /* Più spazio verticale */
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .scroll-area-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-area-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scroll-area-container::-webkit-scrollbar-thumb {
+            background-color: var(--border);
+            border-radius: 10px;
+        }
+
+        .scroll-area-container::-webkit-scrollbar-thumb:hover {
+            background-color: var(--accent);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .history-list .category-item {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: unset !important;
+            margin: 0 !important;
+            flex-direction: row !important;
+        }
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            background: #2c2c2c;
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 5px rgba(0, 255, 204, 0.3);
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+        /* --- Keywords Tags --- */
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .keyword-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .keyword-tag:hover {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.05);
+        }
+
+        .keyword-tag .remove {
+            cursor: pointer;
+            font-size: 1.1em;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .keyword-tag .remove:hover {
+            color: #ff4444;
+        }
+
+        .keyword-add-row {
+            display: flex;
+            gap: 10px;
+        }
     </style>
 
     <!-- Firebase JS SDK (v10 modular) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
         // REPLACE WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
@@ -388,6 +616,9 @@
         window.getDocs = getDocs;
         window.doc = doc;
         window.updateDoc = updateDoc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.serverTimestamp = serverTimestamp;
     </script>
 
 </head>
@@ -411,13 +642,25 @@
         // STATE
         // ==========================================
 
-        let showAllSearches = false;
-        let currentSearchIndex = 0;
-        let keywordLabelWidth = "";
+        let currentView = 'dashboard';
         let searchSortOrder = 'chronological';
+        let keywordLabelWidth = "";
+        let botStatus = 'idle';
+        let currentQuery = '';
+        let hideEmptyKeywords = true;
 
-        window.toggleSearchSort = function() {
+        window.toggleEmptyKeywords = function () {
+            hideEmptyKeywords = !hideEmptyKeywords;
+            render();
+        };
+
+        window.toggleSearchSort = function () {
             searchSortOrder = searchSortOrder === 'chronological' ? 'useful_percent' : 'chronological';
+            render();
+        };
+
+        window.setView = function (view) {
+            currentView = view;
             render();
         };
 
@@ -453,6 +696,25 @@
                     job_categories.push(doc.data());
                 });
 
+                // Load cloud config
+                let config = {};
+                try {
+                    const configDoc = await window.getDoc(window.doc(window.db, "app_state", "config"));
+                    if (configDoc.exists()) {
+                        config = configDoc.data();
+                    }
+                } catch (ce) { console.error("Config error:", ce); }
+
+                // Load trigger status
+                try {
+                    const triggerDoc = await window.getDoc(window.doc(window.db, "app_state", "trigger"));
+                    if (triggerDoc.exists()) {
+                        const data = triggerDoc.data();
+                        botStatus = data.status || 'idle';
+                        currentQuery = data.current_query || '';
+                    }
+                } catch (te) { console.error("Trigger error:", te); }
+
                 // Trova l'execution_id più recente basato sulla memory
                 let execution_id = "N/A";
                 if (search_memory.length > 0) {
@@ -463,7 +725,8 @@
                     execution_id,
                     job_store,
                     search_memory,
-                    job_categories
+                    job_categories,
+                    config
                 };
 
                 render();
@@ -490,14 +753,383 @@
         function render() {
             const app = document.getElementById('app');
             app.innerHTML = `
-        ${renderHeader()}
-        ${renderKeywordMap()}
-        ${renderRicerche()}
-        ${renderCategorie()}
-        ${renderJobStore()}
-        ${renderModal()}
-    `;
-            attachEvents();
+                <nav>
+                    <div class="nav-links">
+                        <div class="nav-link ${currentView === 'dashboard' ? 'active' : ''}" onclick="setView('dashboard')">📊 Dashboard</div>
+                        <div class="nav-link ${currentView === 'history' ? 'active' : ''}" onclick="setView('history')">📜 Cronologia</div>
+                        <div class="nav-link ${currentView === 'settings' ? 'active' : ''}" onclick="setView('settings')">⚙️ Configurazione</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <button onclick="loadDataFromFirestore()" style="background: transparent; color: var(--text-light); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.9em;" onmouseover="this.style.borderColor=var(--accent); this.style.color=var(--accent)" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-light)'">
+                            🔄 REFRESH
+                        </button>
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))}; box-shadow: 0 0 8px ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))};"></div>
+                            <span style="letter-spacing: 0.5px;">BOT: ${botStatus.toUpperCase()}</span>
+                        </div>
+                        ${(botStatus === 'running' || botStatus === 'pending') ? `
+                            <button onclick="stopSearch()" style="background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                                🛑 STOP RICERCA
+                            </button>
+                        ` : `
+                            <button onclick="startNewSearch()" style="background: var(--accent); color: var(--bg-main); border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                🚀 AVVIA RICERCA
+                            </button>
+                        `}
+                    </div>
+                </nav>
+                <div id="view-content">
+                    ${currentView === 'dashboard' ? renderDashboard() : (currentView === 'history' ? renderHistoryView() : renderSettings())}
+                </div>
+                </div>
+                <div id="toast" class="toast">Settings saved successfully!</div>
+            `;
+            if (currentView === 'dashboard') {
+                attachEvents();
+            } else {
+                attachSettingsEvents();
+            }
+        }
+
+        function renderDashboard() {
+            return `
+                ${renderHeader()}
+                ${renderKeywordMap()}
+                ${renderCategorie()}
+                ${renderJobStore()}
+                ${renderModal()}
+            `;
+        }
+
+        function renderHistoryView() {
+            return `
+                <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 30px;">
+                    <h2 style="color: var(--accent); margin-bottom: 10px;">Monitoraggio Ricerche</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9em;">
+                        Visualizza l'andamento delle ricerche in tempo reale e lo storico delle sessioni passate.
+                    </p>
+                </div>
+                
+                ${botStatus === 'running' ? `
+                    <div class="card" style="background: rgba(0,255,204,0.05); border: 1px solid var(--accent); margin-bottom: 30px; animation: fadeIn 0.5s;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0; color: var(--accent);">📡 Ricerca in corso...</h3>
+                                <div style="font-size: 1.5em; font-weight: bold; margin-top: 10px;">${currentQuery || 'Inizializzazione...'}</div>
+                            </div>
+                            <div class="metric" style="color: var(--accent);">RUNNING</div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${renderRicerche()}
+            `;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        window.saveSettings = async function () {
+            const btn = document.getElementById('btn-save-settings');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const config = {
+                preferences: {
+                    location: document.getElementById('cfg-location').value,
+                    language: document.getElementById('cfg-language').value
+                },
+                scraper: {
+                    jobs_target: parseInt(document.getElementById('cfg-jobs-target').value),
+                    count_per_search: parseInt(document.getElementById('cfg-count-per-search').value),
+                    unique_keyword_threshold: parseInt(document.getElementById('cfg-unique-threshold').value),
+                    time_filter: document.getElementById('cfg-time-filter').value,
+                    core_time_filter: document.getElementById('cfg-core-time-filter').value,
+                    scrape_company: document.getElementById('cfg-scrape-company').checked,
+                    core_keywords: (appData.config && appData.config.scraper) ? (appData.config.scraper.core_keywords || []) : []
+                },
+                evaluation: {
+                    min_fit_score: parseInt(document.getElementById('cfg-min-fit').value)
+                },
+                outreach: {
+                    run_discovery: document.getElementById('cfg-run-discovery').checked,
+                    min_signals: parseInt(document.getElementById('cfg-min-signals').value)
+                },
+                email: {
+                    send_email: document.getElementById('cfg-send-email').checked
+                }
+            };
+
+            try {
+                await window.setDoc(window.doc(window.db, "app_state", "config"), config);
+                appData.config = config;
+                showToast("Configuration saved to Firestore!");
+            } catch (e) {
+                console.error(e);
+                alert("Error saving settings: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+
+        window.removeKeyword = function (index) {
+            appData.config.scraper.core_keywords.splice(index, 1);
+            render();
+        };
+
+        window.addKeyword = function () {
+            const input = document.getElementById('new-keyword-input');
+            const val = input.value.trim();
+            if (val) {
+                if (!appData.config.scraper.core_keywords) appData.config.scraper.core_keywords = [];
+                appData.config.scraper.core_keywords.push(val);
+                input.value = '';
+                render();
+            }
+        };
+
+        window.resetToFactory = async function () {
+            if (!confirm("Sei sicuro di voler resettare ai parametri di fabbrica (quelli del file config.yaml locale)?")) return;
+
+            try {
+                const factoryDoc = await window.getDoc(window.doc(window.db, "app_state", "factory_config"));
+                if (factoryDoc.exists()) {
+                    const factoryConfig = factoryDoc.data();
+                    await window.setDoc(window.doc(window.db, "app_state", "config"), factoryConfig);
+                    appData.config = factoryConfig;
+                    render();
+                    showToast("Parametri resettati con successo!");
+                } else {
+                    alert("Factory config non trovata nel database.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Errore durante il reset: " + e.message);
+            }
+        };
+
+        window.startNewSearch = async function () {
+            if (botStatus === 'running' || botStatus === 'pending') {
+                alert("Una ricerca è già in corso o in coda.");
+                return;
+            }
+
+            if (!confirm("Avviare una nuova ricerca con i parametri cloud correnti?")) return;
+
+            try {
+                await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
+                    status: 'pending',
+                    current_query: 'Inizializzazione...',
+                    timestamp: window.serverTimestamp()
+                });
+                botStatus = 'pending';
+                currentQuery = 'Inizializzazione...';
+                render();
+                showToast("Segnale di avvio inviato al bot!");
+            } catch (e) {
+                console.error(e);
+                alert("Errore nell'invio del trigger: " + e.message);
+            }
+        };
+
+        window.stopSearch = async function () {
+            if (!confirm("Sei sicuro di voler fermare la ricerca in corso?")) return;
+            try {
+                await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
+                    status: 'stopping',
+                    stop: true,
+                    timestamp: window.serverTimestamp()
+                });
+                botStatus = 'stopping';
+                render();
+                showToast("Segnale di stop inviato!");
+            } catch (e) {
+                console.error(e);
+                alert("Errore nell'invio dello stop: " + e.message);
+            }
+        };
+
+        // Aggiornamento automatico dello stato del bot ogni 3 secondi
+        setInterval(async () => {
+            if (!window.db) return;
+            try {
+                const triggerDoc = await window.getDoc(window.doc(window.db, "app_state", "trigger"));
+                if (triggerDoc.exists()) {
+                    const data = triggerDoc.data();
+                    const newStatus = data.status || 'idle';
+                    const newQuery = data.current_query || '';
+                    if (newStatus !== botStatus || newQuery !== currentQuery) {
+                        botStatus = newStatus;
+                        currentQuery = newQuery;
+                        render();
+                    }
+                }
+            } catch (e) {}
+        }, 3000);
+
+        function renderSettings() {
+            const cfg = appData.config || {};
+            const pref = cfg.preferences || {};
+            const scrap = cfg.scraper || {};
+            const eval_ = cfg.evaluation || {};
+            const out = cfg.outreach || {};
+            const em = cfg.email || {};
+
+            return `
+                <div class="card" style="border-left: 4px solid var(--accent);">
+                    <h2 style="color: var(--accent); margin-bottom: 10px;">Configurazione Scraper</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 25px;">
+                        Questi parametri sovrascrivono il file <code>config.yaml</code> locale durante l'esecuzione del bot.
+                    </p>
+
+                    <div class="settings-grid">
+                        <!-- Colonna 1: Preferenze e Scraper Core -->
+                        <div class="settings-column">
+                            <h3>🔍 Ricerca & Scraper</h3>
+                            <div class="card" style="background: rgba(0,0,0,0.2);">
+                                <div class="form-group">
+                                    <label>Location (LinkedIn)</label>
+                                    <input type="text" id="cfg-location" value="${pref.location || 'Milan, Lombardy, Italy'}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lingua</label>
+                                    <input type="text" id="cfg-language" value="${pref.language || 'Italian'}">
+                                </div>
+                                <div class="search-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div class="form-group">
+                                        <label>Lavori Target (Totali)</label>
+                                        <input type="number" id="cfg-jobs-target" value="${scrap.jobs_target || 100}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jobs per Query</label>
+                                        <input type="number" id="cfg-count-per-search" value="${scrap.count_per_search || 20}">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Soglia Ciclaggio (Keywords uniche)</label>
+                                    <input type="number" id="cfg-unique-threshold" value="${scrap.unique_keyword_threshold || 40}">
+                                </div>
+                                <div class="form-group">
+                                    <div class="toggle-group">
+                                        <span>Scrape Company Details</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="cfg-scrape-company" ${scrap.scrape_company ? 'checked' : ''}>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colonna 2: Filtri e AI -->
+                        <div class="settings-column">
+                            <h3>🤖 AI & Filtri</h3>
+                            <div class="card" style="background: rgba(0,0,0,0.2);">
+                                <div class="form-group">
+                                    <label>Min Fit Score (0-100)</label>
+                                    <input type="range" id="cfg-min-fit" min="0" max="100" value="${eval_.min_fit_score || 75}" style="width: 100%; accent-color: var(--accent);">
+                                    <div style="text-align: right; color: var(--accent); font-weight: bold; margin-top: 5px;">
+                                        <span id="cfg-min-fit-val">${eval_.min_fit_score || 75}</span>/100
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time Filter (Generic)</label>
+                                    <select id="cfg-time-filter">
+                                        <option value="r86400" ${scrap.time_filter === 'r86400' ? 'selected' : ''}>Ultime 24h</option>
+                                        <option value="r604800" ${scrap.time_filter === 'r604800' ? 'selected' : ''}>Ultima Settimana</option>
+                                        <option value="r2592000" ${scrap.time_filter === 'r2592000' ? 'selected' : ''}>Ultimo Mese</option>
+                                        <option value="" ${scrap.time_filter === '' ? 'selected' : ''}>Senza limite</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time Filter (Core Keywords)</label>
+                                    <select id="cfg-core-time-filter">
+                                        <option value="r86400" ${scrap.core_time_filter === 'r86400' ? 'selected' : ''}>Ultime 24h</option>
+                                        <option value="r604800" ${scrap.core_time_filter === 'r604800' ? 'selected' : ''}>Ultima Settimana</option>
+                                        <option value="r2592000" ${scrap.core_time_filter === 'r2592000' ? 'selected' : ''}>Ultimo Mese</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <div class="toggle-group">
+                                        <span>Invia Report Email</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="cfg-send-email" ${em.send_email !== false ? 'checked' : ''}>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colonna 3: Core Keywords & Outreach -->
+                        <div class="settings-column">
+                            <h3>💎 Core Keywords</h3>
+                            <div class="card" style="background: rgba(0,0,0,0.2);">
+                                <div class="form-group">
+                                    <label>Keywords fisse testate ad ogni esecuzione</label>
+                                    
+                                    <div class="keyword-list" style="margin-top: 10px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr; gap: 8px;">
+                                        ${(scrap.core_keywords || []).map((k, i) => `
+                                            <div class="keyword-tag" style="justify-content: space-between; background: #252525;">
+                                                <span style="font-weight: 500;">${k}</span>
+                                                <span class="remove" onclick="removeKeyword(${i})" title="Elimina keyword">🗑️</span>
+                                            </div>
+                                        `).join('')}
+                                        ${!(scrap.core_keywords && scrap.core_keywords.length) ? '<div style="color: var(--text-muted); font-style: italic; font-size: 0.85em;">Nessuna keyword impostata.</div>' : ''}
+                                    </div>
+
+                                    <div class="keyword-add-row">
+                                        <input type="text" id="new-keyword-input" placeholder="Aggiungi keyword..." onkeypress="if(event.key==='Enter') addKeyword()">
+                                        <button onclick="addKeyword()" style="background: var(--accent); color: var(--bg-main); border: none; font-size: 1.2em; width: 45px;">+</button>
+                                    </div>
+                                </div>
+                                <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
+                                <h3>🚀 Outreach</h3>
+                                <div class="form-group">
+                                    <div class="toggle-group" style="margin-bottom: 10px;">
+                                        <span>Startup Discovery</span>
+                                        <label class="switch">
+                                            <input type="checkbox" id="cfg-run-discovery" ${out.run_discovery ? 'checked' : ''}>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Min Signals (Outreach)</label>
+                                    <input type="number" id="cfg-min-signals" value="${out.min_signals || 3}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+                        <button onclick="resetToFactory()" style="background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px;">
+                            🔄 RESET AI VALORI LOCALI
+                        </button>
+                        <button id="btn-save-settings" onclick="saveSettings()" style="padding: 12px 40px; font-size: 1.1em; font-weight: bold; background: var(--accent); color: var(--bg-main);">
+                            💾 SALVA CONFIGURAZIONE
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachSettingsEvents() {
+            const range = document.getElementById('cfg-min-fit');
+            const val = document.getElementById('cfg-min-fit-val');
+            if (range && val) {
+                range.addEventListener('input', (e) => {
+                    val.textContent = e.target.value;
+                });
+            }
         }
 
         function renderHeader() {
@@ -600,7 +1232,10 @@
 
             const maxKpi = Math.max(...statsList.map(s => s.kpi), 1);
 
-            const bars = statsList.map(s => {
+            const filteredList = hideEmptyKeywords ? statsList.filter(s => s.useful > 0) : statsList;
+            const hiddenCount = statsList.length - filteredList.length;
+
+            const bars = filteredList.map(s => {
                 const pct = maxKpi > 0 ? (s.kpi / maxKpi) * 100 : 0;
                 return `
             <div class="bar-row">
@@ -614,9 +1249,14 @@
             }).join('');
 
             return `
-        <h2>Migliori Keyword</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="margin: 0;">Migliori Keyword</h2>
+            <button onclick="toggleEmptyKeywords()" style="font-size: 0.8em; padding: 5px 12px;">
+                ${hideEmptyKeywords ? `Mostra tutte (${hiddenCount} nascoste)` : 'Nascondi 0 useful'}
+            </button>
+        </div>
         <div class="card">
-            ${bars}
+            ${bars || '<div style="color: var(--text-muted); padding: 10px;">Nessuna keyword con risultati utili trovata.</div>'}
         </div>
     `;
         }
@@ -648,14 +1288,16 @@
             const html = searches.map(s => getSearchCardHtml(s)).join('');
 
             return `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 15px;">
             <h2 style="margin: 0;">Cronologia Ricerche</h2>
-            <button onclick="toggleSearchSort()" title="Cambia ordinamento">
+            <button onclick="toggleSearchSort()" title="Cambia ordinamento" style="font-size: 0.85em; padding: 6px 12px;">
                 Ordina per: ${searchSortOrder === 'chronological' ? 'Data' : '% Useful'}
             </button>
         </div>
-        <div class="categories-container" style="margin-top: 15px;">
-            ${html}
+        <div class="scroll-area-container">
+            <div class="history-list">
+                ${html}
+            </div>
         </div>
     `;
         }
@@ -688,37 +1330,43 @@
             }
 
             return `
-        <div class="card category-item">
-            <div style="display: flex; flex-direction: column; height: 100%; justify-content: space-between;">
-                <div style="margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                        <h3 style="margin: 0; font-size: 1.1em; line-height: 1.2;">${s.keyword}</h3>
-                        <span class="badge ${badgeClass}" style="flex-shrink: 0; margin-left: 10px;">${badgeText}</span>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 0.85em; margin-bottom: 15px;">${displayTs}</div>
-                    
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                        <div>
-                            <div style="color: var(--text-muted); font-size: 0.8em;">Found</div>
-                            <div class="metric" style="font-size: 1.1em;">${foundCount}</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-muted); font-size: 0.8em;">Useful</div>
-                            <div class="metric" style="font-size: 1.1em; display: flex; align-items: baseline; gap: 5px;">${usefulDisplay}</div>
-                        </div>
-                        <div>
-                            <div style="color: var(--text-muted); font-size: 0.8em;">Avg Fit</div>
-                            <div class="metric" style="font-size: 1.1em;">${avgFit}</div>
-                        </div>
-                    </div>
+        <div class="card category-item" style="padding: 15px 25px; margin-bottom: 12px; border-left: 4px solid ${s.fruitful ? 'var(--score-good)' : 'var(--border)'}; display: flex; align-items: center; gap: 30px; min-height: 80px;">
+            
+            <!-- Sezione 1: Keyword e Badge (Larghezza fissa ma generosa) -->
+            <div style="flex: 0 0 320px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 5px;">
+                    <h3 style="margin: 0; font-size: 1.15em; color: var(--text-light); line-height: 1.2;">${s.keyword}</h3>
                 </div>
-                <div style="border-top: 1px dashed var(--border); padding-top: 10px; font-size: 0.85em;">
-                    <strong style="color: var(--text-muted);">Top Titles:</strong><br>
-                    <span style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="${(s.top_titles || []).join(', ')}">
-                        ${(s.top_titles || []).join(', ')}
-                    </span>
+                <span class="badge ${badgeClass}" style="font-size: 0.65em; padding: 2px 8px;">${badgeText}</span>
+                <div style="color: var(--text-muted); font-size: 0.8em; font-family: monospace; margin-top: 8px; opacity: 0.7;">
+                    ${displayTs}
                 </div>
             </div>
+
+            <!-- Sezione 2: Metriche (Compatte e verticali) -->
+            <div style="display: flex; gap: 35px; align-items: center; flex-shrink: 0; border-left: 1px solid var(--border); padding-left: 30px; padding-right: 30px;">
+                <div style="text-align: center; min-width: 60px;">
+                    <div style="color: var(--text-muted); font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Found</div>
+                    <div class="metric" style="font-size: 1.2em;">${foundCount}</div>
+                </div>
+                <div style="text-align: center; min-width: 70px;">
+                    <div style="color: var(--text-muted); font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Useful</div>
+                    <div class="metric" style="font-size: 1.2em; color: var(--accent);">${usefulDisplay}</div>
+                </div>
+                <div style="text-align: center; min-width: 60px;">
+                    <div style="color: var(--text-muted); font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Avg Fit</div>
+                    <div class="metric" style="font-size: 1.2em;">${avgFit}</div>
+                </div>
+            </div>
+
+            <!-- Sezione 3: Top Job Titles (SI ESPANDE PER USARE TUTTO LO SPAZIO) -->
+            <div style="flex-grow: 1; border-left: 1px solid var(--border); padding-left: 30px; overflow: hidden;">
+                <div style="color: var(--text-muted); font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; opacity: 0.6;">Top Job Titles</div>
+                <div style="font-size: 0.9em; line-height: 1.5; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;" title="${(s.top_titles || []).join(', ')}">
+                    ${(s.top_titles || []).join(', ')}
+                </div>
+            </div>
+
         </div>
     `;
         }
@@ -727,18 +1375,20 @@
             const cats = appData.job_categories || [];
             if (!cats.length) return '';
 
-            const html = cats.map((c, idx) => {
+            // Pre-calcola le stats per ogni categoria e ordina per useful decrescente
+            const catsWithStats = cats.map((c, idx) => {
                 const urls = c.job_urls || [];
-
                 let useful = 0;
-                let found = urls.length;
                 urls.forEach(u => {
                     const j = appData.job_store ? appData.job_store[u] : null;
-                    if (j && j.fit_score !== null && j.fit_score >= 75) {
-                        useful++;
-                    }
+                    if (j && j.fit_score !== null && j.fit_score >= 75) useful++;
                 });
+                return { cat: c, idx, urls, useful, found: urls.length };
+            });
 
+            catsWithStats.sort((a, b) => b.useful - a.useful || b.found - a.found);
+
+            const html = catsWithStats.map(({ cat: c, idx, urls, useful, found }) => {
                 let displayStr = `${useful}/${found}`;
                 if (found > 20) {
                     const pct = Math.round((useful / found) * 100);
@@ -756,7 +1406,7 @@
                 </div>
                 <div class="category-body" id="cat-body-${idx}" style="flex-grow: 1; overflow-y: auto; max-height: 250px;">
                     <ul class="job-urls">
-                        ${urls.map(u => { const t = appData.job_store[u]?.job_data?.title || u; return `<li><a href="${u}" target="_blank">${t}</a></li>`; }).join('')}
+                        ${urls.map(u => { const j = appData.job_store[u]; const t = j?.job_data?.title || u; const isUseful = j?.fit_score !== null && j?.fit_score !== undefined && j?.fit_score >= 75; const color = isUseful ? 'var(--score-good)' : '#aaaaaa'; return `<li><a href="${u}" target="_blank" style="color: ${color};">${t}</a></li>`; }).join('')}
                     </ul>
                 </div>
             </div>

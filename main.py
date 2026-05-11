@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import yaml
+import argparse
 import urllib.parse
 from datetime import datetime
 import smtplib
@@ -13,6 +14,7 @@ import threading
 from apify_client import ApifyClient
 from google import genai
 from pydantic import BaseModel
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -369,6 +371,16 @@ def send_email_report(matched_jobs: list, metrics: dict):
         print(f"[!] ERRORE durante l'invio dell'email: {e}")
 
 
+def deep_merge(base: dict, update: dict) -> dict:
+    """Esegue un merge ricorsivo di due dizionari."""
+    for key, value in update.items():
+        if isinstance(value, dict) and key in base and isinstance(base[key], dict):
+            deep_merge(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
 def main():
     load_dotenv()
 
@@ -378,6 +390,25 @@ def main():
 
     config = load_config("config.yaml")
     profile = load_profile("my_profile.md")
+
+    # Salva la configurazione locale come "factory_config" per permettere il reset dalla dashboard
+    try:
+        db.db.collection("app_state").document("factory_config").set(config)
+    except Exception as e:
+        print(f"[!] Errore durante il salvataggio della factory_config: {e}")
+
+    # Carica la configurazione dal DB e fai il merge con quella locale
+    print("[*] Controllo configurazione cloud su Firestore...")
+    cloud_config = db.load_config_from_db()
+    if cloud_config:
+        print("[*] Configurazione cloud rilevata. Applicazione merge...")
+        config = deep_merge(config, cloud_config)
+    else:
+        print("[*] Nessuna configurazione cloud trovata. Sincronizzazione locale -> cloud...")
+        db.save_config_to_db(config)
+
+    # Inizializza stato trigger
+    db.set_trigger("running", stop=False)
 
     search_memory = db.load_search_memory()
     job_store = db.load_job_store()
@@ -452,6 +483,10 @@ def main():
     keywords_cycled_this_run = 0
 
     while jobs_scraped_this_run < jobs_target and iteration < max_retries:
+        if db.is_stop_requested():
+            print("\n[!] STOP ricevuto dalla dashboard. Interruzione scraping...")
+            break
+
         print(
             f"\n--- Iterazione {iteration + 1}/{max_retries} | "
             f"Lavori estratti: {jobs_scraped_this_run}/{jobs_target} ---"
@@ -462,6 +497,7 @@ def main():
         if is_core_iteration:
             # Fase 1: Core keywords
             keyword = core_keywords[iteration]
+            db.set_trigger("running", stop=False, current_query=f"Scraping: {keyword}")
             print(f"[*] Keyword CORE predefinita: {keyword}")
             query = {
                 "keywords": keyword,
@@ -475,6 +511,7 @@ def main():
                 break
 
             keyword = all_discovered_keywords[cycle_index]
+            db.set_trigger("running", stop=False, current_query=f"Scraping: {keyword}")
             print(
                 f"[*] Keyword CICLAGGIO [{cycle_index + 1}/{len(all_discovered_keywords)}]: {keyword}"
             )
@@ -543,6 +580,9 @@ def main():
                 top_titles.append(title)
 
             if job_url not in job_store:
+                if db.is_stop_requested():
+                    break
+                
                 new_data = {
                     "job_data": job,
                     "fit_score": None,
@@ -781,5 +821,120 @@ def main():
         print(f"[!] ERRORE durante la generazione della dashboard: {e}")
 
 
+def run_cycle():
+    """Esegue un singolo ciclo di ricerca e valutazione."""
+    config = load_config("config.yaml")
+    profile = load_profile("my_profile.md")
+    
+    # Carica configurazione cloud
+    cloud_config = db.load_config_from_db()
+    if cloud_config:
+        config = deep_merge(config, cloud_config)
+    
+    search_memory = db.load_search_memory()
+    job_store = db.load_job_store()
+    
+    print(f"\n{'='*50}")
+    print(f"[*] AVVIO NUOVA RICERCA: {datetime.now().strftime('%H:%M:%S')}")
+    print(f"{'='*50}\n")
+    
+    db.set_trigger("running")
+    
+    # ... resto della logica di main ...
+    # (Per semplicità sposterò il grosso del codice di main qui sotto)
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--listen", action="store_true", help="Resta in attesa di un trigger dalla dashboard")
+    args = parser.parse_args()
+
+    def categorize_existing():
+        """Categorizza i job già in DB che non hanno ancora una categoria."""
+        load_dotenv()
+        print("[*] Controllo job non categorizzati nel database...")
+        job_store = db.load_job_store()
+        job_categories = db.load_job_categories()
+
+        jobs_to_categorize = {
+            url: data["job_data"]
+            for url, data in job_store.items()
+            if data.get("category") is None and data.get("job_data")
+        }
+
+        if not jobs_to_categorize:
+            print("  [-] Tutti i job sono già categorizzati.")
+            return
+
+        print(f"  [-] Trovati {len(jobs_to_categorize)} job da categorizzare.")
+
+        urls_list = list(jobs_to_categorize.keys())
+        chunk_size = 50
+        job_labels_total = {}
+        new_cats_total = []
+
+        for i in range(0, len(urls_list), chunk_size):
+            chunk_urls = urls_list[i : i + chunk_size]
+            chunk_jobs = {u: jobs_to_categorize[u] for u in chunk_urls}
+            print(f"  [-] Categorizzazione blocco {i // chunk_size + 1} ({len(chunk_urls)} jobs)...")
+            cat_result = categorize_jobs_with_gemini(chunk_jobs, job_categories)
+            job_labels_total.update(cat_result.get("job_labels", {}))
+            new_cats_total.extend(cat_result.get("new_categories", []))
+
+        cat_labels_set = {
+            c["label"].lower()
+            for c in job_categories
+            if isinstance(c, dict) and "label" in c
+        }
+
+        for nc in new_cats_total:
+            if isinstance(nc, dict) and "label" in nc and "description" in nc:
+                if nc["label"].lower() not in cat_labels_set:
+                    nc["job_urls"] = []
+                    job_categories.append(nc)
+                    cat_labels_set.add(nc["label"].lower())
+
+        label_mapping = {
+            c["label"].lower(): c["label"]
+            for c in job_categories
+            if isinstance(c, dict) and "label" in c
+        }
+
+        for url, category in job_labels_total.items():
+            if url in job_store:
+                normalized_cat = category.lower() if category else None
+                if normalized_cat in label_mapping:
+                    job_store[url]["category"] = label_mapping[normalized_cat]
+                else:
+                    job_store[url]["category"] = category
+
+        for i, cat in enumerate(job_categories):
+            if isinstance(cat, str):
+                job_categories[i] = {"label": cat, "description": "Legacy category", "job_urls": []}
+                cat = job_categories[i]
+            cat["job_urls"] = []
+            for url, data in job_store.items():
+                if data.get("category") == cat["label"]:
+                    cat["job_urls"].append(url)
+
+        db.save_job_store(job_store)
+        db.save_job_categories(job_categories)
+        print(f"  [-] Categorizzazione completata! Nuove categorie: {len(new_cats_total)}")
+
+    if args.listen:
+        print("[*] Modalità ASCOLTO attiva. In attesa di trigger dalla dashboard...")
+        categorize_existing()
+        db.set_trigger("idle")
+        while True:
+            trigger = db.get_trigger()
+            if trigger and trigger.get("status") == "pending":
+                print("[!] Trigger ricevuto! Avvio ricerca...")
+                try:
+                    main()
+                except Exception as e:
+                    print(f"[!] Errore durante l'esecuzione: {e}")
+                finally:
+                    db.set_trigger("idle", stop=False)
+                print("\n[*] Ricerca completata. In attesa del prossimo trigger...")
+            time.sleep(5)
+    else:
+        main()
