@@ -631,6 +631,7 @@
 
         // Aggiorna la navbar quando cambia lo stato auth
         onAuthStateChanged(auth, (user) => {
+            const wasLoggedOut = !window.currentUser;
             window.currentUser = user;
             const authBtn = document.getElementById('auth-btn');
             if (authBtn) {
@@ -644,6 +645,20 @@
                     el.classList.add('hidden-auth');
                 }
             });
+
+            if (user) {
+                if (wasLoggedOut && typeof loadDataFromFirestore === 'function') {
+                    loadDataFromFirestore();
+                } else if (typeof render === 'function') {
+                    render();
+                }
+            } else {
+                if (typeof render === 'function') {
+                    render();
+                }
+                const modal = document.getElementById('login-modal');
+                if (modal) modal.style.display = 'flex';
+            }
         });
     </script>
 
@@ -810,9 +825,9 @@
         document.addEventListener("DOMContentLoaded", () => {
             // Wait slightly for module import to complete, or use interval to check window.db
             const checkDb = setInterval(() => {
-                if (window.db) {
+                if (window.db && window.auth) {
                     clearInterval(checkDb);
-                    loadDataFromFirestore();
+                    // L'aggiornamento avverrà tramite onAuthStateChanged
                 }
             }, 100);
         });
@@ -823,6 +838,16 @@
         // ==========================================
         function render() {
             const app = document.getElementById('app');
+            if (!window.currentUser) {
+                app.innerHTML = `
+                    <div style="display:flex; height: 100vh; align-items:center; justify-content:center; flex-direction:column;">
+                        <h2 style="color:var(--accent);">Area Riservata</h2>
+                        <p style="color:var(--text-muted);">Devi effettuare il login per visualizzare la dashboard.</p>
+                        <button onclick="toggleAuth()" style="background:var(--accent); color:var(--bg-main); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px;">Vai al Login</button>
+                    </div>
+                `;
+                return;
+            }
             app.innerHTML = `
                 <nav>
                     <div class="nav-links">
