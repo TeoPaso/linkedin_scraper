@@ -589,12 +589,17 @@
             display: flex;
             gap: 10px;
         }
+
+        .hidden-auth {
+            display: none !important;
+        }
     </style>
 
     <!-- Firebase JS SDK (v10 modular) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         // REPLACE WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
@@ -609,9 +614,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         // Export to window to make it accessible to legacy scripts
         window.db = db;
+        window.auth = auth;
         window.collection = collection;
         window.getDocs = getDocs;
         window.doc = doc;
@@ -619,11 +626,50 @@
         window.setDoc = setDoc;
         window.getDoc = getDoc;
         window.serverTimestamp = serverTimestamp;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signOut = signOut;
+
+        // Aggiorna la navbar quando cambia lo stato auth
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            const authBtn = document.getElementById('auth-btn');
+            if (authBtn) {
+                authBtn.textContent = user ? '🔓 Logout' : '🔒 Login';
+            }
+            // Mostra/nascondi i controlli admin
+            document.querySelectorAll('.admin-only').forEach(el => {
+                if (user) {
+                    el.classList.remove('hidden-auth');
+                } else {
+                    el.classList.add('hidden-auth');
+                }
+            });
+        });
     </script>
 
 </head>
 
 <body>
+
+    <!-- Login Modal -->
+    <div id="login-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#1c1c1c; border:1px solid #333; border-radius:8px; padding:40px; width:100%; max-width:380px;">
+            <h3 style="color:#00ffcc; margin-top:0;">Login</h3>
+            <div style="margin-bottom:15px;">
+                <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Email</label>
+                <input type="email" id="login-email" style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Password</label>
+                <input type="password" id="login-password" style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <div id="login-error" style="color:#ff4444; font-size:0.85em; margin-bottom:15px; display:none;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="doLogin()" style="flex:1; background:#00ffcc; color:#0f0f0f; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Accedi</button>
+                <button onclick="document.getElementById('login-modal').style.display='none'" style="background:transparent; color:#888; border:1px solid #333; padding:10px 15px; border-radius:6px; cursor:pointer;">Annulla</button>
+            </div>
+        </div>
+    </div>
 
     <div id="app"></div>
 
@@ -662,6 +708,31 @@
         window.setView = function (view) {
             currentView = view;
             render();
+        };
+
+        window.doLogin = async function() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            try {
+                await window.signInWithEmailAndPassword(window.auth, email, password);
+                document.getElementById('login-modal').style.display = 'none';
+                render();
+            } catch (e) {
+                errorEl.textContent = 'Credenziali errate.';
+                errorEl.style.display = 'block';
+            }
+        };
+
+        window.toggleAuth = async function() {
+            if (window.currentUser) {
+                await window.signOut(window.auth);
+                window.currentUser = null;
+                render();
+            } else {
+                const modal = document.getElementById('login-modal');
+                modal.style.display = 'flex';
+            }
         };
 
         async function loadDataFromFirestore() {
@@ -758,8 +829,10 @@
                         <div class="nav-link ${currentView === 'dashboard' ? 'active' : ''}" onclick="setView('dashboard')">📊 Dashboard</div>
                         <div class="nav-link ${currentView === 'history' ? 'active' : ''}" onclick="setView('history')">📜 Cronologia</div>
                         <div class="nav-link ${currentView === 'settings' ? 'active' : ''}" onclick="setView('settings')">⚙️ Configurazione</div>
-                    </div>
                     <div style="display: flex; align-items: center; gap: 20px;">
+                        <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
+                            ${window.currentUser ? '🔓 Logout' : '🔒 Login'}
+                        </button>
                         <button onclick="loadDataFromFirestore()" style="background: transparent; color: var(--text-light); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.9em;" onmouseover="this.style.borderColor=var(--accent); this.style.color=var(--accent)" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-light)'">
                             🔄 REFRESH
                         </button>
@@ -767,15 +840,17 @@
                             <div style="width: 8px; height: 8px; border-radius: 50%; background: ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))}; box-shadow: 0 0 8px ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))};"></div>
                             <span style="letter-spacing: 0.5px;">BOT: ${botStatus.toUpperCase()}</span>
                         </div>
-                        ${(botStatus === 'running' || botStatus === 'pending') ? `
-                            <button onclick="stopSearch()" style="background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,68,68,0.1)'" onmouseout="this.style.background='transparent'">
-                                🛑 STOP RICERCA
-                            </button>
-                        ` : `
-                            <button onclick="startNewSearch()" style="background: var(--accent); color: var(--bg-main); border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                                🚀 AVVIA RICERCA
-                            </button>
-                        `}
+                        <span class="admin-only ${window.currentUser ? '' : 'hidden-auth'}">
+                            ${(botStatus === 'running' || botStatus === 'pending') ? `
+                                <button onclick="stopSearch()" style="background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                                    🛑 STOP RICERCA
+                                </button>
+                            ` : `
+                                <button onclick="startNewSearch()" style="background: var(--accent); color: var(--bg-main); border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                    🚀 AVVIA RICERCA
+                                </button>
+                            `}
+                        </span>
                     </div>
                 </nav>
                 <div id="view-content">
@@ -836,6 +911,7 @@
         }
 
         window.saveSettings = async function () {
+            if (!window.currentUser) { window.toggleAuth(); return; }
             const btn = document.getElementById('btn-save-settings');
             const originalText = btn.textContent;
             btn.disabled = true;
@@ -897,6 +973,7 @@
         };
 
         window.resetToFactory = async function () {
+            if (!window.currentUser) { window.toggleAuth(); return; }
             if (!confirm("Sei sicuro di voler resettare ai parametri di fabbrica (quelli del file config.yaml locale)?")) return;
 
             try {
@@ -917,6 +994,7 @@
         };
 
         window.startNewSearch = async function () {
+            if (!window.currentUser) { window.toggleAuth(); return; }
             if (botStatus === 'running' || botStatus === 'pending') {
                 alert("Una ricerca è già in corso o in coda.");
                 return;
@@ -941,6 +1019,7 @@
         };
 
         window.stopSearch = async function () {
+            if (!window.currentUser) { window.toggleAuth(); return; }
             if (!confirm("Sei sicuro di voler fermare la ricerca in corso?")) return;
             try {
                 await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
@@ -1110,7 +1189,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="margin-top: 30px; display: flex; justify-content: space-between; align-items: center;">
                         <button onclick="resetToFactory()" style="background: transparent; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px;">
                             🔄 RESET AI VALORI LOCALI
                         </button>
