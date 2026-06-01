@@ -1649,20 +1649,17 @@
         <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data</label>
-                <select id="filter-date" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
-                    <option value="">Tutte</option>
-                    ${dateOptions}
-                </select>
+                <input type="date" id="filter-date" style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
             </div>
             <div>
-                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query (Keyword)</label>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query (${uniqueKeywords.size})</label>
                 <select id="filter-keyword" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="">Tutte</option>
                     ${keywordOptions}
                 </select>
             </div>
             <div>
-                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Categoria</label>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Categoria (${uniqueCategories.size})</label>
                 <select id="filter-category" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="">Tutte</option>
                     ${categoryOptions}
@@ -1672,8 +1669,8 @@
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Fit Score</label>
                 <select id="filter-score" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="">Tutti</option>
-                    <option value="positivo">Solo Positivi (>= 75)</option>
-                    <option value="negativo">Solo Negativi (< 75)</option>
+                    <option value="positivo">Solo Positivi</option>
+                    <option value="negativo">Solo Negativi</option>
                     <option value="non-valutato">Non Valutati</option>
                 </select>
             </div>
@@ -1681,9 +1678,12 @@
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Preferenza</label>
                 <select id="filter-liked" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="">Tutte</option>
-                    <option value="liked">Solo Piaciute (👍)</option>
-                    <option value="disliked">Solo Scartate (👎)</option>
+                    <option value="liked">👍</option>
+                    <option value="disliked">👎</option>
                 </select>
+            </div>
+            <div style="align-self: flex-end; padding-bottom: 5px;">
+                <button id="btn-clear-filters" style="height: 32px; display: flex; align-items: center; padding: 0 15px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
             </div>
             <div style="margin-left: auto; align-self: flex-end; padding-bottom: 5px;">
                 <span id="jobs-counter" class="metric" style="font-size: 1.1em;">${urls.length}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte visibili</span>
@@ -1693,15 +1693,15 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Titolo</th>
-                        <th>Azienda</th>
-                        <th>Luogo</th>
-                        <th style="text-align: center;">Score</th>
-                        <th>Categoria</th>
-                        <th>Date Seen</th>
+                        <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="category" style="cursor: pointer;">Categoria <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen <span style="font-size: 0.8em; color: var(--accent);"></span></th>
                         <th>Link</th>
-                        <th style="text-align: center;">Preferenza</th>
-                        <th>Candidatura</th>
+                        <th class="sortable" data-sort="liked" style="cursor: pointer; text-align: center;">Preferenza <span style="font-size: 0.8em; color: var(--accent);"></span></th>
+                        <th class="sortable" data-sort="applied" style="cursor: pointer;">Candidatura <span style="font-size: 0.8em; color: var(--accent);"></span></th>
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
@@ -1797,8 +1797,81 @@
             if (filterScore) filterScore.addEventListener('change', applyFilters);
             if (filterLiked) filterLiked.addEventListener('change', applyFilters);
 
+            // Add Clear Filters event
+            const btnClear = document.getElementById('btn-clear-filters');
+            if (btnClear) {
+                btnClear.addEventListener('click', () => {
+                    if (filterDate) filterDate.value = '';
+                    if (filterKeyword) filterKeyword.value = '';
+                    if (filterCategory) filterCategory.value = '';
+                    if (filterScore) filterScore.value = '';
+                    if (filterLiked) filterLiked.value = '';
+                    applyFilters();
+                });
+            }
 
+            // Add Table Sorting
+            const thElements = document.querySelectorAll('.sortable');
+            let currentSortCol = '';
+            let currentSortDir = 'asc';
 
+            thElements.forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.getAttribute('data-sort');
+                    if (currentSortCol === col) {
+                        currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSortCol = col;
+                        currentSortDir = 'asc';
+                    }
+
+                    thElements.forEach(t => t.querySelector('span').textContent = '');
+                    th.querySelector('span').textContent = currentSortDir === 'asc' ? ' ▲' : ' ▼';
+
+                    const tbody = document.getElementById('job-table-body');
+                    const rows = Array.from(tbody.querySelectorAll('tr.job-row'));
+
+                    rows.sort((a, b) => {
+                        let valA = '';
+                        let valB = '';
+
+                        if (col === 'title') {
+                            valA = a.querySelector('td:nth-child(1)').textContent.trim().toLowerCase();
+                            valB = b.querySelector('td:nth-child(1)').textContent.trim().toLowerCase();
+                        } else if (col === 'company') {
+                            valA = a.querySelector('td:nth-child(2)').textContent.trim().toLowerCase();
+                            valB = b.querySelector('td:nth-child(2)').textContent.trim().toLowerCase();
+                        } else if (col === 'location') {
+                            valA = a.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
+                            valB = b.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
+                        } else if (col === 'score') {
+                            valA = a.querySelector('td:nth-child(4)').textContent.trim();
+                            valB = b.querySelector('td:nth-child(4)').textContent.trim();
+                            const numA = parseInt(valA) || (valA.includes('positivo') ? 100 : valA.includes('negativo') ? -100 : 0);
+                            const numB = parseInt(valB) || (valB.includes('positivo') ? 100 : valB.includes('negativo') ? -100 : 0);
+                            if (numA !== numB) return currentSortDir === 'asc' ? numA - numB : numB - numA;
+                        } else if (col === 'category') {
+                            valA = a.querySelector('td:nth-child(5)').textContent.trim().toLowerCase();
+                            valB = b.querySelector('td:nth-child(5)').textContent.trim().toLowerCase();
+                        } else if (col === 'date') {
+                            valA = a.getAttribute('data-date') || '';
+                            valB = b.getAttribute('data-date') || '';
+                        } else if (col === 'liked') {
+                            valA = a.getAttribute('data-liked') || '';
+                            valB = b.getAttribute('data-liked') || '';
+                        } else if (col === 'applied') {
+                            valA = a.querySelector('button.btn-applied').getAttribute('data-applied') || 'false';
+                            valB = b.querySelector('button.btn-applied').getAttribute('data-applied') || 'false';
+                        }
+
+                        if (valA < valB) return currentSortDir === 'asc' ? -1 : 1;
+                        if (valA > valB) return currentSortDir === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+
+                    rows.forEach(r => tbody.appendChild(r));
+                });
+            });
 
             // Sincronizza lo slider delle keyword
             const barLabels = document.querySelectorAll('.bar-label');

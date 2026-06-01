@@ -9,7 +9,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import concurrent.futures
-import threading
+import copy
 
 from apify_client import ApifyClient
 from google import genai
@@ -39,7 +39,7 @@ def load_profile(path: str) -> str:
 
 
 def generate_single_search_query(
-    profile: str, config: dict, search_memory: list, jobs_count: int
+    profile: str, config: dict, search_memory: list
 ) -> dict:
     gemini_key = os.environ.get("GEMINI_API_KEY")
     if not gemini_key:
@@ -88,7 +88,7 @@ REGOLE OBBLIGATORIE per la keyword:
 
 DEVI RESTITUIRE SOLO questo JSON, senza testo aggiuntivo:
 {{
-  "keywords": "una keyword precisa, max 2 titoli in OR",
+  "keywords": "un singolo job title preciso",
   "reasoning": "una frase in italiano che spiega perché questa keyword è mirata per questo profilo"
 }}
 """
@@ -347,10 +347,12 @@ def send_email_report(matched_jobs: list, metrics: dict):
             </div>
             """
 
-    html_content += """
+    dashboard_url = os.environ.get("DASHBOARD_URL", "https://teopaso.github.io/linkedin_scraper/")
+
+    html_content += f"""
         </div>
-        <p style="font-size: 12px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
-            Report completo disponibile nella Dashboard.
+        <p style="font-size: 14px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
+            Report completo disponibile nella <a href="{dashboard_url}" style="color: #0a66c2; text-decoration: none; font-weight: bold;">Dashboard</a>.
         </p>
     """
 
@@ -527,7 +529,7 @@ def main():
         else:
             # Fase 2: Esplorazione con Gemini
             query = generate_single_search_query(
-                profile, config, search_memory, len(job_store)
+                profile, config, search_memory
             )
             keyword = query.get("keywords", "")
             if keyword:
@@ -556,10 +558,8 @@ def main():
         queries_run.append(query)
 
         # Modifica il time_filter temporaneamente se stiamo facendo una query core
-        current_config = dict(config)
+        current_config = copy.deepcopy(config)
         if is_core_iteration:
-            if "scraper" not in current_config:
-                current_config["scraper"] = {}
             current_config["scraper"]["time_filter"] = core_time_filter
 
         jobs = scrape_jobs(query, current_config)
@@ -797,51 +797,8 @@ def main():
 
     send_email_report(matched_jobs, metrics_dict)
 
-    print("\n[*] Generazione della dashboard in corso...")
-    try:
-        dashboard_data = {
-            "execution_id": execution_id,
-            "search_memory": search_memory,
-            "job_categories": job_categories,
-            "job_store": job_store,
-        }
-
-        with open("dashboard_template.html", "r", encoding="utf-8") as f:
-            template = f.read()
-
-        dashboard_html = template.replace(
-            "__DATA_PLACEHOLDER__", json.dumps(dashboard_data)
-        )
-
-        with open("dashboard.html", "w", encoding="utf-8") as f:
-            f.write(dashboard_html)
-
-        print("[*] Dashboard generata con successo: dashboard.html")
-    except Exception as e:
-        print(f"[!] ERRORE durante la generazione della dashboard: {e}")
 
 
-def run_cycle():
-    """Esegue un singolo ciclo di ricerca e valutazione."""
-    config = load_config("config.yaml")
-    profile = load_profile("my_profile.md")
-    
-    # Carica configurazione cloud
-    cloud_config = db.load_config_from_db()
-    if cloud_config:
-        config = deep_merge(config, cloud_config)
-    
-    search_memory = db.load_search_memory()
-    job_store = db.load_job_store()
-    
-    print(f"\n{'='*50}")
-    print(f"[*] AVVIO NUOVA RICERCA: {datetime.now().strftime('%H:%M:%S')}")
-    print(f"{'='*50}\n")
-    
-    db.set_trigger("running")
-    
-    # ... resto della logica di main ...
-    # (Per semplicità sposterò il grosso del codice di main qui sotto)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

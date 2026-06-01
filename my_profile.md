@@ -37,7 +37,7 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 ## Interests
 - Startups & Scaleups
 - Venture Capital
-- Butique Investment Funds
+- Boutique Investment Funds
 - Strategy
 - Big 3 strategic consulting firms (McKinsey, Boston Consulting Group, Bain & Company)
 - I don't like internships, I'd prefer a full-time role, but I'm open to internships if they are very valuable and align with my interests.

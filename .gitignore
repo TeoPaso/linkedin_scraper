@@ -7,3 +7,8 @@ search_memory.json
 job_categories.json
 dashboard_template.html
 startup_leads.json
+cover_letters/
+OUTREACH_SUMMARY.md
+.ruff_cache/
+venv/
+.venv/

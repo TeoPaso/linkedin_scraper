@@ -28,7 +28,6 @@ def clear_collection(collection_name):
     print(f"Fatto! Eliminati {count} documenti.")
 
 def main():
-    load_dotenv()
     print("\n--- LinkedIn Scraper DB Cleaner ---")
     print("Questo script pulirà i dati dal tuo database Firestore.")
     print("-----------------------------------")
@@ -39,8 +38,8 @@ def main():
     choice = input("\nScegli un'opzione (1/2/3): ")
     
     if choice == "1":
-        confirm = input("Vuoi resettare la cronologia? Le statistiche della dashboard torneranno a zero. (SÌ/No): ")
-        if confirm.upper() == "SÌ":
+        confirm = input("Vuoi resettare la cronologia? Le statistiche della dashboard torneranno a zero. (SI/No): ")
+        if confirm.upper() == "SI":
             clear_collection("search_memory")
             print("Reset stato ciclo keyword...")
             db.db.collection("app_state").document("keyword_cycle").delete()
@@ -50,8 +49,8 @@ def main():
             
     elif choice == "2":
         print("\nATTENZIONE: Questa opzione cancellerà TUTTI i lavori salvati, le categorie e le ricerche.")
-        confirm = input("Sei SICURO di voler procedere? Scrivi 'SÌ' per confermare: ")
-        if confirm.upper() == "SÌ":
+        confirm = input("Sei SICURO di voler procedere? Scrivi 'SI' per confermare: ")
+        if confirm.upper() == "SI":
             clear_collection("search_memory")
             clear_collection("job_categories")
             clear_collection("jobs")
