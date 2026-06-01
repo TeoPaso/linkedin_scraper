@@ -182,17 +182,21 @@ Profilo Candidato:
 Descrizione Lavoro:
 Titolo: {job.get("title", "Unknown")}
 Azienda: {job.get("companyName", "Unknown")}
+Location: {job.get("location", "Unknown")}
 Descrizione: {job.get("descriptionText", "")}
 
 Istruzioni:
-1. Valuta l'aderenza del candidato per questo ruolo e assegna un 'fit_score' da 0 a 100.
-2. Scrivi una 'reasoning' di 2-3 righe IN ITALIANO per giustificare il punteggio.
-3. CRITICO: Non inventare competenze. Se il ruolo richiede skill tecniche o esperienze specifiche che mancano, il punteggio non deve superare i 60 punti.
-4. CRITICO: Se il dipartimento/focus del lavoro (es. Marketing, HR, Customer Service) è totalmente estraneo all'obiettivo del candidato (Finance, AI, Engineering, Data), il punteggio DEVE essere inferiore a 50, anche se il candidato ha buone skill analitiche. Solo i fatti espliciti valgono.
+1. Valuta l'aderenza del candidato per questo ruolo e assegna un 'fit_score' da 0 a 100 usando il seguente sistema a FASCE (Tier):
+   - Fascia A (85-100): Match eccellente. Il core focus del lavoro e le skill principali corrispondono al profilo. Le mancanze sono secondarie.
+   - Fascia B (70-84): Buon match. Esperienza pertinente ma ruolo leggermente diverso, o mancano un paio di requisiti importanti ma non bloccanti.
+   - Fascia C (50-69): Match parziale o debole. Settore giusto ma seniority sbagliata (es. chiedono 10 anni e ne hai 2), oppure shift laterale non ideale.
+   - Fascia D (0-49): Fuori scope. Dipartimento completamente errato (es. sei in Finance, cercano Sales o dev puro).
+2. HARD RULE (CRITICO): Il candidato è disponibile a lavorare SOLO IN ITALIA (o fully remote). I viaggi per lavoro vanno bene, ma i trasferimenti definitivi all'estero (relocation) sono categoricamente esclusi. Se il lavoro richiede esplicitamente una relocation fuori dall'Italia, il punteggio DEVE essere 0.
+3. Scrivi una 'reasoning' di 2-3 righe IN ITALIANO per giustificare il punteggio, spiegando chiaramente i pro e i contro rispetto al profilo.
 """
     try:
         response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
+            model="gemini-3.1-flash",
             contents=prompt,
             config={
                 "response_mime_type": "application/json",

@@ -598,7 +598,7 @@
     <!-- Firebase JS SDK (v10 modular) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         // REPLACE WITH YOUR FIREBASE CONFIG
@@ -625,6 +625,7 @@
         window.updateDoc = updateDoc;
         window.setDoc = setDoc;
         window.getDoc = getDoc;
+        window.onSnapshot = onSnapshot;
         window.serverTimestamp = serverTimestamp;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
@@ -750,72 +751,81 @@
             }
         };
 
+        let renderTimeout = null;
+        function debouncedRender() {
+            if (renderTimeout) clearTimeout(renderTimeout);
+            renderTimeout = setTimeout(() => {
+                render();
+            }, 50);
+        }
+
         async function loadDataFromFirestore() {
             const appDiv = document.getElementById('app');
-            appDiv.innerHTML = '<div style="text-align:center; padding: 50px;"><h2 style="color: var(--accent);">Loading data from Firestore...</h2></div>';
+            appDiv.innerHTML = '<div style="text-align:center; padding: 50px;"><h2 style="color: var(--accent);">Connessione al database in tempo reale...</h2></div>';
 
             try {
-                const jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
-                const memorySnapshot = await window.getDocs(window.collection(window.db, "search_memory"));
-                const catsSnapshot = await window.getDocs(window.collection(window.db, "job_categories"));
+                // Inizializza appData se non esiste
+                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {} };
 
-                let job_store = {};
-                jobsSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    // L'ID del documento è un hash, ma l'URL è salvato dentro.
-                    // Se manca usiamo l'ID come chiave per non far fallire la dashboard.
-                    const key = data.url || doc.id;
-                    // Salviamo anche doc.id per poter fare updateDoc
-                    data._doc_id = doc.id;
-                    job_store[key] = data;
-                });
+                // 1. Ascolto in tempo reale dei Jobs (usiamo docChanges per efficienza)
+                window.onSnapshot(window.collection(window.db, "jobs"), (snapshot) => {
+                    let job_store = appData.job_store || {};
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === "added" || change.type === "modified") {
+                            const data = change.doc.data();
+                            const key = data.url || change.doc.id;
+                            data._doc_id = change.doc.id;
+                            job_store[key] = data;
+                        }
+                        if (change.type === "removed") {
+                            const data = change.doc.data();
+                            const key = data.url || change.doc.id;
+                            delete job_store[key];
+                        }
+                    });
+                    appData.job_store = job_store;
+                    debouncedRender();
+                }, (error) => console.error("Jobs sync error:", error));
 
-                let search_memory = [];
-                memorySnapshot.forEach(doc => {
-                    search_memory.push(doc.data());
-                });
-                // Ordina memory per timestamp
-                search_memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
-
-                let job_categories = [];
-                catsSnapshot.forEach(doc => {
-                    job_categories.push(doc.data());
-                });
-
-                // Load cloud config
-                let config = {};
-                try {
-                    const configDoc = await window.getDoc(window.doc(window.db, "app_state", "config"));
-                    if (configDoc.exists()) {
-                        config = configDoc.data();
+                // 2. Ascolto in tempo reale della Search Memory
+                window.onSnapshot(window.collection(window.db, "search_memory"), (snapshot) => {
+                    let memory = [];
+                    snapshot.forEach(doc => memory.push(doc.data()));
+                    memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+                    appData.search_memory = memory;
+                    
+                    if (memory.length > 0) {
+                        appData.execution_id = memory[memory.length - 1].execution_id || "N/A";
                     }
-                } catch (ce) { console.error("Config error:", ce); }
+                    debouncedRender();
+                });
 
-                // Load trigger status
-                try {
-                    const triggerDoc = await window.getDoc(window.doc(window.db, "app_state", "trigger"));
-                    if (triggerDoc.exists()) {
-                        const data = triggerDoc.data();
+                // 3. Ascolto in tempo reale delle Categorie
+                window.onSnapshot(window.collection(window.db, "job_categories"), (snapshot) => {
+                    let cats = [];
+                    snapshot.forEach(doc => cats.push(doc.data()));
+                    appData.job_categories = cats;
+                    debouncedRender();
+                });
+
+                // 4. Ascolto in tempo reale della Configurazione
+                window.onSnapshot(window.doc(window.db, "app_state", "config"), (doc) => {
+                    if (doc.exists()) {
+                        appData.config = doc.data();
+                        debouncedRender();
+                    }
+                });
+
+                // 5. Ascolto in tempo reale del Trigger (Stato Scraper)
+                window.onSnapshot(window.doc(window.db, "app_state", "trigger"), (doc) => {
+                    if (doc.exists()) {
+                        const data = doc.data();
                         botStatus = data.status || 'idle';
                         currentQuery = data.current_query || '';
+                        debouncedRender();
                     }
-                } catch (te) { console.error("Trigger error:", te); }
+                });
 
-                // Trova l'execution_id più recente basato sulla memory
-                let execution_id = "N/A";
-                if (search_memory.length > 0) {
-                    execution_id = search_memory[search_memory.length - 1].execution_id || "N/A";
-                }
-
-                appData = {
-                    execution_id,
-                    job_store,
-                    search_memory,
-                    job_categories,
-                    config
-                };
-
-                render();
             } catch (e) {
                 console.error(e);
                 appDiv.innerHTML = `<div style="text-align:center; padding: 50px; color: var(--score-bad);"><h2>Errore di connessione a Firestore</h2><p>${e.message}</p></div>`;
@@ -1061,23 +1071,7 @@
             }
         };
 
-        // Aggiornamento automatico dello stato del bot ogni 3 secondi
-        setInterval(async () => {
-            if (!window.db) return;
-            try {
-                const triggerDoc = await window.getDoc(window.doc(window.db, "app_state", "trigger"));
-                if (triggerDoc.exists()) {
-                    const data = triggerDoc.data();
-                    const newStatus = data.status || 'idle';
-                    const newQuery = data.current_query || '';
-                    if (newStatus !== botStatus || newQuery !== currentQuery) {
-                        botStatus = newStatus;
-                        currentQuery = newQuery;
-                        render();
-                    }
-                }
-            } catch (e) {}
-        }, 3000);
+
 
         function renderSettings() {
             const cfg = appData.config || {};
