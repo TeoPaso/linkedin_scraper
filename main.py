@@ -25,6 +25,7 @@ class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
     highlighted_description: str = ""
+    compensation: str | None = None
 
 
 def load_config(path: str) -> dict:
@@ -194,7 +195,8 @@ Istruzioni:
    - Fascia Scarto (0-69): Fuori scope, seniority sbagliata o ruolo errato.
 2. HARD RULE (CRITICO): Lavora SOLO IN ITALIA o remote. Se richiesta relocation all'estero, punteggio = 0.
 3. Scrivi una 'reasoning' discorsiva e diretta di 2-3 righe IN ITALIANO. NON ripetere il background del candidato (lo conosce già!). Invece, CONTESTUALIZZA: fagli capire esattamente cosa farebbe nel pratico in questo ruolo, "dandogli un assaggio" delle responsabilità principali.
-4. Restituisci la 'highlighted_description' copiando il testo della "Descrizione" originale (senza tagliarlo), ma inserendo dei tag HTML <mark>testo</mark> attorno alle parti più rilevanti, le responsabilità chiave e i requisiti cruciali. Così leggerla sarà graficamente più agevole.
+4. Restituisci la 'highlighted_description' copiando il testo della "Descrizione" originale (senza tagliarlo), ma inserendo dei tag HTML <mark>testo</mark> attorno alle parti più rilevanti, le responsabilità chiave e i requisiti cruciali.
+5. Se la job description contiene informazioni sullo stipendio (es. RAL, compensation, hourly rate), estraile e inseriscile nel campo 'compensation', altrimenti lascialo vuoto.
 """
     try:
         response = client.models.generate_content(
@@ -227,6 +229,7 @@ def process_and_evaluate_job(url: str, job_store: dict, profile: str, liked_hist
     data["fit_score"] = evaluation.fit_score
     data["reasoning"] = evaluation.reasoning
     data["highlighted_description"] = evaluation.highlighted_description
+    data["compensation"] = evaluation.compensation
     
     db.save_single_job(url, data)
     print(f"  [Background] -> Score {evaluation.fit_score} ({title})")

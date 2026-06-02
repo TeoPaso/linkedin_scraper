@@ -1592,7 +1592,12 @@
                     title: j.job_data ? j.job_data.title : j.title,
                     company: j.job_data ? j.job_data.companyName : j.company,
                     location: j.job_data ? j.job_data.location : j.location,
-                    scoreVal: j.fit_score || -1
+                    scoreVal: j.fit_score || -1,
+                    compensation: j.compensation || '',
+                    applications: j.job_data ? (j.job_data.applicantsCount || '') : '',
+                    employees: j.job_data ? (j.job_data.companyEmployeesCount || '') : '',
+                    seniority: j.job_data ? (j.job_data.seniorityLevel || '') : '',
+                    website: j.job_data ? (j.job_data.companyWebsite || '') : ''
                 });
             });
 
@@ -1617,6 +1622,9 @@
                     case 'company': valA = (a.company || '').toLowerCase(); valB = (b.company || '').toLowerCase(); break;
                     case 'location': valA = (a.location || '').toLowerCase(); valB = (b.location || '').toLowerCase(); break;
                     case 'score': valA = a.scoreVal; valB = b.scoreVal; break;
+                    case 'seniority': valA = (a.seniority || '').toLowerCase(); valB = (b.seniority || '').toLowerCase(); break;
+                    case 'compensation': valA = (a.compensation || '').toLowerCase(); valB = (b.compensation || '').toLowerCase(); break;
+                    case 'applications': valA = parseInt(a.applications) || 0; valB = parseInt(b.applications) || 0; break;
                     case 'category': valA = (a.category || '').toLowerCase(); valB = (b.category || '').toLowerCase(); break;
                     case 'date': valA = a.rawDate; valB = b.rawDate; break;
                     case 'liked': valA = a.likedType; valB = b.likedType; break;
@@ -1677,13 +1685,19 @@
                         ${titleText}
                     </a>
                 </td>
-                <td>${escapeHtml(item.company)}</td>
+                <td>${escapeHtml(item.company)}
+                    <br><span style="font-size: 0.8em; color: var(--text-muted);">${item.employees ? item.employees + ' emp.' : ''}</span>
+                    ${item.website ? `<br><a href="${item.website}" target="_blank" style="font-size: 0.8em; color: var(--accent);">Website</a>` : ''}
+                </td>
                 <td>${escapeHtml(item.location)}</td>
                 <td class="metric" style="text-align: center;">
                     <a href="javascript:void(0)" class="score-link" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: inherit;" title="Mostra ragioni">
                         ${scoreHtml}
                     </a>
                 </td>
+                <td>${escapeHtml(item.seniority)}</td>
+                <td>${escapeHtml(item.compensation)}</td>
+                <td>${escapeHtml(item.applications)}</td>
                 <td>${escapeHtml(item.category)}</td>
                 <td style="color: var(--text-muted);">${formatDate(item.rawDate)}</td>
                 <td><a href="${item.url}" target="_blank">Apri &nearr;</a></td>
@@ -1757,6 +1771,9 @@
                         <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo ${state.sortCol === 'location' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="seniority" style="cursor: pointer;">Seniority ${state.sortCol === 'seniority' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="compensation" style="cursor: pointer;">Compensation ${state.sortCol === 'compensation' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="applications" style="cursor: pointer;">Apps ${state.sortCol === 'applications' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="category" style="cursor: pointer;">Categoria ${state.sortCol === 'category' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
                         <th>Link</th>
