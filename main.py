@@ -286,15 +286,16 @@ DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
 
 
 def send_email_report(matched_jobs: list, metrics: dict):
-    """Genera e invia il report in formato HTML via Email."""
+    """Invia un'email di recap se ci sono offerte interessanti."""
+    if not config.get("email", {}).get("send_email", True):
+        return
+
     sender = os.environ.get("EMAIL_SENDER")
     password = os.environ.get("EMAIL_PASSWORD")
     recipient = os.environ.get("EMAIL_RECIPIENT")
 
-    if not sender or not password or not recipient or password == "tua_app_password":
-        print(
-            "[!] Credenziali email non configurate nel file .env. Salto l'invio dell'email."
-        )
+    if not sender or not password or not recipient:
+        print("[!] Credenziali email mancanti, salto invio email.")
         return
 
     today_str = datetime.now().strftime("%d/%m/%Y")
@@ -325,14 +326,15 @@ def send_email_report(matched_jobs: list, metrics: dict):
             </table>
         </div>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <h3>Nuovi job sopra soglia</h3>
-        <div style="margin-top: 20px;">
     """
 
     if not matched_jobs:
         html_content += "<p style='color: #666; font-style: italic;'>Nessuna nuova offerta ha superato la soglia minima per oggi.</p>"
     else:
-        for item in matched_jobs:
+        top_picks = [j for j in matched_jobs if j["score"] >= 80]
+        other_valid = [j for j in matched_jobs if j["score"] < 80]
+
+        def generate_job_html(item):
             job = item["job"]
             title = job.get("title", "Titolo Sconosciuto")
             company = job.get("companyName", "Azienda Sconosciuta")
@@ -340,25 +342,57 @@ def send_email_report(matched_jobs: list, metrics: dict):
             score = item["score"]
             reasoning = item["reasoning"]
 
-            color = "#2e7d32" if score >= 85 else "#d32f2f" if score < 75 else "#f57c00"
+            if score >= 90:
+                icon = "🏆"
+                color = "#b8860b" # dark gold for text
+                border_color = "#ffd700"
+                bg_color = "#fffdf0"
+            elif score >= 80:
+                icon = "⭐"
+                color = "#2e7d32"
+                border_color = "#2e7d32"
+                bg_color = "#f2fcf3"
+            elif score >= 70:
+                icon = "✓"
+                color = "#f57c00"
+                border_color = "#e0e0e0"
+                bg_color = "#ffffff"
+            else:
+                icon = "❌"
+                color = "#d32f2f"
+                border_color = "#e0e0e0"
+                bg_color = "#ffffff"
 
-            html_content += f"""
-            <div style="margin-bottom: 25px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            return f"""
+            <div style="margin-bottom: 25px; padding: 20px; border: 1px solid {border_color}; border-radius: 8px; background-color: {bg_color}; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                 <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 18px;">
+                    <span style="margin-right: 5px;">{icon}</span>
                     <a href="{url}" style="color: #0a66c2; text-decoration: none;">{title}</a> 
                     <span style="color: #666; font-weight: normal; font-size: 16px;">presso {company}</span>
                     <span style="float: right; font-size: 14px; font-weight: 600; color: {color};">Score: {score}/100</span>
                 </h3>
                 <div style="padding-top: 8px;">
-                    <span style="color: #555; font-size: 14px;">{reasoning}</span>
+                    <span style="color: #555; font-size: 14px; line-height: 1.5;">{reasoning}</span>
                 </div>
             </div>
             """
 
+        if top_picks:
+            html_content += "<h3>🏆 Top Picks (Fascia A & Golden)</h3><div style='margin-top: 20px;'>"
+            for item in top_picks:
+                html_content += generate_job_html(item)
+            html_content += "</div>"
+        
+        if other_valid:
+            html_content += "<hr style='border: 0; border-top: 1px dashed #ccc; margin: 30px 0;'>"
+            html_content += "<h3>✓ Altre Posizioni Valide (Fascia B)</h3><div style='margin-top: 20px;'>"
+            for item in other_valid:
+                html_content += generate_job_html(item)
+            html_content += "</div>"
+
     dashboard_url = os.environ.get("DASHBOARD_URL", "https://teopaso.github.io/linkedin_scraper/")
 
     html_content += f"""
-        </div>
         <p style="font-size: 14px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
             Report completo disponibile nella <a href="{dashboard_url}" style="color: #0a66c2; text-decoration: none; font-weight: bold;">Dashboard</a>.
         </p>
