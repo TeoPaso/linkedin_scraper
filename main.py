@@ -316,7 +316,7 @@ DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
         return {"job_labels": {}, "new_categories": []}
 
 
-def send_email_report(matched_jobs: list, metrics: dict):
+def send_email_report(matched_jobs: list, metrics: dict, config: dict):
     """Invia un'email di recap se ci sono offerte interessanti."""
     if not config.get("email", {}).get("send_email", True):
         return
@@ -869,7 +869,7 @@ def main():
         "avg_fit_score": avg_fit_score,
     }
 
-    send_email_report(matched_jobs, metrics_dict)
+    send_email_report(matched_jobs, metrics_dict, config)
 
 
 
