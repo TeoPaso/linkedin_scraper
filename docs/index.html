@@ -868,9 +868,7 @@
                         <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
                             ${window.currentUser ? '🔓 Logout' : '🔒 Login'}
                         </button>
-                        <button onclick="loadDataFromFirestore()" style="background: transparent; color: var(--text-light); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; font-size: 0.9em;" onmouseover="this.style.borderColor=var(--accent); this.style.color=var(--accent)" onmouseout="this.style.borderColor='var(--border)'; this.style.color='var(--text-light)'">
-                            🔄 REFRESH
-                        </button>
+
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);">
                             <div style="width: 8px; height: 8px; border-radius: 50%; background: ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))}; box-shadow: 0 0 8px ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))};"></div>
                             <span style="letter-spacing: 0.5px;">BOT: ${botStatus.toUpperCase()}</span>
@@ -1239,20 +1237,8 @@
 
             const todayPrefix = exId !== 'N/A' ? exId.split('T')[0] : '';
 
-            // Calculate the avg fit score for this specific execution
-            let avgFit = 0.0;
-            if (appData.search_memory) {
-                const execMem = appData.search_memory.filter(s => {
-                    if (!todayPrefix) return s.execution_id === exId && typeof s.avg_fit_score === 'number';
-                    return ((s.timestamp && s.timestamp.startsWith(todayPrefix)) || (s.execution_id && s.execution_id.startsWith(todayPrefix))) && typeof s.avg_fit_score === 'number';
-                });
-                if (execMem.length > 0) {
-                    const sum = execMem.reduce((acc, curr) => acc + curr.avg_fit_score, 0);
-                    avgFit = sum / execMem.length;
-                }
-            } else {
-                avgFit = appData.metrics?.avg_fit_score || 0;
-            }
+            // Calculate Top Tier Jobs (Tier A + B -> score >= 70)
+            const tierJobsCount = Object.values(appData.job_store || {}).filter(j => j.fit_score !== null && j.fit_score >= 70).length;
 
             let displayExId = exId;
             try {
@@ -1276,8 +1262,8 @@
                 <div class="metric">${totalUseful} / ${totalFound}</div>
             </div>
             <div class="card">
-                <div style="color: var(--text-muted); margin-bottom: 5px;">Avg Fit Score</div>
-                <div class="metric">${typeof avgFit === 'number' ? avgFit.toFixed(1) : avgFit}</div>
+                <div style="color: var(--text-muted); margin-bottom: 5px;">Tier A/B Jobs</div>
+                <div class="metric" style="color: #00ffcc;">${tierJobsCount}</div>
             </div>
         </div>
     `;
@@ -1520,10 +1506,11 @@
         }
 
         function getScoreHtml(score) {
-            if (score === null || score === undefined) return `<span class="score-grey">-</span>`;
-            if (score >= 85) return `<span class="score-green">${score}</span>`;
-            if (score >= 75) return `<span class="score-orange">${score}</span>`;
-            return `<span class="score-red">${score}</span>`;
+            if (score === null || score === undefined) return `<span class="score-grey" style="font-size: 0.9em;">Da valutare</span>`;
+            if (score >= 85) return `<span class="score-green" style="font-weight: bold; font-size: 1.1em;">⭐ ${score} (Tier A)</span>`;
+            if (score >= 70) return `<span class="score-orange" style="font-weight: bold; color: #ffaa00;">✓ ${score} (Tier B)</span>`;
+            if (score >= 50) return `<span class="score-red" style="color: #ffaaaa;">${score} (Tier C)</span>`;
+            return `<span class="score-red" style="color: #ff4444; font-weight: bold;">❌ ${score} (Tier D)</span>`;
         }
 
         function escapeHtml(str) {
