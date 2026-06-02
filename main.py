@@ -40,6 +40,34 @@ def load_profile(path: str) -> str:
         return f.read()
 
 
+
+def get_gemini_client():
+    use_vertex = os.environ.get("USE_VERTEX_AI", "false").lower() == "true"
+    if use_vertex:
+        sa_json_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if sa_json_str:
+            import tempfile, json
+            cred_dict = json.loads(sa_json_str)
+            project_id = cred_dict.get("project_id")
+            
+            # Scrivi un file temporaneo per le credenziali ADC se non esiste già
+            if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+                fd, path = tempfile.mkstemp(suffix=".json")
+                with os.fdopen(fd, 'w') as temp_f:
+                    temp_f.write(sa_json_str)
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path
+                
+            location = os.environ.get("VERTEX_LOCATION", "us-central1")
+            return genai.Client(vertexai=True, project=project_id, location=location)
+        else:
+            raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON mancante per l'autenticazione a Vertex AI")
+    else:
+        gemini_key = os.environ.get("GEMINI_API_KEY")
+        if not gemini_key:
+            raise ValueError("GEMINI_API_KEY mancante.")
+        return genai.Client(api_key=gemini_key)
+
+
 def generate_single_search_query(
     profile: str, config: dict, search_memory: list
 ) -> dict:

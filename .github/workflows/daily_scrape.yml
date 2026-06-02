@@ -36,6 +36,8 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          USE_VERTEX_AI: ${{ secrets.USE_VERTEX_AI }}
+          VERTEX_LOCATION: ${{ secrets.VERTEX_LOCATION }}
         run: python main.py
 
 
