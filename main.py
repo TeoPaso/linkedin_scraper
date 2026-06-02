@@ -316,8 +316,9 @@ def send_email_report(matched_jobs: list, metrics: dict):
         
         <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0a66c2;">
             <table style="width: 100%; border-collapse: collapse;">
-                <tr><td style="padding: 4px 0; width: 60%;"><strong>Totale offerte trovate:</strong></td><td>{total_found}</td></tr>
-                <tr><td style="padding: 4px 0;"><strong>Nuovi job sopra soglia:</strong></td><td>{total_matched}</td></tr>
+                <tr><td style="padding: 4px 0; width: 60%;"><strong>Totale offerte passate al setaccio (inclusi duplicati passati):</strong></td><td>{total_found}</td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Nuovi job effettivamente analizzati oggi (il tuo Target):</strong></td><td>{metrics.get("new_jobs_today", "N/A")}</td></tr>
+                <tr><td style="padding: 4px 0;"><strong>Nuovi job promossi (Sopra la soglia Min Fit):</strong></td><td>{total_matched}</td></tr>
                 <tr><td style="padding: 4px 0;"><strong>Iterazioni effettuate:</strong></td><td>{metrics.get("iterations", 0)}</td></tr>
                 <tr><td style="padding: 4px 0;"><strong>Keyword migliore:</strong></td><td><code>{metrics.get("best_keyword", "N/A")}</code></td></tr>
                 <tr><td style="padding: 4px 0;"><strong>Fit score medio:</strong></td><td>{round(metrics.get("avg_fit_score", 0), 1)}/100</td></tr>
@@ -796,6 +797,7 @@ def main():
 
     metrics_dict = {
         "total_found": total_found,
+        "new_jobs_today": jobs_scraped_this_run,
         "total_above_threshold": len(matched_jobs),
         "iterations": loops_today,
         "best_keyword": best_keyword,

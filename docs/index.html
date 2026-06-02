@@ -709,12 +709,12 @@
         let keywordLabelWidth = "";
         let botStatus = 'idle';
         let currentQuery = '';
-        let hideEmptyKeywords = true;
+        let keywordFilterMode = 'useful'; // 'all', 'useful', 'top5'
 
-        window.toggleEmptyKeywords = function () {
-            hideEmptyKeywords = !hideEmptyKeywords;
+        window.changeKeywordFilter = function(val) {
+            keywordFilterMode = val;
             render();
-        };
+        };;
 
         window.toggleSearchSort = function () {
             searchSortOrder = searchSortOrder === 'chronological' ? 'useful_percent' : 'chronological';
@@ -1316,7 +1316,12 @@
 
             const maxKpi = Math.max(...statsList.map(s => s.kpi), 1);
 
-            const filteredList = hideEmptyKeywords ? statsList.filter(s => s.useful > 0) : statsList;
+            let filteredList = statsList;
+            if (keywordFilterMode === 'useful') {
+                filteredList = statsList.filter(s => s.useful > 0);
+            } else if (keywordFilterMode === 'top5') {
+                filteredList = statsList.slice(0, 5);
+            }
             const hiddenCount = statsList.length - filteredList.length;
 
             const bars = filteredList.map(s => {
@@ -1335,9 +1340,11 @@
             return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h2 style="margin: 0;">Migliori Keyword</h2>
-            <button onclick="toggleEmptyKeywords()" style="font-size: 0.8em; padding: 5px 12px;">
-                ${hideEmptyKeywords ? `Mostra tutte (${hiddenCount} nascoste)` : 'Nascondi 0 useful'}
-            </button>
+            <select onchange="window.changeKeywordFilter(this.value)" style="font-size: 0.85em; padding: 4px 8px; border-radius: 4px; background: var(--surface); color: var(--text-light); border: 1px solid var(--border);">
+                <option value="useful" ${keywordFilterMode === 'useful' ? 'selected' : ''}>Solo utili (>0)</option>
+                <option value="top5" ${keywordFilterMode === 'top5' ? 'selected' : ''}>Migliori 5</option>
+                <option value="all" ${keywordFilterMode === 'all' ? 'selected' : ''}>Tutte le keyword</option>
+            </select>
         </div>
         <div class="card">
             ${bars || '<div style="color: var(--text-muted); padding: 10px;">Nessuna keyword con risultati utili trovata.</div>'}
