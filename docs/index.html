@@ -1506,11 +1506,11 @@
         }
 
         function getScoreHtml(score) {
-            if (score === null || score === undefined) return `<span class="score-grey" style="font-size: 0.9em;">Da valutare</span>`;
-            if (score >= 90) return `<span class="score-green" style="font-weight: bold; font-size: 1.1em; color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);">🏆 ${score} (Golden)</span>`;
-            if (score >= 75) return `<span class="score-green" style="font-weight: bold;">⭐ ${score} (Tier A)</span>`;
-            if (score >= 50) return `<span class="score-orange" style="font-weight: bold; color: #ffaa00;">✓ ${score} (Tier B)</span>`;
-            return `<span class="score-red" style="color: #ff4444; font-weight: bold;">❌ ${score} (Scartato)</span>`;
+            if (score === null || score === undefined) return `<span class="score-grey" style="font-size: 0.9em;">-</span>`;
+            if (score >= 90) return `<span class="score-green" style="font-weight: bold; font-size: 1.1em; color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);">${score}</span>`;
+            if (score >= 80) return `<span class="score-green" style="font-weight: bold;">${score}</span>`;
+            if (score >= 70) return `<span class="score-orange" style="font-weight: bold; color: #ffaa00;">${score}</span>`;
+            return `<span class="score-red" style="color: #ff4444; font-weight: bold;">${score}</span>`;
         }
 
         function escapeHtml(str) {
@@ -1564,8 +1564,8 @@
                 let scoreType = 'non-valutato';
                 if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
                     if (j.fit_score >= 90) scoreType = 'golden';
-                    else if (j.fit_score >= 75) scoreType = 'tiera';
-                    else if (j.fit_score >= 50) scoreType = 'tierb';
+                    else if (j.fit_score >= 80) scoreType = 'tiera';
+                    else if (j.fit_score >= 70) scoreType = 'tierb';
                     else scoreType = 'scartato';
                 }
 
@@ -1636,19 +1636,38 @@
             const rows = paginatedList.map(item => {
                 const j = item.j;
                 const scoreHtml = getScoreHtml(j.fit_score);
-                const descriptionText = j.job_data ? j.job_data.descriptionText : j.descriptionText;
+                const descriptionText = j.highlighted_description || (j.job_data ? j.job_data.descriptionText : j.descriptionText);
 
                 const descId = "desc_" + Math.random().toString(36).substr(2, 9);
                 window[`modalData_${descId}`] = {
                     desc: descriptionText || '',
                     reason: j.reasoning || j.fit_reasoning || ''
                 };
+                
+                let titleText = escapeHtml(item.title);
+                let titleStyle = "text-decoration: none; border-bottom: 1px dashed var(--accent); color: var(--accent); font-weight: bold;";
+                
+                if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
+                    if (j.fit_score >= 90) {
+                        titleText = `🏆 ${titleText}`;
+                        titleStyle = "text-decoration: none; border-bottom: 1px dashed #ffd700; color: #ffd700; font-weight: bold; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);";
+                    } else if (j.fit_score >= 80) {
+                        titleText = `⭐ ${titleText}`;
+                        titleStyle = "text-decoration: none; border-bottom: 1px dashed var(--score-good); color: var(--score-good); font-weight: bold;";
+                    } else if (j.fit_score >= 70) {
+                        titleText = `✓ ${titleText}`;
+                        titleStyle = "text-decoration: none; border-bottom: 1px dashed #ffaa00; color: #ffaa00; font-weight: bold;";
+                    } else {
+                        titleText = `❌ ${titleText}`;
+                        titleStyle = "text-decoration: none; border-bottom: 1px dashed #ff4444; color: #ff4444; font-weight: bold;";
+                    }
+                }
 
                 return `
             <tr class="job-row">
                 <td>
-                    <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: var(--accent); font-weight: bold;" title="Mostra descrizione">
-                        ${escapeHtml(item.title)}
+                    <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="${titleStyle}" title="Mostra descrizione">
+                        ${titleText}
                     </a>
                 </td>
                 <td>${escapeHtml(item.company)}</td>
@@ -1702,9 +1721,9 @@
                 <select id="filter-score" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="" ${state.filters.score === '' ? 'selected' : ''}>Tutti</option>
                     <option value="golden" ${state.filters.score === 'golden' ? 'selected' : ''}>Golden Tier (90+)</option>
-                    <option value="tiera" ${state.filters.score === 'tiera' ? 'selected' : ''}>Tier A (75-89)</option>
-                    <option value="tierb" ${state.filters.score === 'tierb' ? 'selected' : ''}>Tier B (50-74)</option>
-                    <option value="scartato" ${state.filters.score === 'scartato' ? 'selected' : ''}>Scartati (<50)</option>
+                    <option value="tiera" ${state.filters.score === 'tiera' ? 'selected' : ''}>Tier A (80-89)</option>
+                    <option value="tierb" ${state.filters.score === 'tierb' ? 'selected' : ''}>Tier B (70-79)</option>
+                    <option value="scartato" ${state.filters.score === 'scartato' ? 'selected' : ''}>Scartati (<70)</option>
                     <option value="non-valutato" ${state.filters.score === 'non-valutato' ? 'selected' : ''}>Non Valutati</option>
                 </select>
             </div>
@@ -1904,7 +1923,7 @@
                     const data = window[`modalData_${targetId}`];
 
                     if (modalReason) modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
-                    if (modalDesc) modalDesc.innerText = data.desc || 'Nessuna descrizione disponibile.';
+                    if (modalDesc) modalDesc.innerHTML = (data.desc || 'Nessuna descrizione disponibile.').replace(/\n/g, '<br>');
 
                     if (modal) modal.classList.add('active');
                 });

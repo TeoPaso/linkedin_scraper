@@ -24,6 +24,7 @@ import db
 class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
+    highlighted_description: str = ""
 
 
 def load_config(path: str) -> dict:
@@ -187,12 +188,13 @@ Descrizione: {job.get("descriptionText", "")}
 
 Istruzioni:
 1. Valuta l'aderenza del candidato per questo ruolo e assegna un 'fit_score' da 0 a 100 usando il seguente sistema a FASCE (Tier):
-   - Fascia A (85-100): Match eccellente. Il core focus del lavoro e le skill principali corrispondono al profilo. Le mancanze sono secondarie.
-   - Fascia B (70-84): Buon match. Esperienza pertinente ma ruolo leggermente diverso, o mancano un paio di requisiti importanti ma non bloccanti.
-   - Fascia C (50-69): Match parziale o debole. Settore giusto ma seniority sbagliata (es. chiedono 10 anni e ne hai 2), oppure shift laterale non ideale.
-   - Fascia D (0-49): Fuori scope. Dipartimento completamente errato (es. sei in Finance, cercano Sales o dev puro).
-2. HARD RULE (CRITICO): Il candidato è disponibile a lavorare SOLO IN ITALIA (o fully remote). I viaggi per lavoro vanno bene, ma i trasferimenti definitivi all'estero (relocation) sono categoricamente esclusi. Se il lavoro richiede esplicitamente una relocation fuori dall'Italia, il punteggio DEVE essere 0.
-3. Scrivi una 'reasoning' di 2-3 righe IN ITALIANO per giustificare il punteggio, spiegando chiaramente i pro e i contro rispetto al profilo.
+   - Fascia Golden (90-100): Ruolo perfetto, seniority esatta.
+   - Fascia A (80-89): Match eccellente. Il core focus del lavoro e le skill principali corrispondono al profilo.
+   - Fascia B (70-79): Buon match. Esperienza pertinente ma manca un requisito.
+   - Fascia Scarto (0-69): Fuori scope, seniority sbagliata o ruolo errato.
+2. HARD RULE (CRITICO): Lavora SOLO IN ITALIA o remote. Se richiesta relocation all'estero, punteggio = 0.
+3. Scrivi una 'reasoning' discorsiva e diretta di 2-3 righe IN ITALIANO. NON ripetere il background del candidato (lo conosce già!). Invece, CONTESTUALIZZA: fagli capire esattamente cosa farebbe nel pratico in questo ruolo, "dandogli un assaggio" delle responsabilità principali.
+4. Restituisci la 'highlighted_description' copiando il testo della "Descrizione" originale (senza tagliarlo), ma inserendo dei tag HTML <mark>testo</mark> attorno alle parti più rilevanti, le responsabilità chiave e i requisiti cruciali. Così leggerla sarà graficamente più agevole.
 """
     try:
         response = client.models.generate_content(
@@ -224,6 +226,7 @@ def process_and_evaluate_job(url: str, job_store: dict, profile: str, liked_hist
     
     data["fit_score"] = evaluation.fit_score
     data["reasoning"] = evaluation.reasoning
+    data["highlighted_description"] = evaluation.highlighted_description
     
     db.save_single_job(url, data)
     print(f"  [Background] -> Score {evaluation.fit_score} ({title})")
