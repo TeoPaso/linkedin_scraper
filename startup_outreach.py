@@ -14,8 +14,7 @@ from google import genai
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from tavily import TavilyClient
-
-# --- Modelli Pydantic ---
+import time
 
 class StartupFilterResult(BaseModel):
     is_vc_backed: bool
@@ -57,6 +56,7 @@ Testo:
 {text_content[:20000]}
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = genai_client.models.generate_content(
             model='gemini-3-flash-preview',
             contents=prompt,
@@ -124,7 +124,7 @@ def run_discovery(tavily_client, apify_client, genai_client, config):
         return found
 
     # Esegui tutto in parallelo
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = []
         for q in queries:
             futures.append(executor.submit(process_tavily_query, q))
@@ -217,6 +217,7 @@ Rispondi in JSON puro secondo questo formato, dove i valori stringa ammessi sono
 }}
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = genai_client.models.generate_content(
             model='gemini-3-flash-preview',
             contents=prompt,
@@ -266,6 +267,7 @@ VINCOLI TASSATIVI:
 5. Tono: Diretto, competente, analitico. Niente entusiasmo performativo o esclamazioni eccessive. Niente formattazione markdown.
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = genai_client.models.generate_content(
             model='gemini-3-flash-preview',
             contents=prompt,
@@ -460,7 +462,7 @@ def main():
             return None
 
     # Esegui in parallelo (max 5-8 workers per non incorrere in Rate Limit sulle API)
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = {executor.submit(process_startup, s, i+1, len(startups)): s for i, s in enumerate(startups)}
         for future in as_completed(futures):
             res = future.result()

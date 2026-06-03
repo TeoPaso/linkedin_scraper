@@ -123,6 +123,7 @@ DEVI RESTITUIRE SOLO questo JSON, senza testo aggiuntivo:
 }}
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite",
             contents=prompt,
@@ -227,6 +228,7 @@ Istruzioni:
 5. Se la job description contiene informazioni sullo stipendio (es. RAL, compensation, hourly rate), estraile e inseriscile nel campo 'compensation', altrimenti lascialo vuoto.
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite",
             contents=prompt,
@@ -305,6 +307,7 @@ DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
 }}
 """
     try:
+        time.sleep(4.5)  # Limit to 15 RPM
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite",
             contents=prompt,
@@ -552,7 +555,7 @@ def main():
         disliked_history += f"- {t} presso {c}. (Snippet: {d}...)\n"
 
     print("[*] Avvio scraping iterativo con valutazione in background...")
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
     jobs_scraped_this_run = 0
     keywords_cycled_this_run = 0
