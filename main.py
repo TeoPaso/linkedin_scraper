@@ -500,6 +500,16 @@ def main():
     # Inizializza stato trigger
     db.set_trigger("running", stop=False)
 
+    try:
+        _run_scraper(config, profile)
+    finally:
+        # SEMPRE resettare a idle, anche in caso di crash
+        db.set_trigger("idle", stop=False)
+        print("[*] Stato bot resettato a IDLE.")
+
+
+def _run_scraper(config, profile):
+    """Corpo principale dello scraping, estratto per poter essere wrappato in try/finally."""
     search_memory = db.load_search_memory()
     job_store = db.load_job_store()
     job_categories = db.load_job_categories()
@@ -885,6 +895,8 @@ def main():
     }
 
     send_email_report(matched_jobs, metrics_dict, config)
+
+    print("[*] Esecuzione completata con successo.")
 
 
 
