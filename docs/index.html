@@ -1313,15 +1313,7 @@
             // Calculate Top Tier Jobs (Tier A + B -> score >= 70)
             const tierJobsCount = Object.values(appData.job_store || {}).filter(j => j.fit_score !== null && j.fit_score >= 70).length;
 
-            let displayExId = exId;
-            try {
-                if (exId !== 'N/A') {
-                    const dt = new Date(exId);
-                    if (!isNaN(dt)) {
-                        displayExId = dt.toLocaleString();
-                    }
-                }
-            } catch (e) { }
+            const displayExId = formatDate(exId);
 
             return `
         <h2>Overview</h2>
@@ -1474,15 +1466,7 @@
             const avgFit = avgFitValue !== null ? avgFitValue.toFixed(1) : '<span style="color: var(--text-muted);">N/A</span>';
 
             // Convert ISO datetime to something more readable
-            let displayTs = s.timestamp;
-            try {
-                if (displayTs) {
-                    const dt = new Date(displayTs);
-                    if (!isNaN(dt)) {
-                        displayTs = dt.toLocaleString();
-                    }
-                }
-            } catch (e) { }
+            const displayTs = formatDate(s.timestamp);
 
             let usefulCount = s._usefulCount !== undefined ? s._usefulCount : 0;
             let foundCount = s.jobs_found_total || s.total_found || 0;
@@ -1606,9 +1590,15 @@
         function formatDate(isoString) {
             if (!isoString || isoString === 'N/A') return 'N/A';
             try {
-                const dt = new Date(isoString);
+                // Se non c'è fuso orario, assumiamo UTC (GitHub Actions) e aggiungiamo 'Z'
+                let formattedIso = isoString;
+                if (!isoString.includes('Z') && !/[+-]\d{2}:?\d{2}$/.test(isoString)) {
+                    formattedIso = isoString + 'Z';
+                }
+                const dt = new Date(formattedIso);
                 if (!isNaN(dt)) {
                     return dt.toLocaleString('it-IT', {
+                        timeZone: 'Europe/Rome',
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
@@ -1619,6 +1609,31 @@
                 }
             } catch (e) { }
             return isoString;
+        }
+
+        function getLocalDateString(isoString) {
+            if (!isoString || isoString === 'N/A') return '';
+            try {
+                let formattedIso = isoString;
+                if (!isoString.includes('Z') && !/[+-]\d{2}:?\d{2}$/.test(isoString)) {
+                    formattedIso = isoString + 'Z';
+                }
+                const dt = new Date(formattedIso);
+                if (!isNaN(dt)) {
+                    const parts = new Intl.DateTimeFormat('it-IT', {
+                        timeZone: 'Europe/Rome',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    }).formatToParts(dt);
+                    const day = parts.find(p => p.type === 'day').value;
+                    const month = parts.find(p => p.type === 'month').value;
+                    const year = parts.find(p => p.type === 'year').value;
+                    return `${year}-${month}-${day}`;
+                }
+            } catch (e) { }
+            const parts = isoString.split('T');
+            return parts.length > 0 ? parts[0] : '';
         }
 
         function renderJobStore() {
@@ -1636,7 +1651,7 @@
             urls.forEach(url => {
                 const j = jobs[url];
                 const dateStr = j.first_seen || j.date_seen || '';
-                if (dateStr) uniqueDates.add(dateStr.split('T')[0]);
+                if (dateStr) uniqueDates.add(getLocalDateString(dateStr));
                 if (j.keyword) uniqueKeywords.add(j.keyword);
                 if (j.category) uniqueCategories.add(j.category);
 
@@ -1656,7 +1671,7 @@
                 jobList.push({
                     url: url,
                     j: j,
-                    dateStr: dateStr ? dateStr.split('T')[0] : '',
+                    dateStr: dateStr ? getLocalDateString(dateStr) : '',
                     keyword: j.keyword || '',
                     category: j.category || '',
                     scoreType: scoreType,

@@ -4,7 +4,7 @@ import json
 import yaml
 import argparse
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -505,7 +505,7 @@ def main():
     job_categories = db.load_job_categories()
     cycle_state = db.load_cycle_state()
 
-    execution_id = datetime.now().isoformat()
+    execution_id = datetime.now(timezone.utc).isoformat()
 
     jobs_target = config.get("scraper", {}).get("jobs_target", 50)
     max_retries = config.get("scraper", {}).get("max_retries", 10)
@@ -694,7 +694,7 @@ def main():
         fruitful = new_jobs_count > 0
 
         memory_entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "execution_id": execution_id,
             "keyword": keyword,
             "jobs_found_total": len(jobs),
