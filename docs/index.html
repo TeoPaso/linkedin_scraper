@@ -1940,9 +1940,47 @@
                         });
                     } catch (err) {
                         console.error("Errore aggiornamento:", err);
-                        alert("Errore nell'impostare la valutazione");
+                        alert("Errore nell'impostare la valutazione: " + err.message);
                         btn.disabled = false;
                         btn.textContent = '🔄 Valuta';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-like').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const docId = btn.getAttribute('data-docid');
+                    if (!docId) return;
+                    const isLikeBtn = btn.getAttribute('data-like') === 'true';
+                    const isCurrentlyActive = btn.getAttribute('data-current') === 'true';
+                    
+                    let newLikedValue = isLikeBtn ? true : false;
+                    if (isCurrentlyActive) newLikedValue = null; // Toggle off
+
+                    try {
+                        await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                            liked: newLikedValue
+                        });
+                    } catch(err) {
+                        console.error("Errore like:", err);
+                        alert("Errore aggiornamento: " + err.message);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-applied').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const docId = btn.getAttribute('data-docid');
+                    if (!docId) return;
+                    const isCurrentlyApplied = btn.getAttribute('data-applied') === 'true';
+                    
+                    try {
+                        await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                            applied: !isCurrentlyApplied
+                        });
+                    } catch(err) {
+                        console.error("Errore applied:", err);
+                        alert("Errore aggiornamento: " + err.message);
                     }
                 });
             });
