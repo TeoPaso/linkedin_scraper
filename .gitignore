@@ -12,3 +12,5 @@ OUTREACH_SUMMARY.md
 .ruff_cache/
 venv/
 .venv/
+firebase-debug.log
+*.log

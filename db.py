@@ -209,6 +209,22 @@ def set_trigger(status, execution_id=None, stop=False, current_query=None):
         data["current_query"] = current_query
     db.collection("app_state").document("trigger").set(data)
 
+def load_profile_from_db() -> str:
+    """Legge il profilo del candidato da Firestore."""
+    doc = db.collection("app_state").document("profile").get()
+    if doc.exists:
+        return doc.to_dict().get("content", "")
+    return ""
+
+
+def save_profile_to_db(content: str):
+    """Salva il profilo del candidato su Firestore."""
+    db.collection("app_state").document("profile").set({
+        "content": content,
+        "updated_at": firestore.SERVER_TIMESTAMP
+    })
+
+
 def is_stop_requested():
     """Controlla se è stato richiesto lo stop della ricerca."""
     doc = db.collection("app_state").document("trigger").get()

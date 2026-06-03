@@ -844,6 +844,16 @@
                     }
                 });
 
+                // 6. Ascolto in tempo reale del Profilo candidato
+                window.onSnapshot(window.doc(window.db, "app_state", "profile"), (doc) => {
+                    if (doc.exists()) {
+                        appData.profile = doc.data().content || '';
+                    } else {
+                        appData.profile = '';
+                    }
+                    // Non fare render qui per evitare di resettare il textarea mentre si edita
+                });
+
             } catch (e) {
                 console.error(e);
                 appDiv.innerHTML = `<div style="text-align:center; padding: 50px; color: var(--score-bad);"><h2>Errore di connessione a Firestore</h2><p>${e.message}</p></div>`;
@@ -1001,6 +1011,31 @@
             } catch (e) {
                 console.error(e);
                 alert("Error saving settings: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+
+        window.saveProfile = async function () {
+            if (!window.currentUser) { window.toggleAuth(); return; }
+            const btn = document.getElementById('btn-save-profile');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const content = document.getElementById('cfg-profile-content').value;
+
+            try {
+                await window.setDoc(window.doc(window.db, "app_state", "profile"), {
+                    content: content,
+                    updated_at: window.serverTimestamp()
+                });
+                appData.profile = content;
+                showToast("Profilo salvato con successo su Firestore!");
+            } catch (e) {
+                console.error(e);
+                alert("Errore durante il salvataggio del profilo: " + e.message);
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
@@ -1230,6 +1265,26 @@
                         </button>
                         <button id="btn-save-settings" onclick="saveSettings()" style="padding: 12px 40px; font-size: 1.1em; font-weight: bold; background: var(--accent); color: var(--bg-main);">
                             💾 SALVA CONFIGURAZIONE
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #a78bfa; margin-top: 30px;">
+                    <h2 style="color: #a78bfa; margin-bottom: 10px;">👤 Profilo Candidato</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 20px;">
+                        Il tuo profilo in formato Markdown. Viene inviato a Gemini per generare le keyword di ricerca e valutare le offerte.
+                        Le modifiche qui <strong>sovrascrivono</strong> il vecchio file <code>my_profile.md</code>.
+                    </p>
+                    <div class="form-group">
+                        <textarea id="cfg-profile-content" rows="20" style="width: 100%; background: #1a1a2e; border: 1px solid #a78bfa33; color: #e0e0e0; padding: 15px; border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; line-height: 1.6; resize: vertical; box-sizing: border-box;" oninput="document.getElementById('profile-char-count').textContent = this.value.length">${appData.profile || ''}</textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <span style="color: var(--text-muted); font-size: 0.8em;">Caratteri: <span id="profile-char-count">${(appData.profile || '').length}</span></span>
+                            <span style="color: var(--text-muted); font-size: 0.8em;">Formato: Markdown</span>
+                        </div>
+                    </div>
+                    <div class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                        <button id="btn-save-profile" onclick="saveProfile()" style="padding: 12px 40px; font-size: 1.1em; font-weight: bold; background: #a78bfa; color: #0f0f0f; border: none; border-radius: 6px; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            💾 SALVA PROFILO
                         </button>
                     </div>
                 </div>

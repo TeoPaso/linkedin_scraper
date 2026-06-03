@@ -3,3 +3,4 @@ firebase-admin>=6.4.0
 google-genai>=0.5.0
 pydantic>=2.5.0
 python-dotenv>=1.0.0
+requests>=2.25.1

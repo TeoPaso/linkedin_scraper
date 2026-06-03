@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from tavily import TavilyClient
 import time
 
+import db
+
 class StartupFilterResult(BaseModel):
     is_vc_backed: bool
     has_growth_signals: bool
@@ -388,12 +390,24 @@ def send_outreach_email_report(leads):
 def main():
     load_dotenv()
     
-    if not os.path.exists("config.yaml") or not os.path.exists("my_profile.md"):
-        print("ERRORE: File config.yaml o my_profile.md mancanti.")
+    if not os.path.exists("config.yaml"):
+        print("ERRORE: File config.yaml mancante.")
         sys.exit(1)
         
     config = load_config("config.yaml")
-    profile = load_profile("my_profile.md")
+
+    # Carica il profilo dal cloud (Firestore), con fallback al file locale + migrazione automatica
+    profile = db.load_profile_from_db()
+    if profile:
+        print("[*] Profilo caricato da Firestore.")
+    elif os.path.exists("my_profile.md"):
+        print("[*] Profilo non trovato su Firestore. Migrazione dal file locale...")
+        profile = load_profile("my_profile.md")
+        db.save_profile_to_db(profile)
+        print("[*] Profilo migrato con successo su Firestore.")
+    else:
+        print("ERRORE: Profilo non trovato né su Firestore né in locale (my_profile.md).")
+        sys.exit(1)
     outreach_cfg = config.get("outreach", {})
     min_signals = outreach_cfg.get("min_signals", 3)
     

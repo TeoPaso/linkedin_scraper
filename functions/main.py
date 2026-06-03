@@ -57,27 +57,44 @@ Istruzioni:
 4. Restituisci la 'highlighted_description' copiando il testo della "Descrizione" originale (senza tagliarlo), ma inserendo dei tag HTML <mark>testo</mark> attorno alle parti più rilevanti, le responsabilità chiave e i requisiti cruciali.
 5. Se la job description contiene informazioni sullo stipendio (es. RAL, compensation, hourly rate), estraile e inseriscile nel campo 'compensation', altrimenti lascialo vuoto.
 """
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
-            contents=prompt,
-            config={
-                "response_mime_type": "application/json",
-                "response_schema": JobEvaluation,
-                "temperature": 0.1,
+    import requests
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={gemini_key}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "OBJECT",
+                "properties": {
+                    "fit_score": {"type": "INTEGER"},
+                    "reasoning": {"type": "STRING"},
+                    "highlighted_description": {"type": "STRING"},
+                    "compensation": {"type": "STRING", "nullable": True}
+                },
+                "required": ["fit_score", "reasoning", "highlighted_description"]
             },
-        )
-        return JobEvaluation.model_validate_json(response.text)
+            "temperature": 0.1
+        }
+    }
+
+    try:
+        resp = requests.post(url, headers=headers, json=payload, timeout=30)
+        if resp.status_code != 200:
+            raise Exception(f"API Error {resp.status_code}: {resp.text}")
+        data = resp.json()
+        text_response = data['candidates'][0]['content']['parts'][0]['text']
+        return JobEvaluation.model_validate_json(text_response)
     except Exception as e:
         print(f"[!] ERRORE durante la valutazione con Gemini: {e}")
-        return JobEvaluation(fit_score=0, reasoning=f"Errore di valutazione: {str(e)}", highlighted_description="", compensation="")
+        return JobEvaluation(fit_score=0, reasoning=f"Errore HTTP API: {str(e)}", highlighted_description="", compensation="")
 
 def get_preferences():
     # Ottieni i like/dislike dalla collezione jobs per preparare le preferenze
     db = get_db()
     jobs_ref = db.collection("jobs")
-    liked_docs = jobs_ref.where(filter=firestore.FieldFilter("liked", "==", True)).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(10).stream()
-    disliked_docs = jobs_ref.where(filter=firestore.FieldFilter("liked", "==", False)).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(10).stream()
+    liked_docs = jobs_ref.where(filter=firestore.FieldFilter("liked", "==", True)).limit(10).stream()
+    disliked_docs = jobs_ref.where(filter=firestore.FieldFilter("liked", "==", False)).limit(10).stream()
 
     liked_history = ""
     for doc in liked_docs:
@@ -116,14 +133,14 @@ def eval_job_on_demand(event: firestore_fn.Event[firestore_fn.Change[firestore_f
         print(f"[*] Inizio valutazione on-demand per: {title}")
         
         try:
-            # Carica il profilo da my_profile.md
+            # Carica il profilo da Firestore
             profile = ""
-            profile_path = os.path.join(os.path.dirname(__file__), "my_profile.md")
-            if os.path.exists(profile_path):
-                with open(profile_path, "r", encoding="utf-8") as f:
-                    profile = f.read()
+            db = get_db()
+            profile_doc = db.collection("app_state").document("profile").get()
+            if profile_doc.exists:
+                profile = profile_doc.to_dict().get("content", "")
             else:
-                print("[-] my_profile.md non trovato, la valutazione potrebbe essere inaccurata.")
+                print("[-] Profilo non trovato su Firestore (app_state/profile), la valutazione potrebbe essere inaccurata.")
             
             liked_history, disliked_history = get_preferences()
             
