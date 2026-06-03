@@ -1001,6 +1001,9 @@
                 },
                 email: {
                     send_email: document.getElementById('cfg-send-email').checked
+                },
+                github: {
+                    pat: document.getElementById('cfg-github-pat').value.trim()
                 }
             };
 
@@ -1088,19 +1091,41 @@
 
             if (!confirm("Avviare una nuova ricerca con i parametri cloud correnti?")) return;
 
+            const githubPat = (appData.config && appData.config.github) ? appData.config.github.pat : '';
+            if (!githubPat) {
+                alert("Token GitHub (PAT) non configurato. Vai in Configurazione per impostarlo.");
+                return;
+            }
+
             try {
+                // 1. Trigger GitHub Actions workflow via API
+                const resp = await fetch('https://api.github.com/repos/TeoPaso/linkedin_scraper/actions/workflows/daily_scrape.yml/dispatches', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${githubPat}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({ ref: 'main' })
+                });
+
+                if (!resp.ok) {
+                    const errText = await resp.text();
+                    throw new Error(`GitHub API ${resp.status}: ${errText}`);
+                }
+
+                // 2. Aggiorna stato su Firestore
                 await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
                     status: 'pending',
-                    current_query: 'Inizializzazione...',
+                    current_query: 'Workflow GitHub Actions avviato...',
                     timestamp: window.serverTimestamp()
                 });
                 botStatus = 'pending';
-                currentQuery = 'Inizializzazione...';
+                currentQuery = 'Workflow GitHub Actions avviato...';
                 render();
-                showToast("Segnale di avvio inviato al bot!");
+                showToast("Workflow GitHub Actions avviato con successo!");
             } catch (e) {
                 console.error(e);
-                alert("Errore nell'invio del trigger: " + e.message);
+                alert("Errore nell'avvio della ricerca: " + e.message);
             }
         };
 
@@ -1255,6 +1280,14 @@
                                     <label>Min Signals (Outreach)</label>
                                     <input type="number" id="cfg-min-signals" value="${out.min_signals || 3}">
                                 </div>
+                            </div>
+
+                            <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
+                            <h3>🔑 GitHub Actions</h3>
+                            <div class="form-group">
+                                <label>GitHub Personal Access Token</label>
+                                <p style="color: var(--text-muted); font-size: 0.8em; margin-bottom: 8px;">Serve per avviare la ricerca dalla dashboard. Crea un <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color: var(--accent);">Fine-grained PAT</a> con permesso <code>Actions: Read and Write</code> su questo repo.</p>
+                                <input type="password" id="cfg-github-pat" value="${(cfg.github && cfg.github.pat) || ''}" placeholder="github_pat_..." style="font-family: monospace;">
                             </div>
                         </div>
                     </div>
