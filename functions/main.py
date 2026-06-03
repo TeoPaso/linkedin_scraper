@@ -2,7 +2,7 @@ import os
 from firebase_admin import initialize_app, firestore
 from firebase_functions import firestore_fn
 from google import genai
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import firebase_admin
 
 # Lazy initialization for Firebase Admin to prevent deployment timeouts
@@ -16,6 +16,11 @@ class JobEvaluation(BaseModel):
     reasoning: str
     highlighted_description: str
     compensation: str = ""
+
+    @field_validator("compensation", mode="before")
+    @classmethod
+    def coerce_none_to_empty(cls, v):
+        return v if v is not None else ""
 
 def evaluate_job_with_gemini(job: dict, profile: str, liked_history: str = "", disliked_history: str = "") -> JobEvaluation:
     gemini_key = os.environ.get("GEMINI_API_KEY")

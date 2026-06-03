@@ -13,7 +13,7 @@ import copy
 
 from apify_client import ApifyClient
 from google import genai
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import time
 from dotenv import load_dotenv
 
@@ -26,6 +26,11 @@ class JobEvaluation(BaseModel):
     reasoning: str
     highlighted_description: str = ""
     compensation: str = ""
+
+    @field_validator("compensation", mode="before")
+    @classmethod
+    def coerce_none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 def load_config(path: str) -> dict:
