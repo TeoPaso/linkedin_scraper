@@ -15,7 +15,7 @@ class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
     highlighted_description: str
-    compensation: str
+    compensation: str = ""
 
 def evaluate_job_with_gemini(job: dict, profile: str, liked_history: str = "", disliked_history: str = "") -> JobEvaluation:
     gemini_key = os.environ.get("GEMINI_API_KEY")

@@ -25,7 +25,7 @@ class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
     highlighted_description: str = ""
-    compensation: str | None = None
+    compensation: str = ""
 
 
 def load_config(path: str) -> dict:
