@@ -205,9 +205,17 @@
         }
 
         @keyframes pulse {
-            0% { opacity: 0.7; }
-            50% { opacity: 1; }
-            100% { opacity: 0.7; }
+            0% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.7;
+            }
         }
 
         table {
@@ -367,6 +375,7 @@
             font-size: 0.9em;
             color: var(--accent);
         }
+
         /* --- Toast --- */
         .toast {
             position: fixed;
@@ -437,7 +446,8 @@
 
         /* --- Modern Scrollbar Styling --- */
         .scroll-area-container {
-            height: calc(100vh - 250px); /* Più spazio verticale */
+            height: calc(100vh - 250px);
+            /* Più spazio verticale */
             overflow-y: auto;
             padding-right: 10px;
             scrollbar-width: thin;
@@ -474,6 +484,7 @@
             margin: 0 !important;
             flex-direction: row !important;
         }
+
         input[type="number"],
         textarea,
         select {
@@ -548,6 +559,7 @@
         input:checked+.slider:before {
             transform: translateX(22px);
         }
+
         /* --- Keywords Tags --- */
         .keyword-list {
             display: flex;
@@ -668,21 +680,27 @@
 <body>
 
     <!-- Login Modal -->
-    <div id="login-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#1c1c1c; border:1px solid #333; border-radius:8px; padding:40px; width:100%; max-width:380px;">
+    <div id="login-modal"
+        style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+        <div
+            style="background:#1c1c1c; border:1px solid #333; border-radius:8px; padding:40px; width:100%; max-width:380px;">
             <h3 style="color:#00ffcc; margin-top:0;">Login</h3>
             <div style="margin-bottom:15px;">
                 <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Email</label>
-                <input type="email" id="login-email" style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+                <input type="email" id="login-email"
+                    style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
             </div>
             <div style="margin-bottom:20px;">
                 <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Password</label>
-                <input type="password" id="login-password" style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+                <input type="password" id="login-password"
+                    style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
             </div>
             <div id="login-error" style="color:#ff4444; font-size:0.85em; margin-bottom:15px; display:none;"></div>
             <div style="display:flex; gap:10px;">
-                <button onclick="doLogin()" style="flex:1; background:#00ffcc; color:#0f0f0f; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Accedi</button>
-                <button onclick="document.getElementById('login-modal').style.display='none'" style="background:transparent; color:#888; border:1px solid #333; padding:10px 15px; border-radius:6px; cursor:pointer;">Annulla</button>
+                <button onclick="doLogin()"
+                    style="flex:1; background:#00ffcc; color:#0f0f0f; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Accedi</button>
+                <button onclick="document.getElementById('login-modal').style.display='none'"
+                    style="background:transparent; color:#888; border:1px solid #333; padding:10px 15px; border-radius:6px; cursor:pointer;">Annulla</button>
             </div>
         </div>
     </div>
@@ -709,9 +727,9 @@
         let keywordLabelWidth = "";
         let botStatus = 'idle';
         let currentQuery = '';
-        let keywordFilterMode = 'useful'; // 'all', 'useful', 'top5'
+        let keywordFilterMode = 'top5'; // 'all', 'useful', 'top5'
 
-        window.changeKeywordFilter = function(val) {
+        window.changeKeywordFilter = function (val) {
             keywordFilterMode = val;
             render();
         };;
@@ -726,7 +744,7 @@
             render();
         };
 
-        window.doLogin = async function() {
+        window.doLogin = async function () {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const errorEl = document.getElementById('login-error');
@@ -740,7 +758,7 @@
             }
         };
 
-        window.toggleAuth = async function() {
+        window.toggleAuth = async function () {
             if (window.currentUser) {
                 await window.signOut(window.auth);
                 window.currentUser = null;
@@ -793,7 +811,7 @@
                     snapshot.forEach(doc => memory.push(doc.data()));
                     memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
                     appData.search_memory = memory;
-                    
+
                     if (memory.length > 0) {
                         appData.execution_id = memory[memory.length - 1].execution_id || "N/A";
                     }
@@ -1413,7 +1431,7 @@
 
             let usefulCount = s._usefulCount !== undefined ? s._usefulCount : 0;
             let foundCount = s.jobs_found_total || s.total_found || 0;
-            
+
             let usefulDisplay = `${usefulCount}`;
             if (foundCount > 0) {
                 let pct = Math.round((usefulCount / foundCount) * 100);
@@ -1566,7 +1584,7 @@
                 if (dateStr) uniqueDates.add(dateStr.split('T')[0]);
                 if (j.keyword) uniqueKeywords.add(j.keyword);
                 if (j.category) uniqueCategories.add(j.category);
-                
+
                 // Determine UI score type for filtering
                 let scoreType = 'non-valutato';
                 if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
@@ -1601,7 +1619,7 @@
                 });
             });
 
-            if(!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: '', keyword: '', category: '', score: '', liked: '' } };
+            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: '', keyword: '', category: '', score: '', liked: '' } };
             const state = appData.uiState;
 
             // --- FILTERING ---
@@ -1617,7 +1635,7 @@
             // --- SORTING ---
             filteredList.sort((a, b) => {
                 let valA, valB;
-                switch(state.sortCol) {
+                switch (state.sortCol) {
                     case 'title': valA = (a.title || '').toLowerCase(); valB = (b.title || '').toLowerCase(); break;
                     case 'company': valA = (a.company || '').toLowerCase(); valB = (b.company || '').toLowerCase(); break;
                     case 'location': valA = (a.location || '').toLowerCase(); valB = (b.location || '').toLowerCase(); break;
@@ -1658,10 +1676,10 @@
                     desc: descriptionText || '',
                     reason: j.reasoning || j.fit_reasoning || ''
                 };
-                
+
                 let titleText = escapeHtml(item.title);
                 let titleStyle = "text-decoration: none; border-bottom: 1px dashed var(--accent); color: var(--accent); font-weight: bold;";
-                
+
                 if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
                     if (j.fit_score >= 90) {
                         titleText = `🏆 ${titleText}`;
@@ -1770,18 +1788,18 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo ${state.sortCol === 'location' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="seniority" style="cursor: pointer;">Seniority ${state.sortCol === 'seniority' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="compensation" style="cursor: pointer;">Compensation ${state.sortCol === 'compensation' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="applications" style="cursor: pointer;">Apps ${state.sortCol === 'applications' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="category" style="cursor: pointer;">Categoria ${state.sortCol === 'category' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo ${state.sortCol === 'location' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="seniority" style="cursor: pointer;">Seniority ${state.sortCol === 'seniority' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="compensation" style="cursor: pointer;">Compensation ${state.sortCol === 'compensation' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="applications" style="cursor: pointer;">Apps ${state.sortCol === 'applications' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="category" style="cursor: pointer;">Categoria ${state.sortCol === 'category' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th>Link</th>
-                        <th class="sortable" data-sort="liked" style="cursor: pointer; text-align: center;">Preferenza ${state.sortCol === 'liked' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="applied" style="cursor: pointer;">Candidatura ${state.sortCol === 'applied' ? (state.sortDir==='asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="liked" style="cursor: pointer; text-align: center;">Preferenza ${state.sortCol === 'liked' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="applied" style="cursor: pointer;">Candidatura ${state.sortCol === 'applied' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
@@ -1848,7 +1866,7 @@
         // ==========================================
         function attachEvents() {
             const updateFilters = () => {
-                if(!appData.uiState) return;
+                if (!appData.uiState) return;
                 const fDate = document.getElementById('filter-date');
                 const fKeyword = document.getElementById('filter-keyword');
                 const fCat = document.getElementById('filter-category');
@@ -1856,27 +1874,27 @@
                 const fLiked = document.getElementById('filter-liked');
                 const fLimit = document.getElementById('filter-limit');
 
-                if(fDate) appData.uiState.filters.date = fDate.value;
-                if(fKeyword) appData.uiState.filters.keyword = fKeyword.value;
-                if(fCat) appData.uiState.filters.category = fCat.value;
-                if(fScore) appData.uiState.filters.score = fScore.value;
-                if(fLiked) appData.uiState.filters.liked = fLiked.value;
-                
-                if(fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
-                
+                if (fDate) appData.uiState.filters.date = fDate.value;
+                if (fKeyword) appData.uiState.filters.keyword = fKeyword.value;
+                if (fCat) appData.uiState.filters.category = fCat.value;
+                if (fScore) appData.uiState.filters.score = fScore.value;
+                if (fLiked) appData.uiState.filters.liked = fLiked.value;
+
+                if (fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
+
                 appData.uiState.page = 1;
                 render();
             };
 
             ['filter-date', 'filter-keyword', 'filter-category', 'filter-score', 'filter-liked', 'filter-limit'].forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.addEventListener('change', updateFilters);
+                if (el) el.addEventListener('change', updateFilters);
             });
 
             const btnClear = document.getElementById('btn-clear-filters');
             if (btnClear) {
                 btnClear.addEventListener('click', () => {
-                    if(!appData.uiState) return;
+                    if (!appData.uiState) return;
                     appData.uiState.filters = { date: '', keyword: '', category: '', score: '', liked: '' };
                     appData.uiState.page = 1;
                     render();
@@ -1887,7 +1905,7 @@
                 btn.addEventListener('click', () => {
                     if (btn.disabled) return;
                     const newPage = parseInt(btn.getAttribute('data-page'));
-                    if(!isNaN(newPage) && appData.uiState) {
+                    if (!isNaN(newPage) && appData.uiState) {
                         appData.uiState.page = newPage;
                         render();
                     }
@@ -1897,15 +1915,15 @@
             document.querySelectorAll('.sortable').forEach(th => {
                 th.addEventListener('click', () => {
                     const col = th.getAttribute('data-sort');
-                    if(!appData.uiState) return;
-                    
+                    if (!appData.uiState) return;
+
                     if (appData.uiState.sortCol === col) {
                         appData.uiState.sortDir = appData.uiState.sortDir === 'asc' ? 'desc' : 'asc';
                     } else {
                         appData.uiState.sortCol = col;
-                        appData.uiState.sortDir = 'desc'; 
+                        appData.uiState.sortDir = 'desc';
                     }
-                    appData.uiState.page = 1; 
+                    appData.uiState.page = 1;
                     render();
                 });
             });
@@ -1920,7 +1938,7 @@
                         await window.updateDoc(window.doc(window.db, "jobs", docId), {
                             needs_evaluation: true
                         });
-                    } catch(err) {
+                    } catch (err) {
                         console.error("Errore aggiornamento:", err);
                         alert("Errore nell'impostare la valutazione");
                         btn.disabled = false;
