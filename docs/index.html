@@ -1694,6 +1694,9 @@
                     <a href="javascript:void(0)" class="score-link" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: inherit;" title="Mostra ragioni">
                         ${scoreHtml}
                     </a>
+                    <div style="display: flex; justify-content: center; margin-top: 4px;">
+                        ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : `<button class="btn-eval admin-only ${window.currentUser ? '' : 'hidden-auth'}" data-docid="${j._doc_id || ''}" data-url="${item.url}" style="margin-top: 5px; font-size: 0.75em; padding: 2px 6px; border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 4px; cursor: pointer;" title="Richiedi valutazione a Gemini">🔄 Valuta</button>`}
+                    </div>
                 </td>
                 <td>${escapeHtml(item.seniority)}</td>
                 <td>${escapeHtml(item.compensation)}</td>
@@ -1904,6 +1907,25 @@
                     }
                     appData.uiState.page = 1; 
                     render();
+                });
+            });
+
+            document.querySelectorAll('.btn-eval').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const docId = btn.getAttribute('data-docid');
+                    if (!docId) return;
+                    btn.disabled = true;
+                    btn.textContent = '⏳...';
+                    try {
+                        await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                            needs_evaluation: true
+                        });
+                    } catch(err) {
+                        console.error("Errore aggiornamento:", err);
+                        alert("Errore nell'impostare la valutazione");
+                        btn.disabled = false;
+                        btn.textContent = '🔄 Valuta';
+                    }
                 });
             });
 
