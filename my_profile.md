@@ -2,7 +2,7 @@
 
 ## Summary
 
-Management Engineer specializing in Finance, graduated from Politecnico di Milano with honors (110/110, GPA 3.9/4). My profile combines a robust quantitative background in corporate finance (e.g. financial modeling, Monte Carlo simulations, corporate valuation, equity research...) with technical capabilities developed during my university studies (e.g. Python, Power BI, Data Analysis) and a strong interest in AI Automation. Winner of the CFA Institute Research Challenge 2025 in Italy. I am passionate about applying emerging technologies and data-driven approaches to solve complex business problems.
+Management Engineer specializing in Finance, graduated from Politecnico di Milano (110/110, GPA 3.9/4). Winner of the CFA Institute Research Challenge 2025 in Italy. I am passionate about applying emerging technologies and data-driven approaches to solve complex business problems.
 
 ## Professional Experience
 
@@ -18,7 +18,7 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 ## Education
 
 - **Master's Degree in Management Engineering – Finance** @ Politecnico di Milano (03/2024 – 03/2026). Final Grade: 110/110 (GPA: 3.9/4.0).
-- **Bachelor's Degree in Management and Production Engineering** @ Politecnico di Milano (09/2019 – 03/2024). Final Grade: 99/110 (GPA: 3.35/4.0).
+- **Bachelor's Degree in Management Engineering** @ Politecnico di Milano (09/2019 – 03/2024). Final Grade: 99/110 (GPA: 3.4/4.0).
 
 ## Key Projects & Achievements
 
@@ -39,24 +39,44 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 - **Soft Skills**: Leadership & Mentoring, Teamwork, Presentation skills, Operations Management, Time Management.
 - **Languages**: Italian (Native), English (C1 / Advanced Proficiency).
 
-## Interests
+## Interested in
 
-- Startups & Scaleups
-- Venture Capital
+### 🏆 Severity: GOLDEN BOOST (+15/+20 punti)
+- Startup / scaleup / organizzazione lean / team piccolo
+- Ruolo che unisce finance + tech/AI/data
+- VC / PE / fondo di investimento (Venture Capital and Private Equity)
+
+### ⭐ Severity: BONUS FORTE (+10/+15 punti)
+- Strategy consulting Big 3 (McKinsey, Boston Consulting Group, Bain & Company)
+- Linguaggio di ownership: "autonomia", "responsabilità end-to-end", "ownership"
+- Varietà di task / ruolo ibrido / "wear many hats"
+- Graduate program / rotational program
+- Progetti con deliverable concreti e risultati misurabili
+
+### ✓ Severity: BONUS MODERATO (+5/+10 punti)
+- Azienda mission-driven con purpose chiaro
+- Boutique / realtà di nicchia
 - Boutique Investment Funds
-- Strategy
-- Big 3 strategic consulting firms (McKinsey, Boston Consulting Group, Bain & Company)
-- I don't like internships, I'd prefer a full-time role, but I'm open to internships if they are very valuable and align with my interests.
 
 ## Not interested in
 
-- Investment banking roles
-- Freelance/Self-employed roles
-- Remote roles (hybrid is fine, but not fully remote)
-- Big 4 & Accenture Consulting
-- Insurance
-- Dev roles
-- Banking roles
+### 🚫 Severity: ZERO (punteggio = 0, non negoziabile)
+- Fully remote roles (hybrid e in-sede vanno bene)
+- Relocation fuori Lombardia o all'estero
 - Categorie Protette
 - Bending Spoons
-- maternity leave (or in general 1 year contract)
+- Contratti < 1 anno / sostituzioni maternità
+
+### ⛔ Severity: BOCCIATURA (punteggio massimo 40)
+- Investment Banking roles
+- Insurance
+- Dev roles puri (es. Software Engineer, Backend Developer)
+
+### ⚠️ Severity: PENALITÀ (-15/-20 punti dal punteggio finale)
+- Freelance / Self-employed roles
+
+### 📉 Severity: MALUS LEGGERO (-5/-10 punti)
+- Corporate grande / struttura gerarchica rigida
+- Ruolo puramente esecutivo: "supporto a...", "assistere il manager"
+- Ruolo puramente operativo/ripetitivo senza varietà
+- Menzione esplicita di orari estremi / "high pressure 24/7"
