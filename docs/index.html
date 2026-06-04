@@ -2248,8 +2248,13 @@
                     const data = window[`modalData_${targetId}`];
                     const scoreReasonText = data.scoreReason || data.reason || 'Nessuna informazione disponibile.';
 
-                    // Parse bullet points: split by newline, filter lines starting with * or -
-                    const lines = scoreReasonText.split(/\n/).filter(s => s.trim().length > 0);
+                    // Parse bullet points: handle both newline-separated and single-line inline bullets
+                    let normalizedText = scoreReasonText;
+                    if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*\-•]\s+/)) {
+                        normalizedText = normalizedText.replace(/(?:\s+)([\*\-•])\s+/g, '\n$1 ');
+                    }
+                    
+                    const lines = normalizedText.split(/\n/).filter(s => s.trim().length > 0);
                     const listHtml = lines.map(s => {
                         const cleaned = s.replace(/^\s*[\*\-•]\s*/, '');
                         return `<li>${cleaned}</li>`;
