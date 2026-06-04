@@ -1196,6 +1196,13 @@
                     const isEnabled = a.enabled !== false && used < maxJobs;
                     const statusIcon = isEnabled ? '✅' : '⛔';
                     const opacity = isEnabled ? '1' : '0.6';
+                    
+                    let resetText = '';
+                    if (a.next_reset_date) {
+                        const dateObj = new Date(a.next_reset_date);
+                        const formattedDate = dateObj.toLocaleDateString('it-IT', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                        resetText = `<span style="color:var(--text-muted); font-size: 0.85em; margin-left: 10px;">(Resetta il ${formattedDate})</span>`;
+                    }
 
                     return `
                         <div style="display: flex; align-items: center; margin-bottom: 12px; opacity: ${opacity};">
@@ -1203,8 +1210,9 @@
                             <div style="flex-grow: 1; background: rgba(0,0,0,0.3); height: 16px; border-radius: 8px; margin: 0 15px; overflow: hidden; border: 1px solid var(--border);">
                                 <div style="height: 100%; width: ${pct}%; background: ${barColor}; transition: width 0.3s ease;"></div>
                             </div>
-                            <div style="width: 150px; text-align: right; font-family: monospace; font-size: 0.9em; color: var(--text-muted);">
+                            <div style="width: 250px; text-align: right; font-family: monospace; font-size: 0.9em; color: var(--text-muted);">
                                 ${used}/${maxJobs} jobs <span style="color:var(--text-light); margin-left: 5px;">$${cost}</span>
+                                ${resetText}
                             </div>
                             <div style="width: 30px; text-align: right;" title="${isEnabled ? 'Attivo' : 'Esaurito/Disabilitato'}">${statusIcon}</div>
                         </div>

@@ -577,6 +577,11 @@ def _run_scraper(config, profile):
     apify_usage = db.load_apify_usage()
 
     execution_id = datetime.now(timezone.utc).isoformat()
+    
+    # Controllo reset mensile account Apify
+    from apify_pool import check_and_apply_resets
+    if check_and_apply_resets(apify_usage):
+        db.save_apify_usage(apify_usage)
 
     jobs_target = config.get("scraper", {}).get("jobs_target", 50)
     max_retries = config.get("scraper", {}).get("max_retries", 10)

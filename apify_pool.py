@@ -2,6 +2,54 @@ import os
 from datetime import datetime, timezone
 from apify_client import ApifyClient
 
+def check_and_apply_resets(usage: dict) -> bool:
+    """
+    Controlla se ci sono account il cui mese di fatturazione è scaduto.
+    Se sì, resetta i consumi e aggiorna la data del prossimo reset.
+    Ritorna True se è stato modificato qualcosa, così da poter salvare subito.
+    """
+    if "accounts" not in usage:
+        return False
+
+    today = datetime.now(timezone.utc).date()
+    modified = False
+
+    for account_id, acc in usage["accounts"].items():
+        next_reset_str = acc.get("next_reset_date")
+        if not next_reset_str:
+            continue
+            
+        next_reset = datetime.fromisoformat(next_reset_str).date()
+        
+        if today >= next_reset:
+            print(f"[*] Reset mensile budget applicato per l'Account #{account_id}.")
+            acc["total_jobs_returned"] = 0
+            acc["total_searches"] = 0
+            acc["enabled"] = True
+            
+            # Calcola il prossimo mese
+            m = next_reset.month + 1
+            y = next_reset.year
+            if m > 12:
+                m = 1
+                y += 1
+            
+            new_reset = next_reset.replace(year=y, month=m)
+            
+            # Nel caso rarissimo che lo script non giri per più mesi
+            while today >= new_reset:
+                m = new_reset.month + 1
+                y = new_reset.year
+                if m > 12:
+                    m = 1
+                    y += 1
+                new_reset = new_reset.replace(year=y, month=m)
+                
+            acc["next_reset_date"] = new_reset.isoformat()
+            modified = True
+
+    return modified
+
 def get_next_client(usage: dict) -> tuple[ApifyClient, str]:
     """
     Seleziona l'account Apify con il minor numero di `total_jobs_returned`

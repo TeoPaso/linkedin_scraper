@@ -202,12 +202,26 @@ def load_apify_usage() -> dict:
         "grand_total_jobs_returned": 0,
         "grand_total_searches": 0
     }
+    
+    # Mapping iniziale dei prossimi reset e consumi
+    initial_states = {
+        "1": {"next_reset_date": "2026-06-24", "total_jobs_returned": 5000},
+        "2": {"next_reset_date": "2026-06-18", "total_jobs_returned": 0},
+        "3": {"next_reset_date": "2026-07-04", "total_jobs_returned": 0},
+        "4": {"next_reset_date": "2026-07-04", "total_jobs_returned": 0},
+        "5": {"next_reset_date": "2026-06-09", "total_jobs_returned": 0},
+        "6": {"next_reset_date": "2026-06-09", "total_jobs_returned": 0},
+        "7": {"next_reset_date": "2026-06-09", "total_jobs_returned": 0},
+    }
+    
     for i in range(1, 8):
-        usage["accounts"][str(i)] = {
+        acc_id = str(i)
+        usage["accounts"][acc_id] = {
             "label": f"Account {i}",
-            "total_jobs_returned": 0,
+            "total_jobs_returned": initial_states[acc_id]["total_jobs_returned"],
             "total_searches": 0,
             "budget_jobs": 5000,
+            "next_reset_date": initial_states[acc_id]["next_reset_date"],
             "enabled": True,
             "errors": 0,
             "last_used": None
