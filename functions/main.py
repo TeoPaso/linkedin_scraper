@@ -96,7 +96,10 @@ Verifica la fascia:
 
 ═══ FORMATO OUTPUT ═══
 - fit_score: intero 0-100
-- reasoning: 2-3 righe IN ITALIANO, discorsive e dirette. NON ripetere il background del candidato (lo conosce già!). CONTESTUALIZZA: descrivi cosa farebbe nel pratico in questo ruolo. Se bocciato o penalizzato, spiega QUALE regola specifica ha causato la bocciatura/penalità.
+- reasoning: IN ITALIANO. Struttura la risposta in modo chiaro usando un breve elenco puntato (bullet points). NON ripetere il background del candidato. Includi:
+  * Cosa faresti nel pratico in questo ruolo (contestualizzazione).
+  * Punti di forza/debolezza (quali dimensioni o segnali sono stati premiati/penalizzati).
+  * Se bocciato o penalizzato, spiega QUALE regola specifica ha causato la bocciatura/penalità.
 - highlighted_description: copia il testo della "Descrizione" originale INTEGRALE (senza tagliarlo), inserendo tag HTML <mark>testo</mark> attorno alle parti più rilevanti, responsabilità chiave e requisiti cruciali.
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
