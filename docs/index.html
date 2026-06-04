@@ -2262,10 +2262,9 @@
                     const data = window[`modalData_${targetId}`];
                     const scoreReasonText = data.scoreReason || data.reason || 'Nessuna informazione disponibile.';
 
-                    // Parse bullet points: handle both newline-separated and single-line inline bullets
                     let normalizedText = scoreReasonText;
-                    if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*\-•]\s+/)) {
-                        normalizedText = normalizedText.replace(/(?:\s+)([\*\-•])\s+/g, '\n$1 ');
+                    if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*•]\s+/)) {
+                        normalizedText = normalizedText.replace(/(?:\s+)([\*•])\s+/g, '\n$1 ');
                     }
                     
                     const lines = normalizedText.split(/\n/).filter(s => s.trim().length > 0);

@@ -234,7 +234,7 @@ Controlla scrupolosamente le categorie "Not interested in" nel Profilo Candidato
 Se la job description viola una di queste regole, applica la direttiva indicata nel profilo per quella categoria:
 - Es. Se rientra in una categoria "ZERO", lo score finale è 0 (ferma la valutazione).
 - Es. Se rientra in "BOCCIATURA", lo score finale non può superare il massimo indicato (es. 50).
-Non applicare sbarramenti su location, seniority o tipo di contratto a meno che non siano scritti esplicitamente nel profilo.
+ATTENZIONE: QUESTE REGOLI SONO INVIOLABILI. Non puoi ignorarle né applicare bonus extra per "salvare" un'offerta che viola una hard rule.
 
 STEP 2 — CALCOLO DEI PUNTI DAL PROFILO (Base 70)
 Se la job non è stata scartata allo step 1, parti da una base di 70 punti.
@@ -246,9 +246,9 @@ Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
 
 STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
 Ora esprimi il TUO giudizio personale sulla job, al di là dei criteri espliciti nel profilo.
-Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva.
+Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva. È ASSOLUTAMENTE VIETATO ASSEGNARE UN PUNTEGGIO FUORI DA QUESTO RANGE (es. +60 o -50 sono VIETATI).
 Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
-Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto.
+Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI.
 
 STEP 4 — PUNTEGGIO FINALE
 fit_score = SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3).
