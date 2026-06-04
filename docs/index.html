@@ -1777,7 +1777,8 @@
                 const descId = "desc_" + Math.random().toString(36).substr(2, 9);
                 window[`modalData_${descId}`] = {
                     desc: descriptionText || '',
-                    reason: j.reasoning || j.fit_reasoning || ''
+                    reason: j.reasoning || j.fit_reasoning || '',
+                    scoreReason: j.fit_score_reasoning || ''
                 };
 
                 let titleText = escapeHtml(item.title);
@@ -2099,11 +2100,14 @@
                 btn.addEventListener('click', (e) => {
                     const targetId = e.currentTarget.getAttribute('data-target');
                     const data = window[`modalData_${targetId}`];
-                    const reasonText = data.reason || 'Nessuna informazione disponibile.';
+                    const scoreReasonText = data.scoreReason || data.reason || 'Nessuna informazione disponibile.';
 
-                    // Split reasoning into sentences for bullet points
-                    const sentences = reasonText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-                    const listHtml = sentences.map(s => `<li>${s}</li>`).join('');
+                    // Parse bullet points: split by newline, filter lines starting with * or -
+                    const lines = scoreReasonText.split(/\n/).filter(s => s.trim().length > 0);
+                    const listHtml = lines.map(s => {
+                        const cleaned = s.replace(/^\s*[\*\-•]\s*/, '');
+                        return `<li>${cleaned}</li>`;
+                    }).join('');
 
                     const scoreList = document.getElementById('score-reasoning-list');
                     if (scoreList) scoreList.innerHTML = listHtml;

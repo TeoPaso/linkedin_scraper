@@ -24,6 +24,7 @@ import db
 class JobEvaluation(BaseModel):
     fit_score: int
     reasoning: str
+    fit_score_reasoning: str = ""
     highlighted_description: str = ""
     compensation: str = ""
 
@@ -264,13 +265,17 @@ Verifica la fascia:
 - Scarto (50-69): 2+ debolezze importanti
 - Bocciatura (0-40): hard rule o mismatch grave
 
-═══ FORMATO OUTPUT ═══
-- fit_score: intero 0-100
-- reasoning: IN ITALIANO. Struttura la risposta in modo chiaro usando un breve elenco puntato (bullet points). NON ripetere il background del candidato. Includi:
-  * Cosa faresti nel pratico in questo ruolo (contestualizzazione).
-  * Punti di forza/debolezza (quali dimensioni o segnali sono stati premiati/penalizzati).
-  * Se bocciato o penalizzato, spiega QUALE regola specifica ha causato la bocciatura/penalità.
-- highlighted_description: copia il testo della "Descrizione" originale INTEGRALE (senza tagliarlo), inserendo tag HTML <mark>testo</mark> attorno alle parti più rilevanti, responsabilità chiave e requisiti cruciali.
+═══ FORMATO OUTPUT (4 campi) ═══
+- fit_score: intero 0-100.
+- reasoning: IN ITALIANO, testo DISCORSIVO (NO bullet points). Spiega brevemente:
+  Di cosa si tratta questo ruolo, cosa farebbe il candidato nel pratico giorno per giorno, perché è interessante o meno per lui. NON ripetere il background del candidato (lo conosce già!).
+- fit_score_reasoning: IN ITALIANO, ELENCO PUNTATO strutturato. Elenca i singoli fattori che hanno determinato il punteggio, ad esempio:
+  * Seniority fit: entry-level, perfetto (+15)
+  * Settore: startup fintech, match GOLDEN BOOST (+12)
+  * Location: Milano, OK
+  * Penalità: nessuna
+  * Punteggio: 70 base + 15 + 12 + ... = XX
+- highlighted_description: copia il testo della "Descrizione" originale INTEGRALE (senza tagliarlo), inserendo tag HTML <mark>testo</mark> attorno alle parti legate ai fattori di scoring: evidenzia ciò che ha alzato o abbassato il punteggio (match con interessi, segnali di bocciatura, requisiti di seniority, segnali culturali, ecc).
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
     try:
@@ -304,6 +309,7 @@ def process_and_evaluate_job(url: str, job_store: dict, profile: str, liked_hist
     
     data["fit_score"] = evaluation.fit_score
     data["reasoning"] = evaluation.reasoning
+    data["fit_score_reasoning"] = evaluation.fit_score_reasoning
     data["highlighted_description"] = evaluation.highlighted_description
     data["compensation"] = evaluation.compensation
     
