@@ -11,7 +11,6 @@ from email.mime.text import MIMEText
 import concurrent.futures
 import copy
 
-from apify_client import ApifyClient
 from google import genai
 from pydantic import BaseModel, field_validator
 import time
@@ -159,19 +158,20 @@ def construct_linkedin_url(
     return base_url + urllib.parse.urlencode(query_params)
 
 
-def scrape_jobs(query_params: dict, config: dict) -> list:
-    """Lancia l'Actor di Apify per lo scraping dei job post."""
-    apify_token = os.environ.get("APIFY_API_TOKEN")
-    if not apify_token:
-        print("ERRORE: Variabile d'ambiente APIFY_API_TOKEN non impostata.")
-        sys.exit(1)
-
-    client = ApifyClient(apify_token)
+def scrape_jobs(query_params: dict, config: dict, apify_usage: dict) -> list:
+    """Lancia l'Actor di Apify per lo scraping dei job post usando il pool di chiavi."""
+    from apify_pool import get_next_client, report_usage, report_error
+    
+    try:
+        client, account_id = get_next_client(apify_usage)
+    except RuntimeError as e:
+        print(f"[!] ERRORE FATALE: {e}")
+        return []
 
     time_filter = config.get("scraper", {}).get("time_filter", "r604800")
     location = config.get("preferences", {}).get("location", "Milan, Lombardy, Italy")
     url = construct_linkedin_url(query_params, location, time_filter)
-    print(f"[*] Avvio scraper su URL: {url}")
+    print(f"[*] Avvio scraper su URL: {url} (usando Account #{account_id})")
 
     run_input = {
         "urls": [url],
@@ -184,12 +184,19 @@ def scrape_jobs(query_params: dict, config: dict) -> list:
         dataset_id = run["defaultDatasetId"]
 
         items = client.dataset(dataset_id).list_items().items
+        jobs_returned = len(items)
+        
+        # Registra l'utilizzo per fatturazione
+        report_usage(account_id, jobs_returned, apify_usage)
+        
         print(
-            f"[*] Scraper completato. Trovati {len(items)} job post per la query corrente."
+            f"[*] Scraper completato. Trovati {jobs_returned} job post per la query corrente. "
+            f"Account #{account_id} totale consumato: {apify_usage['accounts'][account_id]['total_jobs_returned']}"
         )
         return items
     except Exception as e:
         print(f"[!] ERRORE durante l'esecuzione di Apify: {e}")
+        report_error(account_id, apify_usage)
         return []
 
 
@@ -371,7 +378,7 @@ DEVI RESTITUIRE UN OGGETTO JSON ESATTAMENTE CON QUESTA STRUTTURA:
         return {"job_labels": {}, "new_categories": []}
 
 
-def send_email_report(matched_jobs: list, metrics: dict, config: dict):
+def send_email_report(matched_jobs: list, metrics: dict, config: dict, apify_usage: dict = None):
     """Invia un'email di recap se ci sono offerte interessanti."""
     if not config.get("email", {}).get("send_email", True):
         return
@@ -480,7 +487,7 @@ def send_email_report(matched_jobs: list, metrics: dict, config: dict):
 
     html_content += f"""
         <p style="font-size: 14px; color: #888; text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
-            Report completo disponibile nella <a href="{dashboard_url}" style="color: #0a66c2; text-decoration: none; font-weight: bold;">Dashboard</a>.
+            Report completo e stato API disponibili nella <a href="{dashboard_url}" style="color: #0a66c2; text-decoration: none; font-weight: bold;">Dashboard</a>.
         </p>
     """
 
@@ -488,6 +495,7 @@ def send_email_report(matched_jobs: list, metrics: dict, config: dict):
     </body>
     </html>
     """
+
 
     msg.attach(MIMEText(html_content, "html"))
 
@@ -566,6 +574,7 @@ def _run_scraper(config, profile):
     job_store = db.load_job_store()
     job_categories = db.load_job_categories()
     cycle_state = db.load_cycle_state()
+    apify_usage = db.load_apify_usage()
 
     execution_id = datetime.now(timezone.utc).isoformat()
 
@@ -637,6 +646,12 @@ def _run_scraper(config, profile):
     while jobs_scraped_this_run < jobs_target and iteration < max_retries:
         if db.is_stop_requested():
             print("\n[!] STOP ricevuto dalla dashboard. Interruzione scraping...")
+            break
+        
+        # Check se abbiamo ancora budget Apify
+        eligible = [a for a in apify_usage.get("accounts", {}).values() if a.get("enabled") and a.get("total_jobs_returned", 0) < a.get("budget_jobs", 5000)]
+        if not eligible:
+            print("\n[!] TUTTI GLI ACCOUNT APIFY HANNO ESAURITO IL BUDGET O SONO DISABILITATI. Interruzione scraping...")
             break
 
         print(
@@ -712,7 +727,9 @@ def _run_scraper(config, profile):
         if is_core_iteration:
             current_config["scraper"]["time_filter"] = core_time_filter
 
-        jobs = scrape_jobs(query, current_config)
+        jobs = scrape_jobs(query, current_config, apify_usage)
+        # Salva usage dopo ogni iterazione in caso di crash
+        db.save_apify_usage(apify_usage)
 
         new_jobs_count = 0
         top_titles = []
@@ -946,7 +963,7 @@ def _run_scraper(config, profile):
         "avg_fit_score": avg_fit_score,
     }
 
-    send_email_report(matched_jobs, metrics_dict, config)
+    send_email_report(matched_jobs, metrics_dict, config, apify_usage)
 
     print("[*] Esecuzione completata con successo.")
 

@@ -30,6 +30,14 @@ jobs:
         continue-on-error: true
         env:
           # Queste variabili verranno prese dai GitHub Secrets, non dal file .env
+          APIFY_API_TOKEN_1: ${{ secrets.APIFY_API_TOKEN_1 }}
+          APIFY_API_TOKEN_2: ${{ secrets.APIFY_API_TOKEN_2 }}
+          APIFY_API_TOKEN_3: ${{ secrets.APIFY_API_TOKEN_3 }}
+          APIFY_API_TOKEN_4: ${{ secrets.APIFY_API_TOKEN_4 }}
+          APIFY_API_TOKEN_5: ${{ secrets.APIFY_API_TOKEN_5 }}
+          APIFY_API_TOKEN_6: ${{ secrets.APIFY_API_TOKEN_6 }}
+          APIFY_API_TOKEN_7: ${{ secrets.APIFY_API_TOKEN_7 }}
+          # Fallback
           APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}

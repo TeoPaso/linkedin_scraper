@@ -783,7 +783,7 @@
 
             try {
                 // Inizializza appData se non esiste
-                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: "", keyword: "", category: "", score: "", liked: "" } } };
+                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: "", keyword: "", category: "", score: "", liked: "" } } };
 
                 // 1. Ascolto in tempo reale dei Jobs (usiamo docChanges per efficienza)
                 window.onSnapshot(window.collection(window.db, "jobs"), (snapshot) => {
@@ -853,6 +853,17 @@
                     }
                     // Non fare render qui per evitare di resettare il textarea mentre si edita
                 });
+
+                // 7. Ascolto in tempo reale dell'utilizzo Apify
+                window.onSnapshot(window.doc(window.db, "app_state", "apify_usage"), (doc) => {
+                    if (doc.exists()) {
+                        appData.apify_usage = doc.data() || {};
+                        if (currentView === 'settings') {
+                            debouncedRender();
+                        }
+                    }
+                });
+
 
             } catch (e) {
                 console.error(e);
@@ -1157,7 +1168,69 @@
             const out = cfg.outreach || {};
             const em = cfg.email || {};
 
+            let apifyUsageHtml = '';
+            if (appData.apify_usage && appData.apify_usage.accounts) {
+                const usage = appData.apify_usage;
+                const accounts = Object.entries(usage.accounts || {}).map(([id, data]) => ({ id, ...data }));
+                accounts.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+                let totalJobs = usage.grand_total_jobs_returned || 0;
+                let maxBudgetJobs = accounts.reduce((acc, a) => acc + (a.budget_jobs || 5000), 0);
+                
+                // Assuming $1 per 1000 jobs
+                let totalCost = (totalJobs / 1000).toFixed(2);
+                let totalBudget = (maxBudgetJobs / 1000).toFixed(2);
+
+                let accountsHtml = accounts.map(a => {
+                    const maxJobs = a.budget_jobs || 5000;
+                    const used = a.total_jobs_returned || 0;
+                    const pct = Math.min(100, Math.max(0, (used / maxJobs) * 100));
+                    
+                    let barColor = 'var(--score-good)';
+                    if (pct > 80) barColor = 'var(--score-bad)';
+                    else if (pct > 50) barColor = 'var(--score-ok)';
+
+                    const cost = (used / 1000).toFixed(2);
+                    const budget = (maxJobs / 1000).toFixed(2);
+                    
+                    const isEnabled = a.enabled !== false && used < maxJobs;
+                    const statusIcon = isEnabled ? '✅' : '⛔';
+                    const opacity = isEnabled ? '1' : '0.6';
+
+                    return `
+                        <div style="display: flex; align-items: center; margin-bottom: 12px; opacity: ${opacity};">
+                            <div style="width: 100px; font-weight: 500; color: var(--text-light);">Account #${a.id}</div>
+                            <div style="flex-grow: 1; background: rgba(0,0,0,0.3); height: 16px; border-radius: 8px; margin: 0 15px; overflow: hidden; border: 1px solid var(--border);">
+                                <div style="height: 100%; width: ${pct}%; background: ${barColor}; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="width: 150px; text-align: right; font-family: monospace; font-size: 0.9em; color: var(--text-muted);">
+                                ${used}/${maxJobs} jobs <span style="color:var(--text-light); margin-left: 5px;">$${cost}</span>
+                            </div>
+                            <div style="width: 30px; text-align: right;" title="${isEnabled ? 'Attivo' : 'Esaurito/Disabilitato'}">${statusIcon}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                apifyUsageHtml = `
+                    <div class="card" style="border-left: 4px solid #00ccff; margin-bottom: 30px;">
+                        <h2 style="color: #00ccff; margin-bottom: 15px;">📊 Utilizzo API Apify</h2>
+                        <div style="background: rgba(0,204,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(0,204,255,0.2);">
+                            ${accountsHtml}
+                            <hr style="border-top: 1px dashed rgba(0,204,255,0.3); margin: 20px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+                                <span>Totale Rete Pool (7 Account):</span>
+                                <div style="font-family: monospace; font-size: 1.1em; color: #00ccff;">
+                                    ${totalJobs} / ${maxBudgetJobs} jobs 
+                                    <span style="color: var(--text-light); margin-left: 15px;">$${totalCost} / $${totalBudget}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             return `
+                ${apifyUsageHtml}
                 <div class="card" style="border-left: 4px solid var(--accent);">
                     <h2 style="color: var(--accent); margin-bottom: 10px;">Configurazione Scraper</h2>
                     <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 25px;">

@@ -189,6 +189,37 @@ def save_config_to_db(config: dict):
     """Salva la configurazione su Firestore."""
     db.collection("app_state").document("config").set(config)
 
+
+def load_apify_usage() -> dict:
+    """Legge lo stato di utilizzo degli account Apify da Firestore."""
+    doc = db.collection("app_state").document("apify_usage").get()
+    if doc.exists:
+        return doc.to_dict()
+    
+    # Inizializza nuovo se non esiste
+    usage = {
+        "accounts": {},
+        "grand_total_jobs_returned": 0,
+        "grand_total_searches": 0
+    }
+    for i in range(1, 8):
+        usage["accounts"][str(i)] = {
+            "label": f"Account {i}",
+            "total_jobs_returned": 0,
+            "total_searches": 0,
+            "budget_jobs": 5000,
+            "enabled": True,
+            "errors": 0,
+            "last_used": None
+        }
+    return usage
+
+
+def save_apify_usage(usage: dict):
+    """Salva lo stato di utilizzo degli account Apify su Firestore."""
+    db.collection("app_state").document("apify_usage").set(usage)
+
+
 def get_trigger():
     """Controlla se c'è un trigger per avviare la ricerca."""
     doc = db.collection("app_state").document("trigger").get()

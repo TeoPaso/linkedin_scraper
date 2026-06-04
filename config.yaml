@@ -1,6 +1,13 @@
 # config.yaml
 # I parametri di ricerca vengono generati dinamicamente da Gemini in base al profilo.
 
+# Configurazione Pool Apify (Bilanciamento Account)
+apify:
+  accounts_count: 7           # Numero di account nel pool
+  budget_per_account_dollars: 5.0     # Budget in dollari per account
+  cost_per_1000_jobs: 1.0     # Costo per 1000 jobs restituite
+  max_errors_before_disable: 3 # Errori consecutivi prima di disabilitare un account
+
 # Preferenze per la generazione delle ricerche
 preferences:
   location: "Milan, Lombardy, Italy" # Location fissa su Milano
