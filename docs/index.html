@@ -1227,6 +1227,16 @@
                         </div>
                     </div>
                 `;
+            } else {
+                // Fallback quando il database non ha ancora il documento apify_usage
+                apifyUsageHtml = `
+                    <div class="card" style="border-left: 4px solid #00ccff; margin-bottom: 30px;">
+                        <h2 style="color: #00ccff; margin-bottom: 15px;">📊 Utilizzo API Apify</h2>
+                        <div style="background: rgba(0,204,255,0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(0,204,255,0.2); text-align: center; color: var(--text-muted);">
+                            <i>Nessun dato di utilizzo API disponibile al momento.<br>Il database verrà inizializzato automaticamente non appena verrà avviata la prossima ricerca.</i>
+                        </div>
+                    </div>
+                `;
             }
 
             return `
