@@ -1817,7 +1817,7 @@
                 });
             });
 
-            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: [], keyword: '', category: '', score: '', liked: '' } };
+            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: [], keyword: '', category: '', score: '', liked: '', company: '' } };
             const state = appData.uiState;
 
             // --- FILTERING ---
@@ -1833,6 +1833,7 @@
                 if (state.filters.category && item.category !== state.filters.category) return false;
                 if (state.filters.score && item.scoreType !== state.filters.score) return false;
                 if (state.filters.liked && item.likedType !== state.filters.liked) return false;
+                if (state.filters.company && (!item.company || !item.company.toLowerCase().includes(state.filters.company.toLowerCase()))) return false;
                 return true;
             });
 
@@ -1953,6 +1954,10 @@
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
                 <input type="text" id="filter-date" placeholder="Scegli date..." style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
+            </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Azienda</label>
+                <input type="text" id="filter-company" placeholder="Cerca azienda..." value="${state.filters.company || ''}" style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
             </div>
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query</label>
@@ -2084,10 +2089,12 @@
                 const fScore = document.getElementById('filter-score');
                 const fLiked = document.getElementById('filter-liked');
                 const fLimit = document.getElementById('filter-limit');
+                const fCompany = document.getElementById('filter-company');
                 if (fKeyword) appData.uiState.filters.keyword = fKeyword.value;
                 if (fCat) appData.uiState.filters.category = fCat.value;
                 if (fScore) appData.uiState.filters.score = fScore.value;
                 if (fLiked) appData.uiState.filters.liked = fLiked.value;
+                if (fCompany) appData.uiState.filters.company = fCompany.value;
 
                 if (fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
 
@@ -2095,9 +2102,16 @@
                 render();
             };
 
-            ['filter-keyword', 'filter-category', 'filter-score', 'filter-liked', 'filter-limit'].forEach(id => {
+            ['filter-keyword', 'filter-category', 'filter-score', 'filter-liked', 'filter-limit', 'filter-company'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.addEventListener('change', updateFilters);
+                if (el) {
+                    el.addEventListener('change', updateFilters);
+                    if (id === 'filter-company') {
+                        el.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') updateFilters();
+                        });
+                    }
+                }
             });
 
             const fDateInput = document.getElementById('filter-date');
@@ -2118,7 +2132,7 @@
             if (btnClear) {
                 btnClear.addEventListener('click', () => {
                     if (!appData.uiState) return;
-                    appData.uiState.filters = { date: [], keyword: '', category: '', score: '', liked: '' };
+                    appData.uiState.filters = { date: [], keyword: '', category: '', score: '', liked: '', company: '' };
                     appData.uiState.page = 1;
                     render();
                 });
