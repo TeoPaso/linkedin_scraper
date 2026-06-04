@@ -783,7 +783,7 @@
 
             try {
                 // Inizializza appData se non esiste
-                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: "", keyword: "", category: "", score: "", liked: "" } } };
+                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
 
                 // 1. Ascolto in tempo reale dei Jobs (usiamo docChanges per efficienza)
                 window.onSnapshot(window.collection(window.db, "jobs"), (snapshot) => {
@@ -1813,12 +1813,14 @@
                 });
             });
 
-            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: '', keyword: '', category: '', score: '', liked: '' } };
+            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: [], keyword: '', category: '', score: '', liked: '' } };
             const state = appData.uiState;
 
             // --- FILTERING ---
             let filteredList = jobList.filter(item => {
-                if (state.filters.date && item.dateStr !== state.filters.date) return false;
+                const dateFilter = state.filters.date || [];
+                const activeDates = Array.isArray(dateFilter) ? dateFilter : [dateFilter];
+                if (activeDates.length > 0 && !activeDates.includes(item.dateStr)) return false;
                 if (state.filters.keyword && item.keyword !== state.filters.keyword) return false;
                 if (state.filters.category && item.category !== state.filters.category) return false;
                 if (state.filters.score && item.scoreType !== state.filters.score) return false;
@@ -1856,7 +1858,9 @@
             const startIndex = (state.page - 1) * state.limit;
             const paginatedList = filteredList.slice(startIndex, startIndex + state.limit);
 
-            const dateOptions = Array.from(uniqueDates).sort().reverse().map(d => `<option value="${d}" ${state.filters.date === d ? 'selected' : ''}>${d}</option>`).join('');
+            const currentDates = state.filters.date || [];
+            const activeDatesForSelect = Array.isArray(currentDates) ? currentDates : [currentDates];
+            const dateOptions = Array.from(uniqueDates).sort().reverse().map(d => `<option value="${d}" ${activeDatesForSelect.includes(d) ? 'selected' : ''}>${d}</option>`).join('');
             const keywordOptions = Array.from(uniqueKeywords).sort().map(k => `<option value="${escapeHtml(k)}" ${state.filters.keyword === k ? 'selected' : ''}>${escapeHtml(k)}</option>`).join('');
             const categoryOptions = Array.from(uniqueCategories).sort().map(c => `<option value="${escapeHtml(c)}" ${state.filters.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
 
@@ -1936,8 +1940,10 @@
         <h2>Tutte le Offerte Salvate</h2>
         <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
             <div>
-                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data</label>
-                <input type="date" id="filter-date" value="${state.filters.date}" style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Ctrl+Click per più date)</label>
+                <select id="filter-date" multiple style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 60px;">
+                    ${dateOptions}
+                </select>
             </div>
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query</label>
@@ -1954,13 +1960,13 @@
                 </select>
             </div>
             <div>
-                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Fit Score (Tier)</label>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Fit Score</label>
                 <select id="filter-score" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px;">
                     <option value="" ${state.filters.score === '' ? 'selected' : ''}>Tutti</option>
-                    <option value="golden" ${state.filters.score === 'golden' ? 'selected' : ''}>Golden Tier (90+)</option>
-                    <option value="tiera" ${state.filters.score === 'tiera' ? 'selected' : ''}>Tier A (80-89)</option>
-                    <option value="tierb" ${state.filters.score === 'tierb' ? 'selected' : ''}>Tier B (70-79)</option>
-                    <option value="scartato" ${state.filters.score === 'scartato' ? 'selected' : ''}>Scartati (<70)</option>
+                    <option value="golden" ${state.filters.score === 'golden' ? 'selected' : ''}>🏆</option>
+                    <option value="tiera" ${state.filters.score === 'tiera' ? 'selected' : ''}>⭐</option>
+                    <option value="tierb" ${state.filters.score === 'tierb' ? 'selected' : ''}>✓</option>
+                    <option value="scartato" ${state.filters.score === 'scartato' ? 'selected' : ''}>❌</option>
                     <option value="non-valutato" ${state.filters.score === 'non-valutato' ? 'selected' : ''}>Non Valutati</option>
                 </select>
             </div>
@@ -2069,7 +2075,7 @@
                 const fLiked = document.getElementById('filter-liked');
                 const fLimit = document.getElementById('filter-limit');
 
-                if (fDate) appData.uiState.filters.date = fDate.value;
+                if (fDate) appData.uiState.filters.date = Array.from(fDate.selectedOptions).map(opt => opt.value);
                 if (fKeyword) appData.uiState.filters.keyword = fKeyword.value;
                 if (fCat) appData.uiState.filters.category = fCat.value;
                 if (fScore) appData.uiState.filters.score = fScore.value;
@@ -2090,7 +2096,7 @@
             if (btnClear) {
                 btnClear.addEventListener('click', () => {
                     if (!appData.uiState) return;
-                    appData.uiState.filters = { date: '', keyword: '', category: '', score: '', liked: '' };
+                    appData.uiState.filters = { date: [], keyword: '', category: '', score: '', liked: '' };
                     appData.uiState.page = 1;
                     render();
                 });

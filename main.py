@@ -227,61 +227,48 @@ Azienda: {job.get("companyName", "Unknown")}
 Location: {job.get("location", "Unknown")}
 Descrizione: {job.get("descriptionText", "")}
 
-═══ PROCESSO DI VALUTAZIONE (segui questi 4 step IN ORDINE) ═══
+═══ PROCESSO DI VALUTAZIONE ═══
 
-STEP 1 — HARD RULES CHECK
-Il profilo contiene "Interested in" (tier: 🏆 GOLDEN BOOST, ⭐ BONUS FORTE, ✓ BONUS MODERATO) e "Not interested in" (tier: 🚫 ZERO, ⛔ BOCCIATURA, ⚠️ PENALITÀ, 📉 MALUS LEGGERO).
-Controlla se il lavoro rientra in un elemento di "Not interested in":
-- Se rientra nella fascia 🚫 ZERO → fit_score = 0, STOP.
-- Se rientra nella fascia ⛔ BOCCIATURA → fit_score = massimo 40.
-- Se rientra nella fascia ⚠️ PENALITÀ → annota la penalità (-15/-20 punti) da applicare dopo.
-- Se rientra nella fascia 📉 MALUS LEGGERO → annota il malus (-5/-10 punti) da applicare dopo.
+STEP 1 — HARD RULES & SBARRAMENTI
+Controlla scrupolosamente le categorie "Not interested in" nel Profilo Candidato (es. 🚫 ZERO, ⛔ BOCCIATURA).
+Se la job description viola una di queste regole, applica la direttiva indicata nel profilo per quella categoria:
+- Es. Se rientra in una categoria "ZERO", lo score finale è 0 (ferma la valutazione).
+- Es. Se rientra in "BOCCIATURA", lo score finale non può superare il massimo indicato (es. 50).
+Non applicare sbarramenti su location, seniority o tipo di contratto a meno che non siano scritti esplicitamente nel profilo.
 
-STEP 2 — SENIORITY & LOCATION
-- Il lavoro deve essere in Lombardia (o ibrido/remote con sede in Lombardia). Se fuori Lombardia o estero → fit_score = 0.
-- Esperienza richiesta:
-  - 0-1 anni obbligatori → OK
-  - Fino a 2 anni "preferibili" (NON obbligatori) → OK, score inalterato
-  - 2+ anni OBBLIGATORI → fit_score = massimo 40 (bocciatura seniority)
-  - 5+ anni anche solo preferibili → fit_score = massimo 40 (bocciatura seniority)
+STEP 2 — CALCOLO DEI PUNTI DAL PROFILO (Base 70)
+Se la job non è stata scartata allo step 1, parti da una base di 70 punti.
+Leggi attentamente il Profilo Candidato e cerca match nella Job Description per TUTTE le preferenze indicate (es. "Interested in", seniority, contratto, skills).
+- Per ogni match positivo, aggiungi il punteggio ESATTO indicato nel profilo per quella categoria (es. +10, +5, +2).
+- Per ogni match negativo (es. MALUS, PENALITÀ), sottrai il punteggio ESATTO indicato nel profilo.
+IMPORTANTE: NON inventare o applicare punteggi (es. +15, +3, -5) se non sono scritti nel testo del profilo. Il tuo compito è solo leggere i punti dal profilo e sommarli.
+Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
 
-STEP 3 — VALUTAZIONE DIMENSIONALE (solo se superati step 1-2, parti da un base di 70)
-Valuta queste 5 dimensioni IN ORDINE DI IMPORTANZA:
-
-a) SENIORITY FIT (peso 30%): Il ruolo è adatto a un neolaureato magistrale con ~8 mesi di esperienza (6 mesi CFA Research Challenge + 2 mesi stage)?
-   Entry-level/junior/neolaureato → +15 punti | Non specificato ma compatibile → +10 | Leggermente sopra → +5
-
-b) SETTORE & AZIENDA (peso 25%): Controlla i tier in "Interested in":
-   Match 🏆 GOLDEN BOOST → +12 | Match ⭐ BONUS FORTE → +8 | Match ✓ BONUS MODERATO → +5 | Neutro → +0
-
-c) CULTURAL FIT (peso 20%): Cerca segnali nella job description:
-   Team piccolo, ownership, autonomia, varietà → fino a +10 | Struttura rigida, ruolo esecutivo → fino a -5
-
-d) CONTRATTO (peso 15%): Se indicato nella JD:
-   Indeterminato → +5 | Apprendistato → +3 | Stage → +0 | Non specificato → +2
-
-e) SKILL MATCH (peso 10%): Le competenze richieste corrispondono al profilo?
-   Forte corrispondenza → +5 | Parziale → +2 | Nessuna → +0
+STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
+Ora esprimi il TUO giudizio personale sulla job, al di là dei criteri espliciti nel profilo.
+Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva.
+Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
+Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto.
 
 STEP 4 — PUNTEGGIO FINALE
-Somma: base 70 + bonus step 3 - eventuali penalità/malus step 1.
+fit_score = SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3).
+(A meno che una hard rule dello step 1 non dica esplicitamente di abbassarlo).
 Verifica la fascia:
-- Golden (90-100): eccelle su tutte le dimensioni
-- Fascia A (80-89): eccelle su almeno 3/5 dimensioni
-- Fascia B (70-79): buono ma 1-2 debolezze
-- Scarto (50-69): 2+ debolezze importanti
-- Bocciatura (0-40): hard rule o mismatch grave
+- Golden (90+): eccelle
+- Fascia A (80-89): molto buono
+- Fascia B (70-79): discreto
+- Scarto (50-69): debole
+- Bocciatura (0-40): non in target
 
 ═══ FORMATO OUTPUT (4 campi) ═══
-- fit_score: intero 0-100.
-- reasoning: IN ITALIANO, testo DISCORSIVO (NO bullet points). Spiega brevemente:
-  Di cosa si tratta questo ruolo, cosa farebbe il candidato nel pratico giorno per giorno, perché è interessante o meno per lui. NON ripetere il background del candidato (lo conosce già!).
-- fit_score_reasoning: IN ITALIANO, ELENCO PUNTATO strutturato. Elenca i singoli fattori che hanno determinato il punteggio, ad esempio:
-  * Seniority fit: entry-level, perfetto (+15)
-  * Settore: startup fintech, match GOLDEN BOOST (+12)
-  * Location: Milano, OK
-  * Penalità: nessuna
-  * Punteggio: 70 base + 15 + 12 + ... = XX
+- fit_score: intero (il punteggio finale dello step 4).
+- reasoning: IN ITALIANO, testo DISCORSIVO (NO bullet points). Spiega brevemente di cosa si tratta questo ruolo.
+- fit_score_reasoning: IN ITALIANO, ELENCO PUNTATO strutturato. Elenca i singoli fattori che hanno determinato il punteggio, SEPARANDO chiaramente i criteri del profilo dal tuo giudizio personale:
+  * [Nome fattore dal profilo]: motivazione (+X come da profilo)
+  * [Nome fattore dal profilo]: motivazione (-Y come da profilo)
+  * Subtotale profilo: 70 base + X - Y = ZZ
+  * 💡 Mio giudizio: [spiegazione sintetica di cosa ti ha convinto o preoccupato] (+/-N)
+  * Punteggio finale: ZZ + N = XX
 - highlighted_description: copia il testo della "Descrizione" originale INTEGRALE (senza tagliarlo), inserendo tag HTML <mark>testo</mark> attorno alle parti legate ai fattori di scoring: evidenzia ciò che ha alzato o abbassato il punteggio (match con interessi, segnali di bocciatura, requisiti di seniority, segnali culturali, ecc).
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
