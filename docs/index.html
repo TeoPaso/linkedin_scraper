@@ -1824,7 +1824,11 @@
             let filteredList = jobList.filter(item => {
                 const dateFilter = state.filters.date || [];
                 const activeDates = Array.isArray(dateFilter) ? dateFilter : [dateFilter];
-                if (activeDates.length > 0 && !activeDates.includes(item.dateStr)) return false;
+                if (activeDates.length === 2) {
+                    if (item.dateStr < activeDates[0] || item.dateStr > activeDates[1]) return false;
+                } else if (activeDates.length === 1) {
+                    if (item.dateStr !== activeDates[0]) return false;
+                }
                 if (state.filters.keyword && item.keyword !== state.filters.keyword) return false;
                 if (state.filters.category && item.category !== state.filters.category) return false;
                 if (state.filters.score && item.scoreType !== state.filters.score) return false;
@@ -2094,11 +2098,11 @@
             const fDateInput = document.getElementById('filter-date');
             if (fDateInput) {
                 flatpickr(fDateInput, {
-                    mode: "multiple",
+                    mode: "range",
                     dateFormat: "Y-m-d",
                     defaultDate: appData.uiState.filters.date || [],
                     onChange: function(selectedDates, dateStr, instance) {
-                        appData.uiState.filters.date = dateStr ? dateStr.split(', ') : [];
+                        appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
                         appData.uiState.page = 1;
                         render();
                     }
