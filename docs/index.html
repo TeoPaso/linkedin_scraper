@@ -1905,6 +1905,9 @@
 
                 return `
             <tr class="job-row">
+                <td style="text-align: center;">
+                    <input type="checkbox" class="job-checkbox" data-docid="${j._doc_id || ''}">
+                </td>
                 <td>
                     <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="${titleStyle}" title="Mostra descrizione">
                         ${titleText}
@@ -1920,7 +1923,7 @@
                         ${scoreHtml}
                     </a>
                     <div style="display: flex; justify-content: center; margin-top: 4px;">
-                        ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : `<button class="btn-eval admin-only ${window.currentUser ? '' : 'hidden-auth'}" data-docid="${j._doc_id || ''}" data-url="${item.url}" style="margin-top: 5px; font-size: 0.75em; padding: 2px 6px; border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 4px; cursor: pointer;" title="Richiedi valutazione a Gemini">🔄 Valuta</button>`}
+                        ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : ''}
                     </div>
                 </td>
                 <td>${escapeHtml(item.seniority)}</td>
@@ -1984,8 +1987,9 @@
                     <option value="disliked" ${state.filters.liked === 'disliked' ? 'selected' : ''}>👎</option>
                 </select>
             </div>
-            <div style="align-self: flex-end; padding-bottom: 5px;">
+            <div style="align-self: flex-end; padding-bottom: 5px; display: flex; gap: 10px;">
                 <button id="btn-clear-filters" style="height: 32px; display: flex; align-items: center; padding: 0 15px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
+                <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 32px; display: flex; align-items: center; padding: 0 15px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
             </div>
             <div style="margin-left: auto; align-self: flex-end; padding-bottom: 5px;">
                 <span id="jobs-counter" class="metric" style="font-size: 1.1em;">${totalItems}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte trovate</span>
@@ -1995,6 +1999,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th style="width: 30px; text-align: center;"><input type="checkbox" id="select-all-jobs" title="Seleziona tutti nella pagina"></th>
                         <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo ${state.sortCol === 'location' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
@@ -2010,7 +2015,7 @@
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
-                    ${rows.length ? rows : '<tr><td colspan="9" style="text-align:center; padding:20px;">Nessun risultato.</td></tr>'}
+                    ${rows.length ? rows : '<tr><td colspan="100" style="text-align:center; padding:20px;">Nessun risultato.</td></tr>'}
                 </tbody>
             </table>
             
@@ -2146,24 +2151,51 @@
                 });
             });
 
-            document.querySelectorAll('.btn-eval').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const docId = btn.getAttribute('data-docid');
-                    if (!docId) return;
-                    btn.disabled = true;
-                    btn.textContent = '⏳...';
+            const selectAllCheckbox = document.getElementById('select-all-jobs');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', (e) => {
+                    document.querySelectorAll('.job-checkbox').forEach(cb => {
+                        cb.checked = e.target.checked;
+                    });
+                });
+            }
+
+            const btnEvalSelected = document.getElementById('btn-eval-selected');
+            if (btnEvalSelected) {
+                btnEvalSelected.addEventListener('click', async () => {
+                    const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+                    if (checkedBoxes.length === 0) {
+                        alert("Seleziona almeno una job da valutare.");
+                        return;
+                    }
+                    
+                    if (!confirm(`Vuoi richiedere la valutazione di ${checkedBoxes.length} job?`)) return;
+                    
+                    btnEvalSelected.disabled = true;
+                    btnEvalSelected.textContent = '⏳ Inviando...';
+                    
                     try {
-                        await window.updateDoc(window.doc(window.db, "jobs", docId), {
-                            needs_evaluation: true
+                        const promises = Array.from(checkedBoxes).map(cb => {
+                            const docId = cb.getAttribute('data-docid');
+                            if (docId) {
+                                return window.updateDoc(window.doc(window.db, "jobs", docId), {
+                                    needs_evaluation: true
+                                });
+                            }
                         });
+                        await Promise.all(promises);
+                        showToast(`Richiesta valutazione per ${checkedBoxes.length} job inviata!`);
                     } catch (err) {
-                        console.error("Errore aggiornamento:", err);
+                        console.error("Errore valutazione multipla:", err);
                         alert("Errore nell'impostare la valutazione: " + err.message);
-                        btn.disabled = false;
-                        btn.textContent = '🔄 Valuta';
+                    } finally {
+                        btnEvalSelected.disabled = false;
+                        btnEvalSelected.textContent = '🔄 Valuta Selezionati';
+                        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+                        document.querySelectorAll('.job-checkbox').forEach(cb => cb.checked = false);
                     }
                 });
-            });
+            }
 
             document.querySelectorAll('.btn-like').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
