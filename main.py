@@ -250,9 +250,14 @@ Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi comp
 Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
 Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI.
 
-STEP 4 — PUNTEGGIO FINALE
-fit_score = SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3).
-(A meno che una hard rule dello step 1 non dica esplicitamente di abbassarlo).
+STEP 4 — PUNTEGGIO FINALE (CALCOLO MATEMATICO E CAPPING)
+1. Calcola il punteggio provvisorio: SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3) = SCORE PROVVISORIO.
+2. Applica i "cap" (sbarramenti) dello Step 1, se l'offerta ha violato qualche regola:
+   - Se c'è una violazione "ZERO", il fit_score DEVE ESSERE 0.
+   - Se c'è una "BOCCIATURA" (punteggio massimo 50), e lo SCORE PROVVISORIO è > 50, il fit_score DEVE ESSERE RIDOTTO A 50.
+   - Altrimenti, fit_score = SCORE PROVVISORIO.
+   
+Esempio: Se lo score provvisorio è 80 ma c'è "Bending Spoons" (Bocciatura, max 50), il punteggio finale SARÀ 50. Non 80 e non 77. 50 esatto.
 Verifica la fascia:
 - Golden (90+): eccelle
 - Fascia A (80-89): molto buono
