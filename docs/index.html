@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Execution Dashboard</title>
+    <!-- Flatpickr per calendario multi-selezione -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         :root {
             --bg-main: #0f0f0f;
@@ -1940,10 +1944,8 @@
         <h2>Tutte le Offerte Salvate</h2>
         <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
             <div>
-                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Ctrl+Click per più date)</label>
-                <select id="filter-date" multiple style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 60px;">
-                    ${dateOptions}
-                </select>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
+                <input type="text" id="filter-date" placeholder="Scegli date..." style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
             </div>
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Query</label>
@@ -2068,14 +2070,11 @@
         function attachEvents() {
             const updateFilters = () => {
                 if (!appData.uiState) return;
-                const fDate = document.getElementById('filter-date');
                 const fKeyword = document.getElementById('filter-keyword');
                 const fCat = document.getElementById('filter-category');
                 const fScore = document.getElementById('filter-score');
                 const fLiked = document.getElementById('filter-liked');
                 const fLimit = document.getElementById('filter-limit');
-
-                if (fDate) appData.uiState.filters.date = Array.from(fDate.selectedOptions).map(opt => opt.value);
                 if (fKeyword) appData.uiState.filters.keyword = fKeyword.value;
                 if (fCat) appData.uiState.filters.category = fCat.value;
                 if (fScore) appData.uiState.filters.score = fScore.value;
@@ -2087,10 +2086,24 @@
                 render();
             };
 
-            ['filter-date', 'filter-keyword', 'filter-category', 'filter-score', 'filter-liked', 'filter-limit'].forEach(id => {
+            ['filter-keyword', 'filter-category', 'filter-score', 'filter-liked', 'filter-limit'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('change', updateFilters);
             });
+
+            const fDateInput = document.getElementById('filter-date');
+            if (fDateInput) {
+                flatpickr(fDateInput, {
+                    mode: "multiple",
+                    dateFormat: "Y-m-d",
+                    defaultDate: appData.uiState.filters.date || [],
+                    onChange: function(selectedDates, dateStr, instance) {
+                        appData.uiState.filters.date = dateStr ? dateStr.split(', ') : [];
+                        appData.uiState.page = 1;
+                        render();
+                    }
+                });
+            }
 
             const btnClear = document.getElementById('btn-clear-filters');
             if (btnClear) {
