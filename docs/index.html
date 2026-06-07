@@ -626,6 +626,92 @@
         .hidden-auth {
             display: none !important;
         }
+
+        /* --- Mobile Responsive --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+            
+            nav {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+                padding: 15px 10px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                width: 100%;
+                justify-content: flex-start;
+                gap: 8px;
+            }
+
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.9em;
+            }
+            
+            .search-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-grid, .settings-grid, .grid-header {
+                grid-template-columns: 1fr;
+            }
+            
+            .category-item {
+                min-width: 260px;
+                max-width: 280px;
+            }
+            
+            .modal-container {
+                width: 95%;
+                margin: 0 auto;
+                max-height: 90vh;
+            }
+            
+            .modal-body {
+                padding: 15px;
+            }
+            
+            .bar-label {
+                width: 120px;
+                min-width: 100px;
+                font-size: 0.8em;
+                white-space: normal; /* Allow text to wrap instead of overflowing */
+                word-wrap: break-word;
+            }
+
+            .bar-value {
+                min-width: 60px;
+                font-size: 0.8em;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.85em;
+            }
+
+            /* Fix long urls or words escaping containers */
+            .desc-box, .reasoning-box, a, .metric {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                word-break: break-word;
+            }
+            
+            .table-responsive {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
     </style>
 
     <!-- Firebase JS SDK (v10 modular) -->
