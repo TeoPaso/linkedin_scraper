@@ -1,9 +1,10 @@
 import os
 from firebase_admin import initialize_app, firestore
-from firebase_functions import firestore_fn
+from firebase_functions import scheduler_fn
 from google import genai
 from pydantic import BaseModel, field_validator
 import firebase_admin
+import time
 
 # Lazy initialization for Firebase Admin to prevent deployment timeouts
 def get_db():
@@ -158,40 +159,42 @@ def get_preferences():
         
     return liked_history, disliked_history
 
-@firestore_fn.on_document_updated(document="jobs/{jobId}", region="europe-west1")
-def eval_job_on_demand(event: firestore_fn.Event[firestore_fn.Change[firestore_fn.DocumentSnapshot | None]]) -> None:
-    if event.data is None or event.data.after is None:
+@scheduler_fn.on_schedule(schedule="* * * * *", region="europe-west1", timeout_sec=180)
+def eval_pending_jobs(event: scheduler_fn.ScheduledEvent) -> None:
+    db = get_db()
+    
+    # Prendi un batch di massimo 10 job che necessitano di valutazione
+    jobs_ref = db.collection("jobs").where(filter=firestore.FieldFilter("needs_evaluation", "==", True)).limit(10).stream()
+    
+    jobs_to_evaluate = list(jobs_ref)
+    
+    if not jobs_to_evaluate:
         return
-
-    after_data = event.data.after.to_dict()
-    before_data = event.data.before.to_dict() if event.data.before else {}
-
-    needs_eval_before = before_data.get("needs_evaluation", False)
-    needs_eval_after = after_data.get("needs_evaluation", False)
-
-    # Scatta solo se needs_evaluation passa da False/NonEsistente a True
-    if needs_eval_after and not needs_eval_before:
-        job_data = after_data.get("job_data", {})
+        
+    print(f"[*] Trovati {len(jobs_to_evaluate)} job da valutare. Inizio elaborazione batch...")
+    
+    # Carica il profilo e le preferenze una sola volta per il batch
+    profile = ""
+    profile_doc = db.collection("app_state").document("profile").get()
+    if profile_doc.exists:
+        profile = profile_doc.to_dict().get("content", "")
+    else:
+        print("[-] Profilo non trovato su Firestore (app_state/profile), la valutazione potrebbe essere inaccurata.")
+    
+    liked_history, disliked_history = get_preferences()
+    
+    for idx, doc in enumerate(jobs_to_evaluate):
+        data = doc.to_dict()
+        job_data = data.get("job_data", {})
         title = job_data.get("title", "Unknown Title")
         
-        print(f"[*] Inizio valutazione on-demand per: {title}")
+        print(f"  [{idx+1}/{len(jobs_to_evaluate)}] Valutazione in corso per: {title}")
         
         try:
-            # Carica il profilo da Firestore
-            profile = ""
-            db = get_db()
-            profile_doc = db.collection("app_state").document("profile").get()
-            if profile_doc.exists:
-                profile = profile_doc.to_dict().get("content", "")
-            else:
-                print("[-] Profilo non trovato su Firestore (app_state/profile), la valutazione potrebbe essere inaccurata.")
-            
-            liked_history, disliked_history = get_preferences()
-            
             evaluation = evaluate_job_with_gemini(job_data, profile, liked_history, disliked_history)
             
-            # Update
-            event.data.after.reference.set({
+            # Update del documento
+            doc.reference.set({
                 "fit_score": evaluation.fit_score,
                 "reasoning": evaluation.reasoning,
                 "fit_score_reasoning": evaluation.fit_score_reasoning,
@@ -200,11 +203,17 @@ def eval_job_on_demand(event: firestore_fn.Event[firestore_fn.Change[firestore_f
                 "needs_evaluation": firestore.DELETE_FIELD
             }, merge=True)
             
-            print(f"[v] Valutazione completata per '{title}'. Fit Score: {evaluation.fit_score}")
+            print(f"  [v] Completato '{title}' -> Score: {evaluation.fit_score}")
             
         except Exception as e:
-            print(f"[!] Errore durante eval_job_on_demand: {e}")
-            event.data.after.reference.set({
+            print(f"  [!] Errore durante la valutazione di '{title}': {e}")
+            doc.reference.set({
                 "needs_evaluation": firestore.DELETE_FIELD,
                 "reasoning": f"Errore valutazione in Cloud Function: {e}"
             }, merge=True)
+            
+        # Rate limiting pausa tra le chiamate (tranne l'ultima)
+        if idx < len(jobs_to_evaluate) - 1:
+            time.sleep(4.5)
+            
+    print("[*] Batch di valutazioni completato.")
