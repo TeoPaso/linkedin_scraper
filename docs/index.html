@@ -2076,6 +2076,20 @@
                     <button class="modal-close" id="btn-close-modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <h4 style="margin-bottom: 10px; margin-top: 0;">Azioni</h4>
+                    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <a href="#" id="modal-btn-link" target="_blank" style="background: var(--accent); color: var(--bg-main); border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; transition: transform 0.2s;">Apri su LinkedIn ↗</a>
+                        
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-like" id="modal-btn-like" data-like="true" style="border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Like">👍</button>
+                            <button class="btn-like" id="modal-btn-dislike" data-like="false" style="border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Dislike">👎</button>
+                        </div>
+
+                        <button class="btn-applied" id="modal-btn-applied" style="border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: auto;">
+                            Non applicato
+                        </button>
+                    </div>
+
                     <h4 style="margin-bottom: 10px;">Metadati</h4>
                     <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div><strong style="color: var(--text-muted);">Luogo:</strong> <span id="modal-meta-location"></span></div>
@@ -2090,20 +2104,6 @@
                     
                     <h4 style="margin-bottom: 10px;">Description text</h4>
                     <div class="desc-box" id="modal-description"></div>
-                    
-                    <h4 style="margin-bottom: 10px; margin-top: 20px;">Azioni</h4>
-                    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                        <a href="#" id="modal-btn-link" target="_blank" style="background: var(--accent); color: var(--bg-main); border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; transition: transform 0.2s;">Apri su LinkedIn ↗</a>
-                        
-                        <div style="display: flex; gap: 5px;">
-                            <button class="btn-like" id="modal-btn-like" data-like="true" style="border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Like">👍</button>
-                            <button class="btn-like" id="modal-btn-dislike" data-like="false" style="border: 1px solid var(--border); padding: 8px 12px; border-radius: 4px; cursor: pointer; transition: all 0.2s;" title="Dislike">👎</button>
-                        </div>
-
-                        <button class="btn-applied" id="modal-btn-applied" style="border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-left: auto;">
-                            Non applicato
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
