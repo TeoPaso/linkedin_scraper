@@ -2023,6 +2023,15 @@
                     <option value="not-applied" ${state.filters.applied === 'not-applied' ? 'selected' : ''}>Non candidato</option>
                 </select>
             </div>
+            <div>
+                <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Per Pagina</label>
+                <select id="filter-limit" style="padding: 6px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 100px;">
+                    <option value="10" ${state.limit === 10 ? 'selected' : ''}>10</option>
+                    <option value="50" ${state.limit === 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${state.limit === 100 ? 'selected' : ''}>100</option>
+                    <option value="250" ${state.limit === 250 ? 'selected' : ''}>250</option>
+                </select>
+            </div>
             <div style="align-self: flex-end; padding-bottom: 5px; display: flex; gap: 10px;">
                 <button id="btn-clear-filters" style="height: 32px; display: flex; align-items: center; padding: 0 15px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
                 <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 32px; display: flex; align-items: center; padding: 0 15px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
@@ -2052,15 +2061,6 @@
                     <button class="btn-page" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''} style="padding: 6px 12px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; ${state.page <= 1 ? 'opacity: 0.5' : ''}">&laquo; Prec</button>
                     <span>Pagina <strong>${state.page}</strong> di ${totalPages}</span>
                     <button class="btn-page" data-page="${state.page + 1}" ${state.page >= totalPages ? 'disabled' : ''} style="padding: 6px 12px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; ${state.page >= totalPages ? 'opacity: 0.5' : ''}">Succ &raquo;</button>
-                </div>
-                <div>
-                    <label style="font-size: 0.9em; color: var(--text-muted); margin-right: 5px;">Righe per pagina:</label>
-                    <select id="filter-limit" style="padding: 4px 8px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border);">
-                        <option value="10" ${state.limit === 10 ? 'selected' : ''}>10</option>
-                        <option value="50" ${state.limit === 50 ? 'selected' : ''}>50</option>
-                        <option value="100" ${state.limit === 100 ? 'selected' : ''}>100</option>
-                        <option value="250" ${state.limit === 250 ? 'selected' : ''}>250</option>
-                    </select>
                 </div>
             </div>
         </div>
