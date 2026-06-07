@@ -726,7 +726,7 @@
         // STATE
         // ==========================================
 
-        let currentView = 'dashboard';
+        let currentView = 'jobs';
         let searchSortOrder = 'chronological';
         let keywordLabelWidth = "";
         let botStatus = 'idle';
@@ -904,8 +904,8 @@
             app.innerHTML = `
                 <nav>
                     <div class="nav-links">
-                        <div class="nav-link ${currentView === 'dashboard' ? 'active' : ''}" onclick="setView('dashboard')">📊 Dashboard</div>
-                        <div class="nav-link ${currentView === 'history' ? 'active' : ''}" onclick="setView('history')">📜 Cronologia</div>
+                        <div class="nav-link ${currentView === 'jobs' ? 'active' : ''}" onclick="setView('jobs')">📊 Jobs</div>
+                        <div class="nav-link ${currentView === 'dashboard' ? 'active' : ''}" onclick="setView('dashboard')">📜 Dashboard</div>
                         <div class="nav-link ${currentView === 'settings' ? 'active' : ''}" onclick="setView('settings')">⚙️ Configurazione</div>
                     <div style="display: flex; align-items: center; gap: 20px;">
                         <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
@@ -930,16 +930,24 @@
                     </div>
                 </nav>
                 <div id="view-content">
-                    ${currentView === 'dashboard' ? renderDashboard() : (currentView === 'history' ? renderHistoryView() : renderSettings())}
+                <div id="view-content">
+                    ${currentView === 'jobs' ? renderJobsView() : (currentView === 'dashboard' ? renderDashboard() : renderSettings())}
                 </div>
                 </div>
                 <div id="toast" class="toast">Settings saved successfully!</div>
             `;
-            if (currentView === 'dashboard') {
+            if (currentView === 'jobs') {
                 attachEvents();
             } else {
                 attachSettingsEvents();
             }
+        }
+
+        function renderJobsView() {
+            return `
+                ${renderJobStore()}
+                ${renderModal()}
+            `;
         }
 
         function renderDashboard() {
@@ -947,14 +955,7 @@
                 ${renderHeader()}
                 ${renderKeywordMap()}
                 ${renderCategorie()}
-                ${renderJobStore()}
-                ${renderModal()}
-            `;
-        }
-
-        function renderHistoryView() {
-            return `
-                <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 30px;">
+                <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 30px; margin-top: 20px;">
                     <h2 style="color: var(--accent); margin-bottom: 10px;">Monitoraggio Ricerche</h2>
                     <p style="color: var(--text-muted); font-size: 0.9em;">
                         Visualizza l'andamento delle ricerche in tempo reale e lo storico delle sessioni passate.
@@ -1882,7 +1883,12 @@
                 window[`modalData_${descId}`] = {
                     desc: descriptionText || '',
                     reason: j.reasoning || j.fit_reasoning || '',
-                    scoreReason: j.fit_score_reasoning || ''
+                    scoreReason: j.fit_score_reasoning || '',
+                    location: escapeHtml(item.location || ''),
+                    seniority: escapeHtml(item.seniority || ''),
+                    compensation: escapeHtml(item.compensation || ''),
+                    applications: escapeHtml(item.applications || ''),
+                    category: escapeHtml(item.category || '')
                 };
 
                 let titleText = escapeHtml(item.title);
@@ -1918,7 +1924,6 @@
                     <br><span style="font-size: 0.8em; color: var(--text-muted);">${item.employees ? item.employees + ' emp.' : ''}</span>
                     ${item.website ? `<br><a href="${item.website}" target="_blank" style="font-size: 0.8em; color: var(--accent);">Website</a>` : ''}
                 </td>
-                <td>${escapeHtml(item.location)}</td>
                 <td class="metric" style="text-align: center;">
                     <a href="javascript:void(0)" class="score-link" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: inherit;" title="Mostra ragioni">
                         ${scoreHtml}
@@ -1927,10 +1932,6 @@
                         ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : ''}
                     </div>
                 </td>
-                <td>${escapeHtml(item.seniority)}</td>
-                <td>${escapeHtml(item.compensation)}</td>
-                <td>${escapeHtml(item.applications)}</td>
-                <td>${escapeHtml(item.category)}</td>
                 <td style="color: var(--text-muted);">${formatDate(item.rawDate)}</td>
                 <td><a href="${item.url}" target="_blank">Apri &nearr;</a></td>
                 <td style="text-align: center;">
@@ -1953,7 +1954,10 @@
         <div class="card" style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
-                <input type="text" id="filter-date" placeholder="Scegli date..." style="padding: 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
+                <div style="position: relative; display: inline-block;">
+                    <input type="text" id="filter-date" placeholder="Scegli date..." style="padding: 5px 60px 5px 5px; border-radius: 4px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); min-width: 150px; box-sizing: border-box; height: 32px;" />
+                    <button id="btn-today-filter" style="position: absolute; right: 2px; top: 2px; height: 28px; padding: 0 8px; font-size: 0.8em; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; cursor: pointer;">Today</button>
+                </div>
             </div>
             <div>
                 <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Azienda</label>
@@ -2001,18 +2005,13 @@
             </div>
         </div>
         <div class="card table-responsive">
-            <table>
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
                 <thead>
-                    <tr>
-                        <th style="width: 30px; text-align: center;"><input type="checkbox" id="select-all-jobs" title="Seleziona tutti nella pagina"></th>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <th style="width: 40px; text-align:center;"><input type="checkbox" id="selectAllJobs"></th>
                         <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="location" style="cursor: pointer;">Luogo ${state.sortCol === 'location' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="seniority" style="cursor: pointer;">Seniority ${state.sortCol === 'seniority' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="compensation" style="cursor: pointer;">Compensation ${state.sortCol === 'compensation' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="applications" style="cursor: pointer;">Apps ${state.sortCol === 'applications' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="category" style="cursor: pointer;">Categoria ${state.sortCol === 'category' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th>Link</th>
                         <th class="sortable" data-sort="liked" style="cursor: pointer; text-align: center;">Preferenza ${state.sortCol === 'liked' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
@@ -2053,6 +2052,15 @@
                     <button class="modal-close" id="btn-close-modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <h4 style="margin-bottom: 10px;">Metadati</h4>
+                    <div style="background: var(--bg-main); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><strong style="color: var(--text-muted);">Luogo:</strong> <span id="modal-meta-location"></span></div>
+                        <div><strong style="color: var(--text-muted);">Seniority:</strong> <span id="modal-meta-seniority"></span></div>
+                        <div><strong style="color: var(--text-muted);">Compensation:</strong> <span id="modal-meta-compensation"></span></div>
+                        <div><strong style="color: var(--text-muted);">Applications:</strong> <span id="modal-meta-applications"></span></div>
+                        <div style="grid-column: 1 / -1;"><strong style="color: var(--text-muted);">Categoria:</strong> <span id="modal-meta-category"></span></div>
+                    </div>
+
                     <h4 style="margin-bottom: 10px;">Fit Reasoning</h4>
                     <div class="reasoning-box" id="modal-reasoning"></div>
                     
@@ -2116,13 +2124,29 @@
             });
 
             const fDateInput = document.getElementById('filter-date');
+            let fpInstance = null;
             if (fDateInput) {
-                flatpickr(fDateInput, {
+                fpInstance = flatpickr(fDateInput, {
                     mode: "range",
                     dateFormat: "Y-m-d",
                     defaultDate: appData.uiState.filters.date || [],
                     onChange: function(selectedDates, dateStr, instance) {
                         appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
+                        appData.uiState.page = 1;
+                        render();
+                    }
+                });
+            }
+
+            const btnToday = document.getElementById('btn-today-filter');
+            if (btnToday) {
+                btnToday.addEventListener('click', () => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (fpInstance) {
+                        fpInstance.setDate([today, today]);
+                    }
+                    if (appData.uiState) {
+                        appData.uiState.filters.date = [today, today];
                         appData.uiState.page = 1;
                         render();
                     }
@@ -2156,7 +2180,14 @@
                     if (!appData.uiState) return;
 
                     if (appData.uiState.sortCol === col) {
-                        appData.uiState.sortDir = appData.uiState.sortDir === 'asc' ? 'desc' : 'asc';
+                        if (appData.uiState.sortDir === 'desc') {
+                            appData.uiState.sortDir = 'asc';
+                        } else if (appData.uiState.sortDir === 'asc') {
+                            appData.uiState.sortCol = 'date';
+                            appData.uiState.sortDir = 'desc';
+                        } else {
+                            appData.uiState.sortDir = 'desc';
+                        }
                     } else {
                         appData.uiState.sortCol = col;
                         appData.uiState.sortDir = 'desc';
@@ -2166,7 +2197,7 @@
                 });
             });
 
-            const selectAllCheckbox = document.getElementById('select-all-jobs');
+            const selectAllCheckbox = document.getElementById('selectAllJobs');
             if (selectAllCheckbox) {
                 selectAllCheckbox.addEventListener('change', (e) => {
                     document.querySelectorAll('.job-checkbox').forEach(cb => {
@@ -2252,8 +2283,6 @@
 
             // Modal logic
             const modal = document.getElementById('info-modal');
-            const modalReason = document.getElementById('modal-reasoning');
-            const modalDesc = document.getElementById('modal-description');
             const closeBtn = document.getElementById('btn-close-modal');
 
             // Score click logic
@@ -2292,14 +2321,17 @@
             }
 
             document.querySelectorAll('.btn-desc').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetId = e.target.getAttribute('data-target');
-                    const data = window[`modalData_${targetId}`];
-
-                    if (modalReason) modalReason.innerText = data.reason || 'Nessun ragionamento disponibile.';
-                    if (modalDesc) modalDesc.innerHTML = (data.desc || 'Nessuna descrizione disponibile.').replace(/\n/g, '<br>');
-
-                    if (modal) modal.classList.add('active');
+                btn.addEventListener('click', function () {
+                    const targetId = this.getAttribute('data-target');
+                    const data = window[`modalData_${targetId}`] || {};
+                    document.getElementById('modal-description').innerHTML = data.desc ? data.desc.replace(/\n/g, '<br>') : 'N/A';
+                    document.getElementById('modal-reasoning').innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
+                    document.getElementById('modal-meta-location').textContent = data.location || 'N/A';
+                    document.getElementById('modal-meta-seniority').textContent = data.seniority || 'N/A';
+                    document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
+                    document.getElementById('modal-meta-applications').textContent = data.applications || 'N/A';
+                    document.getElementById('modal-meta-category').textContent = data.category || 'N/A';
+                    document.getElementById('info-modal').classList.add('active');
                 });
             });
 
