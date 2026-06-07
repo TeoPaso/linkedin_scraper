@@ -333,7 +333,8 @@
             font-family: 'Courier New', Courier, monospace;
             font-size: 0.9em;
             white-space: pre-wrap;
-            color: var(--text-muted);
+            color: var(--text-light);
+            line-height: 1.6;
         }
 
         /* --- Keyword Map --- */
@@ -2030,6 +2031,9 @@
 
                 let titleText = escapeHtml(item.title);
                 let titleStyle = "text-decoration: none; border-bottom: 1px dashed var(--text-light); color: var(--text-light); font-weight: bold;";
+                if (j.applied) {
+                    titleStyle = "text-decoration: none; border-bottom: 1px dashed #4caf50; color: #4caf50; font-weight: bold;";
+                }
 
                 return `
             <tr class="job-row">
