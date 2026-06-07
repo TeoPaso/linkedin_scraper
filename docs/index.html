@@ -1734,6 +1734,28 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function formatDateOnly(isoString) {
+            if (!isoString || isoString === 'N/A') return 'N/A';
+            try {
+                let formattedIso = isoString;
+                if (!isoString.includes('Z') && !/[+-]\d{2}:?\d{2}$/.test(isoString)) {
+                    formattedIso = isoString + 'Z';
+                }
+                const dt = new Date(formattedIso);
+                if (!isNaN(dt)) {
+                    return dt.toLocaleDateString('it-IT', {
+                        timeZone: 'Europe/Rome',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                }
+            } catch (e) {
+                console.warn("Invalid date:", isoString);
+            }
+            return isoString;
+        }
+
         function formatDate(isoString) {
             if (!isoString || isoString === 'N/A') return 'N/A';
             try {
@@ -1944,14 +1966,15 @@
                 <td style="text-align: center;">
                     <input type="checkbox" class="job-checkbox" data-docid="${j._doc_id || ''}">
                 </td>
+                <td style="color: var(--text-muted);">${formatDateOnly(item.rawDate)}</td>
                 <td>
                     <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="${titleStyle}" title="Mostra descrizione">
                         ${titleText}
                     </a>
                 </td>
-                <td>${escapeHtml(item.company)}
+                <td>
+                    ${item.website ? `<a href="${item.website}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dotted var(--text-muted); font-weight: bold;">${escapeHtml(item.company)}</a>` : escapeHtml(item.company)}
                     <br><span style="font-size: 0.8em; color: var(--text-muted);">${item.employees ? item.employees + ' emp.' : ''}</span>
-                    ${item.website ? `<br><a href="${item.website}" target="_blank" style="font-size: 0.8em; color: var(--accent);">Website</a>` : ''}
                 </td>
                 <td class="metric" style="text-align: center;">
                     <a href="javascript:void(0)" class="score-link" data-target="${descId}" style="text-decoration: none; border-bottom: 1px dashed var(--accent); color: inherit;" title="Mostra ragioni">
@@ -1961,7 +1984,6 @@
                         ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : ''}
                     </div>
                 </td>
-                <td style="color: var(--text-muted);">${formatDate(item.rawDate)}</td>
             </tr>
         `;
             }).join('');
@@ -2064,10 +2086,10 @@
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="width: 40px; text-align:center;"><input type="checkbox" id="selectAllJobs"></th>
+                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
