@@ -208,6 +208,26 @@
             overflow-x: auto;
         }
 
+        .filters-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            align-content: start;
+        }
+
+        @media (max-width: 900px) {
+            .filters-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .flatpickr-alt-input {
             padding: 8px 60px 8px 10px;
             border-radius: 6px;
@@ -2079,7 +2099,7 @@
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 
-                <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
+                <div class="filters-grid">
                     <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
                         <div style="position: relative; width: 100%;">
