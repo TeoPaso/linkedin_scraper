@@ -2048,6 +2048,7 @@
                 const descId = "desc_" + Math.random().toString(36).substr(2, 9);
                 window[`modalData_${descId}`] = {
                     docId: j._doc_id || '',
+                    title: item.title || '',
                     desc: descriptionText || '',
                     reason: j.reasoning || j.fit_reasoning || '',
                     scoreReason: j.fit_score_reasoning || '',
@@ -2234,7 +2235,7 @@
                     </div>
 
 
-                    <h4 style="margin-bottom: 10px;">Description text</h4>
+                    <h4 id="modal-job-title-header" style="margin-bottom: 10px;">Description text</h4>
                     <div class="desc-box" id="modal-description"></div>
                 </div>
             </div>
@@ -2555,6 +2556,8 @@
                 btn.addEventListener('click', function () {
                     const targetId = this.getAttribute('data-target');
                     const data = window[`modalData_${targetId}`] || {};
+                    const headerEl = document.getElementById('modal-job-title-header');
+                    if (headerEl) headerEl.textContent = data.title || 'Description text';
                     document.getElementById('modal-description').innerHTML = data.desc ? data.desc.replace(/\n/g, '<br>') : 'N/A';
                     document.getElementById('modal-meta-location').textContent = data.location || 'N/A';
                     document.getElementById('modal-meta-seniority').textContent = data.seniority || 'N/A';
