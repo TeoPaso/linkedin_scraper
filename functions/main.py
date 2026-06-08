@@ -98,7 +98,7 @@ Verifica la fascia:
   * Subtotale profilo: 70 base + X - Y = ZZ
   * 💡 Mio giudizio: [spiegazione sintetica di cosa ti ha convinto o preoccupato] (+/-N)
   * Punteggio finale: ZZ + N = XX
-- highlighted_description: copia il contenuto della "Descrizione" originale e migliorane la formattazione: sistema gli a capo (es. riduci quelli multipli a 1 solo, e vai a capo prima di un titolo se è attaccato al paragrafo), aggiungi la punteggiatura mancante, formatta correttamente gli elenchi puntati, e usa il grassetto (tag HTML <b> o <strong>) per evidenziare i titoli delle varie sezioni. Infine, usa il tag HTML <mark> per evidenziare i passaggi specifici della descrizione che ritieni possano interessare di più al candidato (basandoti sul suo profilo), anziché i fattori di scoring.
+- highlighted_description: copia il contenuto della "Descrizione" originale e migliorane la formattazione per la MASSIMA LEGGIBILITÀ: aggiungi la punteggiatura mancante, formatta correttamente gli elenchi puntati e usa il grassetto (tag HTML <b> o <strong>) per i titoli delle sezioni. È FONDAMENTALE che ogni titoletto in grassetto (es. <b>Descrizione:</b>) sia PRECEDUTO da due "a capo" (\n\n) e SEGUITO da un "a capo" (\n) in modo che non sia mai attaccato al testo adiacente. Infine, usa il tag HTML <mark> per evidenziare i passaggi specifici della descrizione che ritieni possano interessare di più al candidato (basandoti sul suo profilo).
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
     import requests
