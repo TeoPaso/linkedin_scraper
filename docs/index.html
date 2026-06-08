@@ -2214,9 +2214,7 @@
                         <div style="grid-column: 1 / -1;"><strong style="color: var(--text-muted);">Categoria:</strong> <span id="modal-meta-category"></span></div>
                     </div>
 
-                    <h4 style="margin-bottom: 10px;">Fit Reasoning</h4>
-                    <div class="reasoning-box" id="modal-reasoning"></div>
-                    
+
                     <h4 style="margin-bottom: 10px;">Description text</h4>
                     <div class="desc-box" id="modal-description"></div>
                 </div>
@@ -2231,9 +2229,12 @@
                     <button class="modal-close" id="btn-close-score-modal">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <h4 style="margin-bottom: 10px; margin-top: 0;">Score Breakdown</h4>
                     <div class="reasoning-box">
                         <ul id="score-reasoning-list" style="margin: 0; padding-left: 20px;"></ul>
                     </div>
+                    <h4 style="margin-bottom: 10px;">Fit Reasoning (Sintesi)</h4>
+                    <div class="reasoning-box" id="modal-reasoning"></div>
                 </div>
             </div>
         </div>
@@ -2496,6 +2497,9 @@
 
                     const scoreList = document.getElementById('score-reasoning-list');
                     if (scoreList) scoreList.innerHTML = listHtml;
+                    
+                    const reasoningEl = document.getElementById('modal-reasoning');
+                    if (reasoningEl) reasoningEl.innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
 
                     const scoreModal = document.getElementById('score-modal');
                     if (scoreModal) scoreModal.classList.add('active');
@@ -2516,7 +2520,6 @@
                     const targetId = this.getAttribute('data-target');
                     const data = window[`modalData_${targetId}`] || {};
                     document.getElementById('modal-description').innerHTML = data.desc ? data.desc.replace(/\n/g, '<br>') : 'N/A';
-                    document.getElementById('modal-reasoning').innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
                     document.getElementById('modal-meta-location').textContent = data.location || 'N/A';
                     document.getElementById('modal-meta-seniority').textContent = data.seniority || 'N/A';
                     document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
