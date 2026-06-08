@@ -1976,7 +1976,7 @@
                 });
             });
 
-            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: [], keyword: '', category: '', scores: [], liked: '', company: '', title: '', applied: '' } };
+            if (!appData.uiState) appData.uiState = { page: 1, limit: 10, sortCol: 'date', sortDir: 'desc', filters: { date: [], keyword: '', category: '', scores: [], liked: '', company: '', title: '', applied: '', excludeZero: false } };
             const state = appData.uiState;
 
             // --- FILTERING ---
@@ -2000,6 +2000,7 @@
                     if (state.filters.applied === 'applied' && item.j.applied !== true) return false;
                     if (state.filters.applied === 'not-applied' && item.j.applied === true) return false;
                 }
+                if (state.filters.excludeZero && item.scoreVal === 0) return false;
                 return true;
             });
 
@@ -2162,9 +2163,13 @@
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: 5px;">
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
                     <button id="btn-clear-filters" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
                     <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
+                    <label style="margin-left: 15px; display: flex; align-items: center; color: var(--text-muted); font-size: 0.9em; cursor: pointer;">
+                        <input type="checkbox" id="filter-exclude-zero" ${state.filters.excludeZero ? 'checked' : ''} style="margin-right: 8px;">
+                        Nascondi Score 0
+                    </label>
                 </div>
                 <div>
                     <span id="jobs-counter" class="metric" style="font-size: 1.2em;">${totalItems}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte trovate</span>
@@ -2268,10 +2273,12 @@
                 const fApplied = document.getElementById('filter-applied');
                 const fCompany = document.getElementById('filter-company');
                 const fLimit = document.getElementById('filter-limit');
+                const fExcludeZero = document.getElementById('filter-exclude-zero');
                 
                 if (fCompany) appData.uiState.filters.company = fCompany.value;
                 if (fTitle) appData.uiState.filters.title = fTitle.value;
                 if (fApplied) appData.uiState.filters.applied = fApplied.value;
+                if (fExcludeZero) appData.uiState.filters.excludeZero = fExcludeZero.checked;
 
                 if (fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
 
@@ -2279,7 +2286,7 @@
                 render();
             };
 
-            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied'].forEach(id => {
+            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied', 'filter-exclude-zero'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', updateFilters);
