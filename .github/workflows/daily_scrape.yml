@@ -2,8 +2,8 @@ name: Daily LinkedIn Job Scraper
 
 on:
   schedule:
-    # 08:00 UTC corrisponde alle 10:00 CEST (ora italiana estiva) / 09:00 CET (invernale)
-    - cron: '0 8 * * *'
+    # 06:30 UTC corrisponde alle 08:30 CEST (ora italiana estiva) / 07:30 CET (invernale)
+    - cron: '30 6 * * *'
   # Permette di lanciare il workflow manualmente dall'interfaccia di GitHub se necessario
   workflow_dispatch:
 
