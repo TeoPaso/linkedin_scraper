@@ -2000,7 +2000,7 @@
                     if (state.filters.applied === 'applied' && item.j.applied !== true) return false;
                     if (state.filters.applied === 'not-applied' && item.j.applied === true) return false;
                 }
-                if (state.filters.excludeZero && item.scoreVal === 0) return false;
+                if (state.filters.excludeZero && item.j.fit_score === 0) return false;
                 return true;
             });
 
@@ -2157,6 +2157,7 @@
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tiera') ? 'active' : ''}" data-score="tiera" title="Tier A" style="background: ${state.filters.scores && state.filters.scores.includes('tiera') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tiera') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 64px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">⭐</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tierb') ? 'active' : ''}" data-score="tierb" title="Tier B" style="background: ${state.filters.scores && state.filters.scores.includes('tierb') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tierb') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 64px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">✓</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('scartato') ? 'active' : ''}" data-score="scartato" title="Scartato" style="background: ${state.filters.scores && state.filters.scores.includes('scartato') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('scartato') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 64px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">❌</div>
+                        <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="grid-column: 1 / -1; background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; margin-top: 2px;" title="Nascondi offerte con score a 0 spaccato">🚫 Nascondi Score 0</div>
                     </div>
                 </div>
 
@@ -2166,10 +2167,6 @@
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <button id="btn-clear-filters" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
                     <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
-                    <label style="margin-left: 15px; display: flex; align-items: center; color: var(--text-muted); font-size: 0.9em; cursor: pointer;">
-                        <input type="checkbox" id="filter-exclude-zero" ${state.filters.excludeZero ? 'checked' : ''} style="margin-right: 8px;">
-                        Nascondi Score 0
-                    </label>
                 </div>
                 <div>
                     <span id="jobs-counter" class="metric" style="font-size: 1.2em;">${totalItems}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte trovate</span>
@@ -2273,12 +2270,10 @@
                 const fApplied = document.getElementById('filter-applied');
                 const fCompany = document.getElementById('filter-company');
                 const fLimit = document.getElementById('filter-limit');
-                const fExcludeZero = document.getElementById('filter-exclude-zero');
                 
                 if (fCompany) appData.uiState.filters.company = fCompany.value;
                 if (fTitle) appData.uiState.filters.title = fTitle.value;
                 if (fApplied) appData.uiState.filters.applied = fApplied.value;
-                if (fExcludeZero) appData.uiState.filters.excludeZero = fExcludeZero.checked;
 
                 if (fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
 
@@ -2286,7 +2281,7 @@
                 render();
             };
 
-            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied', 'filter-exclude-zero'].forEach(id => {
+            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', updateFilters);
@@ -2322,6 +2317,16 @@
                     render();
                 });
             });
+
+            const btnExcludeZero = document.querySelector('.score-exclude-zero');
+            if (btnExcludeZero) {
+                btnExcludeZero.addEventListener('click', () => {
+                    if (!appData.uiState) return;
+                    appData.uiState.filters.excludeZero = !appData.uiState.filters.excludeZero;
+                    appData.uiState.page = 1;
+                    render();
+                });
+            }
 
             const fDateInput = document.getElementById('filter-date');
             let fpInstance = null;
