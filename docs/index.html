@@ -208,6 +208,17 @@
             overflow-x: auto;
         }
 
+        .flatpickr-alt-input {
+            padding: 8px 60px 8px 10px;
+            border-radius: 6px;
+            background: #2c2c2c;
+            color: #fff;
+            border: 1px solid var(--border);
+            width: 100%;
+            box-sizing: border-box;
+            height: 38px;
+        }
+
         @keyframes pulse {
             0% {
                 opacity: 0.7;
@@ -2068,7 +2079,7 @@
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 
-                <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px;">
+                <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
                     <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
                         <div style="position: relative; width: 100%;">
@@ -2090,12 +2101,12 @@
 
 
                     <div>
-                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Preferenza</label>
-                        <select id="filter-liked" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; height: 38px;">
-                            <option value="" ${state.filters.liked === '' ? 'selected' : ''}>Tutte</option>
-                            <option value="liked" ${state.filters.liked === 'liked' ? 'selected' : ''}>👍</option>
-                            <option value="disliked" ${state.filters.liked === 'disliked' ? 'selected' : ''}>👎</option>
-                        </select>
+                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Preferenza</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; height: 38px;">
+                            <div class="pref-btn ${state.filters.liked === '' ? 'active' : ''}" data-pref="" title="Tutte" style="background: ${state.filters.liked === '' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === '' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">Tutte</div>
+                            <div class="pref-btn ${state.filters.liked === 'liked' ? 'active' : ''}" data-pref="liked" title="Liked" style="background: ${state.filters.liked === 'liked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'liked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👍</div>
+                            <div class="pref-btn ${state.filters.liked === 'disliked' ? 'active' : ''}" data-pref="disliked" title="Disliked" style="background: ${state.filters.liked === 'disliked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'disliked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👎</div>
+                        </div>
                     </div>
 
                     <div>
@@ -2215,12 +2226,12 @@
                     <button class="modal-close" id="btn-close-score-modal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <h4 style="margin-bottom: 10px; margin-top: 0;">Score Breakdown</h4>
+                    <h4 style="margin-bottom: 10px; margin-top: 0;">Fit Reasoning (Sintesi)</h4>
+                    <div class="reasoning-box" id="modal-reasoning" style="margin-bottom: 20px;"></div>
+                    <h4 style="margin-bottom: 10px;">Score Breakdown</h4>
                     <div class="reasoning-box">
                         <ul id="score-reasoning-list" style="margin: 0; padding-left: 20px;"></ul>
                     </div>
-                    <h4 style="margin-bottom: 10px;">Fit Reasoning (Sintesi)</h4>
-                    <div class="reasoning-box" id="modal-reasoning"></div>
                 </div>
             </div>
         </div>
@@ -2233,17 +2244,11 @@
         function attachEvents() {
             const updateFilters = () => {
                 if (!appData.uiState) return;
-                const fKeyword = document.getElementById('filter-keyword');
-                const fCat = document.getElementById('filter-category');
                 const fTitle = document.getElementById('filter-title');
                 const fApplied = document.getElementById('filter-applied');
-                const fLiked = document.getElementById('filter-liked');
                 const fCompany = document.getElementById('filter-company');
                 const fLimit = document.getElementById('filter-limit');
                 
-                if (fKeyword) appData.uiState.filters.keyword = fKeyword.value;
-                if (fCat) appData.uiState.filters.category = fCat.value;
-                if (fLiked) appData.uiState.filters.liked = fLiked.value;
                 if (fCompany) appData.uiState.filters.company = fCompany.value;
                 if (fTitle) appData.uiState.filters.title = fTitle.value;
                 if (fApplied) appData.uiState.filters.applied = fApplied.value;
@@ -2254,7 +2259,7 @@
                 render();
             };
 
-            ['filter-keyword', 'filter-category', 'filter-liked', 'filter-limit', 'filter-company', 'filter-title', 'filter-applied'].forEach(id => {
+            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', updateFilters);
@@ -2265,6 +2270,16 @@
                     }
                 }
             });
+
+            document.querySelectorAll('.pref-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!appData.uiState) return;
+                    appData.uiState.filters.liked = btn.getAttribute('data-pref');
+                    appData.uiState.page = 1;
+                    render();
+                });
+            });
+
 
             document.querySelectorAll('.score-quadrant').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2287,6 +2302,9 @@
                 fpInstance = flatpickr(fDateInput, {
                     mode: "range",
                     dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d M Y",
+                    altInputClass: "flatpickr-alt-input",
                     defaultDate: appData.uiState.filters.date || [],
                     onChange: function(selectedDates, dateStr, instance) {
                         appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
