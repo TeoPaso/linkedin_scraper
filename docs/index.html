@@ -1070,10 +1070,15 @@
                     ${currentView === 'jobs' ? renderJobsView() : (currentView === 'dashboard' ? renderDashboard() : renderSettings())}
                 </div>
                 </div>
+                ${renderModal()}
                 <div id="toast" class="toast">Settings saved successfully!</div>
             `;
+            attachModalEvents();
             if (currentView === 'jobs') {
                 attachEvents();
+            } else if (currentView === 'dashboard') {
+                attachSettingsEvents();
+                attachDashboardEvents();
             } else {
                 attachSettingsEvents();
             }
@@ -1082,7 +1087,6 @@
         function renderJobsView() {
             return `
                 ${renderJobStore()}
-                ${renderModal()}
             `;
         }
 
@@ -2285,6 +2289,132 @@
         // ==========================================
         // EVENTS
         // ==========================================
+        function attachModalEvents() {
+            const modal = document.getElementById('info-modal');
+            const closeBtn = document.getElementById('btn-close-modal');
+            if (closeBtn && modal) {
+                closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.classList.remove('active');
+                });
+            }
+
+            const scoreModal = document.getElementById('score-modal');
+            const closeScoreBtn = document.getElementById('btn-close-score-modal');
+            if (closeScoreBtn && scoreModal) {
+                closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
+                scoreModal.addEventListener('click', (e) => {
+                    if (e.target === scoreModal) scoreModal.classList.remove('active');
+                });
+            }
+            
+            document.querySelectorAll('.top-title-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const title = link.getAttribute('data-title');
+                    const execId = link.getAttribute('data-exec');
+                    
+                    const jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => j.execution_id === execId && (j.job_data ? j.job_data.title : j.title) === title);
+                    
+                    if (jobEntry) {
+                        const url = jobEntry[0];
+                        const j = jobEntry[1];
+                        const itemTitle = j.job_data ? j.job_data.title : j.title;
+                        const itemCompany = j.job_data ? j.job_data.companyName : j.company;
+                        const descriptionText = j.highlighted_description || (j.job_data ? j.job_data.descriptionText : j.descriptionText);
+                        
+                        const data = {
+                            docId: j._doc_id || '',
+                            title: itemTitle || '',
+                            company: itemCompany || '',
+                            desc: descriptionText || '',
+                            reason: j.reasoning || j.fit_reasoning || '',
+                            scoreReason: j.fit_score_reasoning || '',
+                            location: escapeHtml(j.job_data ? j.job_data.location : j.location || ''),
+                            seniority: escapeHtml(j.job_data ? j.job_data.seniorityLevel : ''),
+                            compensation: escapeHtml(j.compensation || ''),
+                            applications: escapeHtml(j.job_data ? j.job_data.applicantsCount : ''),
+                            category: escapeHtml(j.category || ''),
+                            url: url,
+                            liked: j.liked,
+                            applied: j.applied
+                        };
+                        openJobModal(data);
+                    } else {
+                        showToast("Dettagli per questo lavoro non presenti in memoria.");
+                    }
+                });
+            });
+        }
+
+        function attachDashboardEvents() {
+            document.querySelectorAll('.btn-history-page').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (btn.disabled) return;
+                    const newPage = parseInt(btn.getAttribute('data-page'));
+                    if (!isNaN(newPage) && appData.uiStateHistory) {
+                        appData.uiStateHistory.page = newPage;
+                        render();
+                    }
+                });
+            });
+
+            const historyFilterLimit = document.getElementById('history-filter-limit');
+            if (historyFilterLimit) {
+                historyFilterLimit.addEventListener('change', (e) => {
+                    if (appData.uiStateHistory) {
+                        appData.uiStateHistory.limit = parseInt(e.target.value);
+                        appData.uiStateHistory.page = 1;
+                        render();
+                    }
+                });
+            }
+        }
+        
+        function openJobModal(data) {
+            const headerEl = document.getElementById('modal-job-title-header');
+            if (headerEl) headerEl.textContent = data.title || 'Description text';
+            const companyEl = document.getElementById('modal-company-header');
+            if (companyEl) companyEl.textContent = data.company || 'Azienda';
+            document.getElementById('modal-description').innerHTML = data.desc ? data.desc.replace(/\n/g, '<br>') : 'N/A';
+            document.getElementById('modal-meta-location').textContent = data.location || 'N/A';
+            document.getElementById('modal-meta-seniority').textContent = data.seniority || 'N/A';
+            document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
+            document.getElementById('modal-meta-applications').textContent = data.applications || 'N/A';
+            document.getElementById('modal-meta-category').textContent = data.category || 'N/A';
+            
+            const btnLink = document.getElementById('modal-btn-link');
+            if (data.url) {
+                btnLink.href = data.url;
+                btnLink.style.display = 'inline-block';
+            } else {
+                btnLink.style.display = 'none';
+            }
+
+            const btnLike = document.getElementById('modal-btn-like');
+            const btnDislike = document.getElementById('modal-btn-dislike');
+            const btnApplied = document.getElementById('modal-btn-applied');
+            
+            if (btnLike && btnDislike && btnApplied) {
+                btnLike.setAttribute('data-docid', data.docId || '');
+                btnLike.setAttribute('data-current', data.liked === true ? 'true' : 'false');
+                btnLike.style.backgroundColor = data.liked === true ? '#2e7d32' : 'transparent';
+                btnLike.style.color = data.liked === true ? '#fff' : 'var(--text-muted)';
+                
+                btnDislike.setAttribute('data-docid', data.docId || '');
+                btnDislike.setAttribute('data-current', data.liked === false ? 'true' : 'false');
+                btnDislike.style.backgroundColor = data.liked === false ? '#c62828' : 'transparent';
+                btnDislike.style.color = data.liked === false ? '#fff' : 'var(--text-muted)';
+
+                btnApplied.setAttribute('data-docid', data.docId || '');
+                btnApplied.setAttribute('data-applied', data.applied === true ? 'true' : 'false');
+                btnApplied.style.backgroundColor = data.applied === true ? '#2e7d32' : '#555';
+                btnApplied.style.color = 'white';
+                btnApplied.textContent = data.applied === true ? 'Applicato ✓' : 'Non applicato';
+            }
+            document.getElementById('info-modal').classList.add('active');
+        }
+
         function attachEvents() {
             const updateFilters = () => {
                 if (!appData.uiState) return;
@@ -2404,27 +2534,7 @@
                 });
             });
 
-            document.querySelectorAll('.btn-history-page').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (btn.disabled) return;
-                    const newPage = parseInt(btn.getAttribute('data-page'));
-                    if (!isNaN(newPage) && appData.uiStateHistory) {
-                        appData.uiStateHistory.page = newPage;
-                        render();
-                    }
-                });
-            });
-
-            const historyFilterLimit = document.getElementById('history-filter-limit');
-            if (historyFilterLimit) {
-                historyFilterLimit.addEventListener('change', (e) => {
-                    if (appData.uiStateHistory) {
-                        appData.uiStateHistory.limit = parseInt(e.target.value);
-                        appData.uiStateHistory.page = 1;
-                        render();
-                    }
-                });
-            }
+ 
 
             document.querySelectorAll('.sortable').forEach(th => {
                 th.addEventListener('click', () => {
@@ -2553,10 +2663,6 @@
                 });
             }
 
-            // Modal logic
-            const modal = document.getElementById('info-modal');
-            const closeBtn = document.getElementById('btn-close-modal');
-
             // Score click logic
             document.querySelectorAll('.score-link').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -2586,59 +2692,6 @@
                 });
             });
 
-            const scoreModal = document.getElementById('score-modal');
-            const closeScoreBtn = document.getElementById('btn-close-score-modal');
-            if (closeScoreBtn && scoreModal) {
-                closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
-                scoreModal.addEventListener('click', (e) => {
-                    if (e.target === scoreModal) scoreModal.classList.remove('active');
-                });
-            }
-
-            function openJobModal(data) {
-                const headerEl = document.getElementById('modal-job-title-header');
-                if (headerEl) headerEl.textContent = data.title || 'Description text';
-                const companyEl = document.getElementById('modal-company-header');
-                if (companyEl) companyEl.textContent = data.company || 'Azienda';
-                document.getElementById('modal-description').innerHTML = data.desc ? data.desc.replace(/\n/g, '<br>') : 'N/A';
-                document.getElementById('modal-meta-location').textContent = data.location || 'N/A';
-                document.getElementById('modal-meta-seniority').textContent = data.seniority || 'N/A';
-                document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
-                document.getElementById('modal-meta-applications').textContent = data.applications || 'N/A';
-                document.getElementById('modal-meta-category').textContent = data.category || 'N/A';
-                
-                const btnLink = document.getElementById('modal-btn-link');
-                if (data.url) {
-                    btnLink.href = data.url;
-                    btnLink.style.display = 'inline-block';
-                } else {
-                    btnLink.style.display = 'none';
-                }
-
-                const btnLike = document.getElementById('modal-btn-like');
-                const btnDislike = document.getElementById('modal-btn-dislike');
-                const btnApplied = document.getElementById('modal-btn-applied');
-                
-                if (btnLike && btnDislike && btnApplied) {
-                    btnLike.setAttribute('data-docid', data.docId || '');
-                    btnLike.setAttribute('data-current', data.liked === true ? 'true' : 'false');
-                    btnLike.style.backgroundColor = data.liked === true ? '#2e7d32' : 'transparent';
-                    btnLike.style.color = data.liked === true ? '#fff' : 'var(--text-muted)';
-                    
-                    btnDislike.setAttribute('data-docid', data.docId || '');
-                    btnDislike.setAttribute('data-current', data.liked === false ? 'true' : 'false');
-                    btnDislike.style.backgroundColor = data.liked === false ? '#c62828' : 'transparent';
-                    btnDislike.style.color = data.liked === false ? '#fff' : 'var(--text-muted)';
-
-                    btnApplied.setAttribute('data-docid', data.docId || '');
-                    btnApplied.setAttribute('data-applied', data.applied === true ? 'true' : 'false');
-                    btnApplied.style.backgroundColor = data.applied === true ? '#2e7d32' : '#555';
-                    btnApplied.style.color = 'white';
-                    btnApplied.textContent = data.applied === true ? 'Applicato ✓' : 'Non applicato';
-                }
-                document.getElementById('info-modal').classList.add('active');
-            }
-
             document.querySelectorAll('.btn-desc').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const targetId = this.getAttribute('data-target');
@@ -2646,58 +2699,6 @@
                     openJobModal(data);
                 });
             });
-
-            document.querySelectorAll('.top-title-link').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const title = link.getAttribute('data-title');
-                    const execId = link.getAttribute('data-exec');
-                    
-                    const jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => j.execution_id === execId && (j.job_data ? j.job_data.title : j.title) === title);
-                    
-                    if (jobEntry) {
-                        const url = jobEntry[0];
-                        const j = jobEntry[1];
-                        const itemTitle = j.job_data ? j.job_data.title : j.title;
-                        const itemCompany = j.job_data ? j.job_data.companyName : j.company;
-                        const descriptionText = j.highlighted_description || (j.job_data ? j.job_data.descriptionText : j.descriptionText);
-                        
-                        const data = {
-                            docId: j._doc_id || '',
-                            title: itemTitle || '',
-                            company: itemCompany || '',
-                            desc: descriptionText || '',
-                            reason: j.reasoning || j.fit_reasoning || '',
-                            scoreReason: j.fit_score_reasoning || '',
-                            location: escapeHtml(j.job_data ? j.job_data.location : j.location || ''),
-                            seniority: escapeHtml(j.job_data ? j.job_data.seniorityLevel : ''),
-                            compensation: escapeHtml(j.compensation || ''),
-                            applications: escapeHtml(j.job_data ? j.job_data.applicantsCount : ''),
-                            category: escapeHtml(j.category || ''),
-                            url: url,
-                            liked: j.liked,
-                            applied: j.applied
-                        };
-                        openJobModal(data);
-                    } else {
-                        showToast("Dettagli per questo lavoro non presenti in memoria.");
-                    }
-                });
-            });
-
-            if (closeBtn && modal) {
-                closeBtn.addEventListener('click', () => {
-                    modal.classList.remove('active');
-                });
-            }
-
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.classList.remove('active');
-                    }
-                });
-            }
         }
 
         // ==========================================
