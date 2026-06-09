@@ -245,7 +245,7 @@
         }
 
         .custom-inline-calendar .flatpickr-calendar {
-            transform: scale(0.52);
+            transform: scale(0.68);
             transform-origin: top center;
             margin: 0 !important;
             box-shadow: none !important;
@@ -253,8 +253,8 @@
             border-radius: 8px;
         }
         .custom-inline-calendar {
-            width: 158px;
-            height: 145px;
+            width: 210px;
+            height: 195px;
             overflow: hidden;
             display: flex;
             justify-content: center;
@@ -2176,8 +2176,7 @@
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 
-                <div style="display: flex; flex-direction: column; min-width: 158px; border-right: 1px solid var(--border); padding-right: 20px;">
-                    <label style="display:block; margin-bottom: 10px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Data</label>
+                <div style="display: flex; flex-direction: column; min-width: 210px; border-right: 1px solid var(--border); padding-right: 20px;">
                     <div class="custom-inline-calendar">
                         <input type="text" id="filter-date" style="display: none;" />
                     </div>
@@ -2581,6 +2580,9 @@
                     mode: "range",
                     inline: true,
                     dateFormat: "Y-m-d",
+                    locale: {
+                        firstDayOfWeek: 1
+                    },
                     defaultDate: appData.uiState.filters.date || [],
                     onChange: function(selectedDates, dateStr, instance) {
                         appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
