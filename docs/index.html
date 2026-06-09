@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css">
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     <style>
         :root {
             --bg-main: #0f0f0f;
@@ -1196,7 +1199,7 @@
             btn.disabled = true;
             btn.textContent = 'Saving...';
 
-            const content = document.getElementById('cfg-profile-content').value;
+            const content = window.profileEditor ? window.profileEditor.getMarkdown() : (appData.profile || '');
 
             try {
                 await window.setDoc(window.doc(window.db, "app_state", "profile"), {
@@ -1569,10 +1572,9 @@
                         Le modifiche qui <strong>sovrascrivono</strong> il vecchio file <code>my_profile.md</code>.
                     </p>
                     <div class="form-group">
-                        <textarea id="cfg-profile-content" rows="20" style="width: 100%; background: #1a1a2e; border: 1px solid #a78bfa33; color: #e0e0e0; padding: 15px; border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9em; line-height: 1.6; resize: vertical; box-sizing: border-box;" oninput="document.getElementById('profile-char-count').textContent = this.value.length">${appData.profile || ''}</textarea>
+                        <div id="cfg-profile-editor" style="background: #1a1a2e; text-align: left; border-radius: 8px; overflow: hidden; border: 1px solid #a78bfa33; min-height: 500px;"></div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                            <span style="color: var(--text-muted); font-size: 0.8em;">Caratteri: <span id="profile-char-count">${(appData.profile || '').length}</span></span>
-                            <span style="color: var(--text-muted); font-size: 0.8em;">Formato: Markdown</span>
+                            <span style="color: var(--text-muted); font-size: 0.8em;">Formato: Markdown (WYSIWYG)</span>
                         </div>
                     </div>
                     <div class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="margin-top: 20px; display: flex; justify-content: flex-end;">
@@ -1590,6 +1592,18 @@
             if (range && val) {
                 range.addEventListener('input', (e) => {
                     val.textContent = e.target.value;
+                });
+            }
+
+            const editorEl = document.querySelector('#cfg-profile-editor');
+            if (editorEl) {
+                window.profileEditor = new toastui.Editor({
+                    el: editorEl,
+                    height: '500px',
+                    initialEditType: 'wysiwyg',
+                    previewStyle: 'vertical',
+                    initialValue: appData.profile || '',
+                    theme: 'dark'
                 });
             }
         }
