@@ -2709,9 +2709,9 @@ ${profile}
 ${preferences_section}
 Offerta di Lavoro:
 Titolo: ${job.title || "Unknown"}
-Azienda: ${job.companyName || "Unknown"}
+Azienda: ${job.companyName || job.company || "Unknown"}
 Location: ${job.location || "Unknown"}
-Descrizione: ${job.descriptionText || ""}
+Descrizione: ${job.descriptionText || job.description || ""}
 
 ═══ PROCESSO DI VALUTAZIONE ═══
 
@@ -2836,7 +2836,7 @@ Verifica la fascia:
                         for (const cb of checkedBoxes) {
                             const docId = cb.getAttribute('data-docid');
                             if (!docId) continue;
-                            const job = appData.job_store[docId];
+                            const job = Object.values(appData.job_store || {}).find(j => j._doc_id === docId);
                             if (!job) continue;
                             
                             const jobDataToEval = job.job_data || job;
