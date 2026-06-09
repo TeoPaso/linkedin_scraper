@@ -1,9 +1,10 @@
 name: Daily LinkedIn Job Scraper
 
 on:
-  schedule:
-    # 06:30 UTC corrisponde alle 08:30 CEST (ora italiana estiva) / 07:30 CET (invernale)
-    - cron: '30 6 * * *'
+  # Trigger tramite Webhook esterno (es. cron-job.org) per esecuzione all'orario spaccato
+  repository_dispatch:
+    types: [trigger-daily-scrape]
+  
   # Permette di lanciare il workflow manualmente dall'interfaccia di GitHub se necessario
   workflow_dispatch:
 
