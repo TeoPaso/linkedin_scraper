@@ -2837,7 +2837,9 @@ Verifica la fascia:
                             const docId = cb.getAttribute('data-docid');
                             if (!docId) continue;
                             const job = appData.job_store[docId];
-                            if (!job || !job.job_data) continue;
+                            if (!job) continue;
+                            
+                            const jobDataToEval = job.job_data || job;
 
                             const card = document.getElementById(`job-card-${docId}`);
                             if (card) {
@@ -2846,7 +2848,7 @@ Verifica la fascia:
                             }
 
                             try {
-                                const evaluation = await evaluateJobWithGemini(job.job_data, profileText, liked_history, disliked_history, apiKey);
+                                const evaluation = await evaluateJobWithGemini(jobDataToEval, profileText, liked_history, disliked_history, apiKey);
                                 await window.updateDoc(window.doc(window.db, "jobs", docId), {
                                     fit_score: evaluation.fit_score || 0,
                                     reasoning: evaluation.reasoning || "",
