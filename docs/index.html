@@ -244,6 +244,22 @@
             }
         }
 
+        .custom-inline-calendar .flatpickr-calendar {
+            transform: scale(0.52);
+            transform-origin: top center;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .custom-inline-calendar {
+            width: 158px;
+            height: 145px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
         .flatpickr-alt-input {
             padding: 8px 60px 8px 10px;
             border-radius: 6px;
@@ -2160,15 +2176,14 @@
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 
-                <div class="filters-grid">
-                    <div>
-                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Data (Calendario)</label>
-                        <div style="position: relative; width: 100%;">
-                            <input type="text" id="filter-date" placeholder="Scegli date..." style="padding: 8px 60px 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; box-sizing: border-box; height: 38px;" />
-                            <button id="btn-today-filter" style="position: absolute; right: 4px; top: 4px; height: 30px; padding: 0 8px; font-size: 0.8em; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer;">Today</button>
-                        </div>
+                <div style="display: flex; flex-direction: column; min-width: 158px; border-right: 1px solid var(--border); padding-right: 20px;">
+                    <label style="display:block; margin-bottom: 10px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Data</label>
+                    <div class="custom-inline-calendar">
+                        <input type="text" id="filter-date" style="display: none;" />
                     </div>
-                    
+                </div>
+
+                <div class="filters-grid" style="grid-template-columns: 1fr 1fr; display: grid; gap: 15px; flex: 1;">
                     <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Azienda</label>
                         <input type="text" id="filter-company" placeholder="Cerca azienda..." value="${state.filters.company || ''}" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; box-sizing: border-box; height: 38px;" />
@@ -2177,17 +2192,6 @@
                     <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Job Title</label>
                         <input type="text" id="filter-title" placeholder="Cerca titolo..." value="${state.filters.title || ''}" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; box-sizing: border-box; height: 38px;" />
-                    </div>
-
-
-
-                    <div>
-                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Preferenza</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; height: 38px;">
-                            <div class="pref-btn ${state.filters.liked === '' ? 'active' : ''}" data-pref="" title="Tutte" style="background: ${state.filters.liked === '' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === '' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">Tutte</div>
-                            <div class="pref-btn ${state.filters.liked === 'liked' ? 'active' : ''}" data-pref="liked" title="Liked" style="background: ${state.filters.liked === 'liked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'liked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👍</div>
-                            <div class="pref-btn ${state.filters.liked === 'disliked' ? 'active' : ''}" data-pref="disliked" title="Disliked" style="background: ${state.filters.liked === 'disliked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'disliked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👎</div>
-                        </div>
                     </div>
 
                     <div>
@@ -2200,13 +2204,12 @@
                     </div>
 
                     <div>
-                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Per Pagina</label>
-                        <select id="filter-limit" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; height: 38px;">
-                            <option value="10" ${state.limit === 10 ? 'selected' : ''}>10</option>
-                            <option value="50" ${state.limit === 50 ? 'selected' : ''}>50</option>
-                            <option value="100" ${state.limit === 100 ? 'selected' : ''}>100</option>
-                            <option value="250" ${state.limit === 250 ? 'selected' : ''}>250</option>
-                        </select>
+                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Preferenza</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; height: 38px;">
+                            <div class="pref-btn ${state.filters.liked === '' ? 'active' : ''}" data-pref="" title="Tutte" style="background: ${state.filters.liked === '' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === '' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">Tutte</div>
+                            <div class="pref-btn ${state.filters.liked === 'liked' ? 'active' : ''}" data-pref="liked" title="Liked" style="background: ${state.filters.liked === 'liked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'liked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👍</div>
+                            <div class="pref-btn ${state.filters.liked === 'disliked' ? 'active' : ''}" data-pref="disliked" title="Disliked" style="background: ${state.filters.liked === 'disliked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'disliked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👎</div>
+                        </div>
                     </div>
                 </div>
 
@@ -2225,6 +2228,15 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px; margin-top: 5px;">
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-right: 10px;">
+                        <label style="font-size: 0.9em; color: var(--text-muted);">Per Pagina</label>
+                        <select id="filter-limit" style="padding: 6px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); height: 36px; outline: none; cursor: pointer;">
+                            <option value="10" ${state.limit === 10 ? 'selected' : ''}>10</option>
+                            <option value="50" ${state.limit === 50 ? 'selected' : ''}>50</option>
+                            <option value="100" ${state.limit === 100 ? 'selected' : ''}>100</option>
+                            <option value="250" ${state.limit === 250 ? 'selected' : ''}>250</option>
+                        </select>
+                    </div>
                     <button id="btn-clear-filters" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
                     <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
                 </div>
@@ -2567,10 +2579,8 @@
             if (fDateInput) {
                 fpInstance = flatpickr(fDateInput, {
                     mode: "range",
+                    inline: true,
                     dateFormat: "Y-m-d",
-                    altInput: true,
-                    altFormat: "d M Y",
-                    altInputClass: "flatpickr-alt-input",
                     defaultDate: appData.uiState.filters.date || [],
                     onChange: function(selectedDates, dateStr, instance) {
                         appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
