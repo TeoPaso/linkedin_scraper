@@ -237,7 +237,7 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        
+
         @media (max-width: 600px) {
             .filters-grid {
                 grid-template-columns: 1fr;
@@ -252,6 +252,7 @@
             min-width: 260px !important;
             max-width: 260px !important;
         }
+
         .custom-inline-calendar .flatpickr-calendar {
             transform: scale(0.8);
             transform-origin: top center;
@@ -260,16 +261,19 @@
             border: 1px solid var(--border);
             border-radius: 8px;
         }
+
         .custom-inline-calendar .flatpickr-day {
             font-size: 1.25em !important;
             max-width: none !important;
             height: 28px !important;
             line-height: 28px !important;
         }
+
         .custom-inline-calendar .flatpickr-day.nextMonthDay,
         .custom-inline-calendar .flatpickr-day.prevMonthDay {
             visibility: hidden !important;
         }
+
         .custom-inline-calendar {
             width: 210px;
             height: 205px;
@@ -715,14 +719,14 @@
                 padding: 10px;
                 font-size: 14px;
             }
-            
+
             nav {
                 flex-direction: column;
                 align-items: stretch;
                 gap: 15px;
                 padding: 15px 10px;
             }
-            
+
             .nav-links {
                 flex-wrap: wrap;
                 width: 100%;
@@ -734,36 +738,39 @@
                 padding: 6px 12px;
                 font-size: 0.9em;
             }
-            
+
             .search-controls {
                 flex-direction: column;
                 align-items: stretch;
             }
-            
-            .search-grid, .settings-grid, .grid-header {
+
+            .search-grid,
+            .settings-grid,
+            .grid-header {
                 grid-template-columns: 1fr;
             }
-            
+
             .category-item {
                 min-width: 260px;
                 max-width: 280px;
             }
-            
+
             .modal-container {
                 width: 95%;
                 margin: 0 auto;
                 max-height: 90vh;
             }
-            
+
             .modal-body {
                 padding: 15px;
             }
-            
+
             .bar-label {
                 width: 120px;
                 min-width: 100px;
                 font-size: 0.8em;
-                white-space: normal; /* Allow text to wrap instead of overflowing */
+                white-space: normal;
+                /* Allow text to wrap instead of overflowing */
                 word-wrap: break-word;
             }
 
@@ -771,19 +778,23 @@
                 min-width: 60px;
                 font-size: 0.8em;
             }
-            
-            th, td {
+
+            th,
+            td {
                 padding: 8px 10px;
                 font-size: 0.85em;
             }
 
             /* Fix long urls or words escaping containers */
-            .desc-box, .reasoning-box, a, .metric {
+            .desc-box,
+            .reasoning-box,
+            a,
+            .metric {
                 word-wrap: break-word;
                 overflow-wrap: break-word;
                 word-break: break-word;
             }
-            
+
             .table-responsive {
                 width: 100%;
                 overflow-x: auto;
@@ -1376,7 +1387,7 @@
 
                 let totalJobs = usage.grand_total_jobs_returned || 0;
                 let maxBudgetJobs = accounts.reduce((acc, a) => acc + (a.budget_jobs || 5000), 0);
-                
+
                 // Assuming $1 per 1000 jobs
                 let totalCost = (totalJobs / 1000).toFixed(2);
                 let totalBudget = (maxBudgetJobs / 1000).toFixed(2);
@@ -1385,37 +1396,37 @@
                     const maxJobs = a.budget_jobs || 5000;
                     const used = a.total_jobs_returned || 0;
                     const pct = Math.min(100, Math.max(0, (used / maxJobs) * 100));
-                    
+
                     let barColor = 'var(--score-good)';
                     if (pct > 80) barColor = 'var(--score-bad)';
                     else if (pct > 50) barColor = 'var(--score-ok)';
 
                     const cost = (used / 1000).toFixed(2);
                     const budget = (maxJobs / 1000).toFixed(2);
-                    
+
                     const isEnabled = a.enabled !== false && used < maxJobs;
                     const statusIcon = isEnabled ? '✅' : '⛔';
                     const opacity = isEnabled ? '1' : '0.6';
-                    
+
                     let resetText = '';
                     if (a.next_reset_date) {
                         const dateObj = new Date(a.next_reset_date);
-                        const formattedDate = dateObj.toLocaleDateString('it-IT', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                        const formattedDate = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         resetText = `<span style="color:var(--text-muted); font-size: 0.85em; margin-left: 10px;">(Resetta il ${formattedDate})</span>`;
                     }
 
-                        const accountNames = {
-                            1: 'Matteo',
-                            2: 'primo1',
-                            3: 'primo2',
-                            4: 'primo3',
-                            5: 'baka1',
-                            6: 'baka2',
-                            7: 'baka3'
-                        };
-                        const accountName = accountNames[a.id] || `Account #${a.id}`;
+                    const accountNames = {
+                        1: 'Matteo',
+                        2: 'primo1',
+                        3: 'primo2',
+                        4: 'primo3',
+                        5: 'baka1',
+                        6: 'baka2',
+                        7: 'baka3'
+                    };
+                    const accountName = accountNames[a.id] || `Account #${a.id}`;
 
-                        return `
+                    return `
                         <div style="display: flex; align-items: center; margin-bottom: 12px; opacity: ${opacity};">
                             <div style="width: 100px; font-weight: 500; color: var(--text-light);">${accountName}</div>
                             <div style="flex-grow: 1; background: rgba(0,0,0,0.3); height: 16px; border-radius: 8px; margin: 0 15px; overflow: hidden; border: 1px solid var(--border);">
@@ -2250,7 +2261,7 @@
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tiera') ? 'active' : ''}" data-score="tiera" title="Tier A" style="background: ${state.filters.scores && state.filters.scores.includes('tiera') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tiera') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">⭐</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tierb') ? 'active' : ''}" data-score="tierb" title="Tier B" style="background: ${state.filters.scores && state.filters.scores.includes('tierb') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tierb') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">✓</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('scartato') ? 'active' : ''}" data-score="scartato" title="Scartato" style="background: ${state.filters.scores && state.filters.scores.includes('scartato') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('scartato') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">❌</div>
-                        <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="grid-column: 1 / -1; background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; margin-top: 2px;" title="Nascondi offerte con score a 0 spaccato">🚫 Nascondi Score 0</div>
+                        <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="grid-column: 1 / -1; background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; margin-top: 2px;" title="Nascondi offerte con score a 0 spaccato">🚫 No Score 0</div>
                     </div>
                 </div>
 
@@ -2385,13 +2396,13 @@
                     if (e.target === scoreModal) scoreModal.classList.remove('active');
                 });
             }
-            
+
             document.querySelectorAll('.top-title-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const title = link.getAttribute('data-title');
                     const execId = link.getAttribute('data-exec');
-                    
+
                     const jobTitle = title ? title.trim().toLowerCase() : '';
                     let jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => {
                         const t = (j.job_data ? j.job_data.title : j.title) || '';
@@ -2403,14 +2414,14 @@
                             return t.trim().toLowerCase() === jobTitle;
                         });
                     }
-                    
+
                     if (jobEntry) {
                         const url = jobEntry[0];
                         const j = jobEntry[1];
                         const itemTitle = j.job_data ? j.job_data.title : j.title;
                         const itemCompany = j.job_data ? j.job_data.companyName : j.company;
                         const descriptionText = j.highlighted_description || (j.job_data ? j.job_data.descriptionText : j.descriptionText);
-                        
+
                         const data = {
                             docId: j._doc_id || '',
                             title: itemTitle || '',
@@ -2459,7 +2470,7 @@
                 });
             }
         }
-        
+
         function openJobModal(data) {
             const headerEl = document.getElementById('modal-job-title-header');
             if (headerEl) headerEl.textContent = data.title || 'Description text';
@@ -2471,7 +2482,7 @@
             document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
             document.getElementById('modal-meta-applications').textContent = data.applications || 'N/A';
             document.getElementById('modal-meta-category').textContent = data.category || 'N/A';
-            
+
             const metaScore = document.getElementById('modal-meta-score');
             if (metaScore) {
                 if (data.fit_score !== undefined && data.fit_score !== null) {
@@ -2485,7 +2496,7 @@
                         if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*•]\s+/)) {
                             normalizedText = normalizedText.replace(/(?:\s+)([\*•])\s+/g, '\n$1 ');
                         }
-                        
+
                         const lines = normalizedText.split(/\n/).filter(s => s.trim().length > 0);
                         const listHtml = lines.map(s => {
                             const cleaned = s.replace(/^\s*[\*\-•]\s*/, '');
@@ -2494,7 +2505,7 @@
 
                         const scoreList = document.getElementById('score-reasoning-list');
                         if (scoreList) scoreList.innerHTML = listHtml;
-                        
+
                         const reasoningEl = document.getElementById('modal-reasoning');
                         if (reasoningEl) reasoningEl.innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
 
@@ -2506,7 +2517,7 @@
                     metaScore.onclick = null;
                 }
             }
-            
+
             const btnLink = document.getElementById('modal-btn-link');
             if (data.url) {
                 btnLink.href = data.url;
@@ -2518,13 +2529,13 @@
             const btnLike = document.getElementById('modal-btn-like');
             const btnDislike = document.getElementById('modal-btn-dislike');
             const btnApplied = document.getElementById('modal-btn-applied');
-            
+
             if (btnLike && btnDislike && btnApplied) {
                 btnLike.setAttribute('data-docid', data.docId || '');
                 btnLike.setAttribute('data-current', data.liked === true ? 'true' : 'false');
                 btnLike.style.backgroundColor = data.liked === true ? '#2e7d32' : 'transparent';
                 btnLike.style.color = data.liked === true ? '#fff' : 'var(--text-muted)';
-                
+
                 btnDislike.setAttribute('data-docid', data.docId || '');
                 btnDislike.setAttribute('data-current', data.liked === false ? 'true' : 'false');
                 btnDislike.style.backgroundColor = data.liked === false ? '#c62828' : 'transparent';
@@ -2546,7 +2557,7 @@
                 const fApplied = document.getElementById('filter-applied');
                 const fCompany = document.getElementById('filter-company');
                 const fLimit = document.getElementById('filter-limit');
-                
+
                 if (fCompany) appData.uiState.filters.company = fCompany.value;
                 if (fTitle) appData.uiState.filters.title = fTitle.value;
                 if (fApplied) appData.uiState.filters.applied = fApplied.value;
@@ -2615,7 +2626,7 @@
                         firstDayOfWeek: 1
                     },
                     defaultDate: appData.uiState.filters.date || [],
-                    onChange: function(selectedDates, dateStr, instance) {
+                    onChange: function (selectedDates, dateStr, instance) {
                         appData.uiState.filters.date = dateStr ? dateStr.split(' to ') : [];
                         appData.uiState.page = 1;
                         render();
@@ -2659,7 +2670,7 @@
                 });
             });
 
- 
+
 
             document.querySelectorAll('.sortable').forEach(th => {
                 th.addEventListener('click', () => {
@@ -2693,7 +2704,7 @@
                 });
             }
 
-            window.evaluateJobWithGemini = async function(job, profile, liked_history, disliked_history, apiKey) {
+            window.evaluateJobWithGemini = async function (job, profile, liked_history, disliked_history, apiKey) {
                 let preferences_section = "";
                 if (liked_history || disliked_history) {
                     preferences_section = "\\nPreferenze del candidato (basate sui feedback precedenti):\\n";
@@ -2792,7 +2803,7 @@ Verifica la fascia:
 
                 if (!response.ok) {
                     const text = await response.text();
-                    throw new Error(`API Error \${response.status}: \${text}`);
+                    throw new Error("API Error " + response.status + ": " + text);
                 }
 
                 const data = await response.json();
@@ -2814,15 +2825,15 @@ Verifica la fascia:
                         alert("Seleziona almeno una job da valutare.");
                         return;
                     }
-                    
+
                     if (!confirm(`Vuoi richiedere la valutazione di ${checkedBoxes.length} job?`)) return;
-                    
+
                     btnEvalSelected.disabled = true;
                     btnEvalSelected.textContent = '⏳ Valutazione in corso...';
-                    
+
                     try {
                         const profileText = appData.profile || "";
-                        
+
                         let liked_history = "";
                         let disliked_history = "";
                         Object.values(appData.job_store || {}).forEach(j => {
@@ -2838,7 +2849,7 @@ Verifica la fascia:
                             if (!docId) continue;
                             const job = Object.values(appData.job_store || {}).find(j => j._doc_id === docId);
                             if (!job) continue;
-                            
+
                             const jobDataToEval = job.job_data || job;
 
                             const card = document.getElementById(`job-card-${docId}`);
@@ -2913,7 +2924,7 @@ Verifica la fascia:
                             modalBtnDislike.style.backgroundColor = 'transparent';
                             modalBtnDislike.style.color = 'var(--text-muted)';
                         }
-                    } catch(err) {
+                    } catch (err) {
                         alert("Errore aggiornamento: " + err.message);
                     }
                 };
@@ -2932,7 +2943,7 @@ Verifica la fascia:
                         modalBtnApplied.setAttribute('data-applied', !isCurrentlyApplied ? 'true' : 'false');
                         modalBtnApplied.style.backgroundColor = !isCurrentlyApplied ? '#2e7d32' : '#555';
                         modalBtnApplied.textContent = !isCurrentlyApplied ? 'Applicato ✓' : 'Non applicato';
-                    } catch(err) {
+                    } catch (err) {
                         alert("Errore aggiornamento: " + err.message);
                     }
                 });
@@ -2949,7 +2960,7 @@ Verifica la fascia:
                     if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*•]\s+/)) {
                         normalizedText = normalizedText.replace(/(?:\s+)([\*•])\s+/g, '\n$1 ');
                     }
-                    
+
                     const lines = normalizedText.split(/\n/).filter(s => s.trim().length > 0);
                     const listHtml = lines.map(s => {
                         const cleaned = s.replace(/^\s*[\*\-•]\s*/, '');
@@ -2958,7 +2969,7 @@ Verifica la fascia:
 
                     const scoreList = document.getElementById('score-reasoning-list');
                     if (scoreList) scoreList.innerHTML = listHtml;
-                    
+
                     const reasoningEl = document.getElementById('modal-reasoning');
                     if (reasoningEl) reasoningEl.innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
 
