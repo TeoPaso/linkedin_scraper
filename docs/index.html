@@ -2314,7 +2314,17 @@
                     const title = link.getAttribute('data-title');
                     const execId = link.getAttribute('data-exec');
                     
-                    const jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => j.execution_id === execId && (j.job_data ? j.job_data.title : j.title) === title);
+                    const jobTitle = title ? title.trim().toLowerCase() : '';
+                    let jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => {
+                        const t = (j.job_data ? j.job_data.title : j.title) || '';
+                        return j.execution_id === execId && t.trim().toLowerCase() === jobTitle;
+                    });
+                    if (!jobEntry) {
+                        jobEntry = Object.entries(appData.job_store || {}).find(([url, j]) => {
+                            const t = (j.job_data ? j.job_data.title : j.title) || '';
+                            return t.trim().toLowerCase() === jobTitle;
+                        });
+                    }
                     
                     if (jobEntry) {
                         const url = jobEntry[0];
