@@ -245,16 +245,24 @@
         }
 
         .custom-inline-calendar .flatpickr-calendar {
-            transform: scale(0.68);
+            transform: scale(0.70);
             transform-origin: top center;
             margin: 0 !important;
             box-shadow: none !important;
             border: 1px solid var(--border);
             border-radius: 8px;
+            width: 290px !important;
+        }
+        .custom-inline-calendar .flatpickr-day {
+            font-size: 1.15em !important;
+        }
+        .custom-inline-calendar .flatpickr-day.nextMonthDay,
+        .custom-inline-calendar .flatpickr-day.prevMonthDay {
+            visibility: hidden !important;
         }
         .custom-inline-calendar {
             width: 210px;
-            height: 195px;
+            height: 200px;
             overflow: hidden;
             display: flex;
             justify-content: center;
