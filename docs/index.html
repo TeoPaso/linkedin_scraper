@@ -45,6 +45,19 @@
             font-weight: 600;
         }
 
+        .top-title-link {
+            color: var(--text-light);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--border);
+            white-space: nowrap;
+            transition: color 0.2s, border-bottom-color 0.2s;
+        }
+
+        .top-title-link:hover {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
         .metric {
             font-family: 'Courier New', Courier, monospace;
             color: var(--accent);
@@ -1799,7 +1812,7 @@
             <div style="flex-grow: 1; border-left: 1px solid var(--border); padding-left: 30px; overflow: hidden;">
                 <div style="color: var(--text-muted); font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; opacity: 0.6;">Top Job Titles</div>
                 <div style="font-size: 0.9em; line-height: 1.5; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px;" title="${escapeHtml((s.top_titles || []).join(', '))}">
-                    ${(s.top_titles || []).map(t => `<a href="javascript:void(0)" class="top-title-link" data-title="${escapeHtml(t)}" data-exec="${s.execution_id}" style="color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); white-space: nowrap;">${escapeHtml(t)}</a>`).join('')}
+                    ${(s.top_titles || []).map(t => `<a href="javascript:void(0)" class="top-title-link" data-title="${escapeHtml(t)}" data-exec="${s.execution_id}">${escapeHtml(t)}</a>`).join('')}
                 </div>
             </div>
 
