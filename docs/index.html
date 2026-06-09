@@ -244,17 +244,25 @@
             }
         }
 
+        .custom-inline-calendar .flatpickr-calendar,
+        .custom-inline-calendar .flatpickr-innerContainer,
+        .custom-inline-calendar .flatpickr-days,
+        .custom-inline-calendar .dayContainer {
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+        }
         .custom-inline-calendar .flatpickr-calendar {
-            transform: scale(0.70);
+            transform: scale(0.8);
             transform-origin: top center;
             margin: 0 !important;
             box-shadow: none !important;
             border: 1px solid var(--border);
             border-radius: 8px;
-            width: 290px !important;
         }
         .custom-inline-calendar .flatpickr-day {
-            font-size: 1.15em !important;
+            font-size: 1.25em !important;
+            max-width: none !important;
         }
         .custom-inline-calendar .flatpickr-day.nextMonthDay,
         .custom-inline-calendar .flatpickr-day.prevMonthDay {
