@@ -63,7 +63,7 @@ Management Engineer specializing in Finance, graduated from Politecnico di Milan
 ### 🚫 Severity: ZERO (punteggio = 0, non negoziabile)
 - Fully remote roles (hybrid e in-sede vanno bene)
 - Relocation fuori Lombardia o all'estero
-- Categorie Protette
+- Categorie Protette (controllare accuratamente sia la Descrizione sia il Titolo dell'annuncio per diciture come "Categorie protette (68/99)" o simili)
 - Bending Spoons
 - Contratti < 1 anno / sostituzioni maternità
 

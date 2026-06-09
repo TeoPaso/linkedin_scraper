@@ -163,8 +163,8 @@ def get_preferences():
 def eval_pending_jobs(event: scheduler_fn.ScheduledEvent) -> None:
     db = get_db()
     
-    # Prendi un batch di massimo 10 job che necessitano di valutazione
-    jobs_ref = db.collection("jobs").where(filter=firestore.FieldFilter("needs_evaluation", "==", True)).limit(10).stream()
+    # Prendi un batch di massimo 5 job che necessitano di valutazione (ridotto da 10 per evitare timeout)
+    jobs_ref = db.collection("jobs").where(filter=firestore.FieldFilter("needs_evaluation", "==", True)).limit(5).stream()
     
     jobs_to_evaluate = list(jobs_ref)
     
@@ -181,7 +181,11 @@ def eval_pending_jobs(event: scheduler_fn.ScheduledEvent) -> None:
     else:
         print("[-] Profilo non trovato su Firestore (app_state/profile), la valutazione potrebbe essere inaccurata.")
     
-    liked_history, disliked_history = get_preferences()
+    try:
+        liked_history, disliked_history = get_preferences()
+    except Exception as e:
+        print(f"[-] Errore nel caricare le preferenze: {e}")
+        liked_history, disliked_history = "", ""
     
     for idx, doc in enumerate(jobs_to_evaluate):
         data = doc.to_dict()

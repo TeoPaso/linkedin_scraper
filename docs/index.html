@@ -799,7 +799,7 @@
     <!-- Firebase JS SDK (v10 modular) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, setDoc, getDoc, serverTimestamp, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         // REPLACE WITH YOUR FIREBASE CONFIG
@@ -826,8 +826,8 @@
         window.updateDoc = updateDoc;
         window.setDoc = setDoc;
         window.getDoc = getDoc;
-        window.onSnapshot = onSnapshot;
         window.serverTimestamp = serverTimestamp;
+        window.deleteField = deleteField;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
 
@@ -1183,6 +1183,10 @@
             const originalText = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Saving...';
+
+            const geminiKey = document.getElementById('cfg-gemini-api-key').value.trim();
+            if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
+            else localStorage.removeItem('gemini_api_key');
 
             const config = {
                 preferences: {
@@ -1577,6 +1581,14 @@
                                     <label>Min Signals (Outreach)</label>
                                     <input type="number" id="cfg-min-signals" value="${out.min_signals || 3}">
                                 </div>
+                            </div>
+
+                            <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
+                            <h3>🤖 Gemini API</h3>
+                            <div class="form-group">
+                                <label>Gemini API Key</label>
+                                <p style="color: var(--text-muted); font-size: 0.8em; margin-bottom: 8px;">Chiave per valutare le job direttamente dal browser. (Viene salvata solo in locale)</p>
+                                <input type="password" id="cfg-gemini-api-key" placeholder="AIzaSy..." style="font-family: monospace;" value="${localStorage.getItem('gemini_api_key') || ''}">
                             </div>
 
                             <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
@@ -2680,9 +2692,122 @@
                 });
             }
 
+            window.evaluateJobWithGemini = async function(job, profile, liked_history, disliked_history, apiKey) {
+                let preferences_section = "";
+                if (liked_history || disliked_history) {
+                    preferences_section = "\\nPreferenze del candidato (basate sui feedback precedenti):\\n";
+                    if (liked_history) preferences_section += `Lavori apprezzati (LIKE):\\n${liked_history}\\n`;
+                    if (disliked_history) preferences_section += `Lavori scartati (DISLIKE):\\n${disliked_history}\\n`;
+                    preferences_section += "Usa queste preferenze per influenzare il punteggio: alza il punteggio per lavori molto simili a quelli apprezzati e abbassalo drasticamente per lavori simili a quelli scartati.\\n";
+                }
+
+                const prompt = `Sei un technical recruiter esperto. Valuta l'aderenza del candidato all'offerta seguendo un processo RIGOROSO a 4 step.
+
+Profilo Candidato:
+${profile}
+${preferences_section}
+Offerta di Lavoro:
+Titolo: ${job.title || "Unknown"}
+Azienda: ${job.companyName || "Unknown"}
+Location: ${job.location || "Unknown"}
+Descrizione: ${job.descriptionText || ""}
+
+═══ PROCESSO DI VALUTAZIONE ═══
+
+STEP 1 — HARD RULES & SBARRAMENTI
+Controlla scrupolosamente le categorie "Not interested in" nel Profilo Candidato (es. 🚫 ZERO, ⛔ BOCCIATURA).
+Se la job description viola una di queste regole, applica la direttiva indicata nel profilo per quella categoria:
+- Es. Se rientra in una categoria "ZERO", lo score finale è 0 (ferma la valutazione).
+- Es. Se rientra in "BOCCIATURA", lo score finale non può superare il massimo indicato (es. 50).
+ATTENZIONE: QUESTE REGOLI SONO INVIOLABILI. Non puoi ignorarle né applicare bonus extra per "salvare" un'offerta che viola una hard rule.
+
+STEP 2 — CALCOLO DEI PUNTI DAL PROFILO (Base 70)
+Se la job non è stata scartata allo step 1, parti da una base di 70 punti.
+Leggi attentamente il Profilo Candidato e cerca match nella Job Description per TUTTE le preferenze indicate (es. "Interested in", seniority, contratto, skills).
+- Per ogni match positivo, aggiungi il punteggio ESATTO indicato nel profilo per quella categoria (es. +10, +5, +2).
+- Per ogni match negativo (es. MALUS, PENALITÀ), sottrai il punteggio ESATTO indicato nel profilo.
+IMPORTANTE: NON inventare o applicare punteggi (es. +15, +3, -5) se non sono scritti nel testo del profilo. Il tuo compito è solo leggere i punti dal profilo e sommarli.
+Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
+
+STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
+Ora esprimi il TUO giudizio personale sulla job, al di là dei criteri espliciti nel profilo.
+Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva. È ASSOLUTAMENTE VIETATO ASSEGNARE UN PUNTEGGIO FUORI DA QUESTO RANGE (es. +60 o -50 sono VIETATI).
+Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
+Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI.
+
+STEP 4 — PUNTEGGIO FINALE (CALCOLO MATEMATICO E CAPPING)
+1. Calcola il punteggio provvisorio: SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3) = SCORE PROVVISORIO.
+2. Applica i "cap" (sbarramenti) dello Step 1, se l'offerta ha violato qualche regola:
+   - Se c'è una violazione "ZERO", il fit_score DEVE ESSERE 0.
+   - Se c'è una "BOCCIATURA" (punteggio massimo 50), e lo SCORE PROVVISORIO è > 50, il fit_score DEVE ESSERE RIDOTTO A 50.
+   - Altrimenti, fit_score = SCORE PROVVISORIO.
+   
+Esempio: Se lo score provvisorio è 80 ma c'è "Bending Spoons" (Bocciatura, max 50), il punteggio finale SARÀ 50. Non 80 e non 77. 50 esatto.
+Verifica la fascia:
+- Golden (90+): eccelle
+- Fascia A (80-89): molto buono
+- Fascia B (70-79): discreto
+- Scarto (50-69): debole
+- Bocciatura (0-40): non in target
+
+═══ FORMATO OUTPUT (4 campi) ═══
+- fit_score: intero (il punteggio finale dello step 4).
+- reasoning: IN ITALIANO, testo DISCORSIVO (NO bullet points). Spiega brevemente di cosa si tratta questo ruolo.
+- fit_score_reasoning: IN ITALIANO, ELENCO PUNTATO strutturato. Elenca i singoli fattori che hanno determinato il punteggio, SEPARANDO chiaramente i criteri del profilo dal tuo giudizio personale:
+  * [Nome fattore dal profilo]: motivazione (+X come da profilo)
+  * [Nome fattore dal profilo]: motivazione (-Y come da profilo)
+  * Subtotale profilo: 70 base + X - Y = ZZ
+  * 💡 Mio giudizio: [spiegazione sintetica di cosa ti ha convinto o preoccupato] (+/-N)
+  * Punteggio finale: ZZ + N = XX
+- highlighted_description: RISCRIVI E PRESERVA INTEGRALMENTE TUTTO il contenuto della "Descrizione" originale. È ASSOLUTAMENTE VIETATO RIASSUMERE O OMETTERE PARTI DI TESTO. Se ci sono lunghi paragrafi, devi riportarli tutti per intero senza tagliare nulla. Migliorane SOLO la formattazione per la MASSIMA LEGGIBILITÀ: aggiungi la punteggiatura mancante, usa ESCLUSIVAMENTE il simbolo '•' per gli elenchi puntati e usa il grassetto (tag HTML <b> o <strong>) per i titoli delle sezioni. È FONDAMENTALE che ogni titoletto in grassetto (es. <b>Descrizione:</b>) sia PRECEDUTO da due "a capo" (\\n\\n) e SEGUITO da un "a capo" (\\n) in modo che non sia mai attaccato al testo adiacente. Infine, usa il tag HTML <mark> per evidenziare i passaggi specifici della descrizione che ritieni possano interessare di più al candidato (basandoti sul suo profilo).
+- compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
+`;
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=\${apiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                fit_score: { type: "INTEGER" },
+                                reasoning: { type: "STRING" },
+                                fit_score_reasoning: { type: "STRING" },
+                                highlighted_description: { type: "STRING" },
+                                compensation: { type: "STRING", nullable: true }
+                            },
+                            required: ["fit_score", "reasoning", "fit_score_reasoning", "highlighted_description"]
+                        },
+                        temperature: 0.1
+                    }
+                };
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(`API Error \${response.status}: \${text}`);
+                }
+
+                const data = await response.json();
+                const textResponse = data.candidates[0].content.parts[0].text;
+                return JSON.parse(textResponse);
+            };
+
             const btnEvalSelected = document.getElementById('btn-eval-selected');
             if (btnEvalSelected) {
                 btnEvalSelected.addEventListener('click', async () => {
+                    const apiKey = localStorage.getItem('gemini_api_key');
+                    if (!apiKey) {
+                        alert("API Key di Gemini non trovata! Inseriscila nella sezione Configurazione prima di valutare.");
+                        return;
+                    }
+
                     const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
                     if (checkedBoxes.length === 0) {
                         alert("Seleziona almeno una job da valutare.");
@@ -2692,19 +2817,54 @@
                     if (!confirm(`Vuoi richiedere la valutazione di ${checkedBoxes.length} job?`)) return;
                     
                     btnEvalSelected.disabled = true;
-                    btnEvalSelected.textContent = '⏳ Inviando...';
+                    btnEvalSelected.textContent = '⏳ Valutazione in corso...';
                     
                     try {
-                        const promises = Array.from(checkedBoxes).map(cb => {
-                            const docId = cb.getAttribute('data-docid');
-                            if (docId) {
-                                return window.updateDoc(window.doc(window.db, "jobs", docId), {
-                                    needs_evaluation: true
-                                });
+                        const profileText = appData.profile || "";
+                        
+                        let liked_history = "";
+                        let disliked_history = "";
+                        Object.values(appData.job_store || {}).forEach(j => {
+                            if (j.liked === true) {
+                                liked_history += `- ${j.job_data?.title || ''} presso ${j.job_data?.companyName || ''}. (Snippet: ${(j.job_data?.descriptionText || '').substring(0, 300)}...)\n`;
+                            } else if (j.liked === false) {
+                                disliked_history += `- ${j.job_data?.title || ''} presso ${j.job_data?.companyName || ''}. (Snippet: ${(j.job_data?.descriptionText || '').substring(0, 300)}...)\n`;
                             }
                         });
-                        await Promise.all(promises);
-                        showToast(`Richiesta valutazione per ${checkedBoxes.length} job inviata!`);
+
+                        for (const cb of checkedBoxes) {
+                            const docId = cb.getAttribute('data-docid');
+                            if (!docId) continue;
+                            const job = appData.job_store[docId];
+                            if (!job || !job.job_data) continue;
+
+                            const card = document.getElementById(`job-card-${docId}`);
+                            if (card) {
+                                const evalDiv = card.querySelector('.job-eval-div');
+                                if (evalDiv) evalDiv.innerHTML = '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ Valutazione in corso...</div>';
+                            }
+
+                            try {
+                                const evaluation = await evaluateJobWithGemini(job.job_data, profileText, liked_history, disliked_history, apiKey);
+                                await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                                    fit_score: evaluation.fit_score || 0,
+                                    reasoning: evaluation.reasoning || "",
+                                    fit_score_reasoning: evaluation.fit_score_reasoning || "",
+                                    highlighted_description: evaluation.highlighted_description || "",
+                                    compensation: evaluation.compensation || "",
+                                    needs_evaluation: window.deleteField()
+                                });
+                            } catch (evalErr) {
+                                console.error(`Errore valutazione job ${docId}:`, evalErr);
+                                await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                                    needs_evaluation: window.deleteField(),
+                                    reasoning: `Errore HTTP API: ${evalErr.message}`
+                                });
+                            }
+                            // Small delay to prevent hitting Gemini rate limits too aggressively
+                            await new Promise(r => setTimeout(r, 2000));
+                        }
+                        showToast(`Valutazione completata per ${checkedBoxes.length} job!`);
                     } catch (err) {
                         console.error("Errore valutazione multipla:", err);
                         alert("Errore nell'impostare la valutazione: " + err.message);
