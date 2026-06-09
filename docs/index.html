@@ -2096,7 +2096,8 @@
                     category: escapeHtml(item.category || ''),
                     url: item.url || '',
                     liked: j.liked,
-                    applied: j.applied
+                    applied: j.applied,
+                    fit_score: j.fit_score
                 };
 
                 let titleText = escapeHtml(item.title);
@@ -2268,6 +2269,7 @@
                         <div><strong style="color: var(--text-muted);">Seniority:</strong> <span id="modal-meta-seniority"></span></div>
                         <div><strong style="color: var(--text-muted);">Compensation:</strong> <span id="modal-meta-compensation"></span></div>
                         <div><strong style="color: var(--text-muted);">Applications:</strong> <span id="modal-meta-applications"></span></div>
+                        <div><strong style="color: var(--text-muted);">Score:</strong> <span id="modal-meta-score"></span></div>
                         <div style="grid-column: 1 / -1;"><strong style="color: var(--text-muted);">Categoria:</strong> <span id="modal-meta-category"></span></div>
                     </div>
 
@@ -2360,7 +2362,8 @@
                             category: escapeHtml(j.category || ''),
                             url: url,
                             liked: j.liked,
-                            applied: j.applied
+                            applied: j.applied,
+                            fit_score: j.fit_score
                         };
                         openJobModal(data);
                     } else {
@@ -2405,6 +2408,41 @@
             document.getElementById('modal-meta-compensation').textContent = data.compensation || 'N/A';
             document.getElementById('modal-meta-applications').textContent = data.applications || 'N/A';
             document.getElementById('modal-meta-category').textContent = data.category || 'N/A';
+            
+            const metaScore = document.getElementById('modal-meta-score');
+            if (metaScore) {
+                if (data.fit_score !== undefined && data.fit_score !== null) {
+                    const scoreHtml = getScoreHtml(data.fit_score);
+                    metaScore.innerHTML = `<span style="cursor: pointer; display: inline-block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${scoreHtml}</span>`;
+                    metaScore.onclick = (e) => {
+                        e.preventDefault();
+                        const scoreReasonText = data.scoreReason || data.reason || 'Nessuna informazione disponibile.';
+
+                        let normalizedText = scoreReasonText;
+                        if (!normalizedText.includes('\n') && normalizedText.match(/(?:\s+|^)[\*•]\s+/)) {
+                            normalizedText = normalizedText.replace(/(?:\s+)([\*•])\s+/g, '\n$1 ');
+                        }
+                        
+                        const lines = normalizedText.split(/\n/).filter(s => s.trim().length > 0);
+                        const listHtml = lines.map(s => {
+                            const cleaned = s.replace(/^\s*[\*\-•]\s*/, '');
+                            return `<li>${cleaned}</li>`;
+                        }).join('');
+
+                        const scoreList = document.getElementById('score-reasoning-list');
+                        if (scoreList) scoreList.innerHTML = listHtml;
+                        
+                        const reasoningEl = document.getElementById('modal-reasoning');
+                        if (reasoningEl) reasoningEl.innerHTML = data.reason ? data.reason.replace(/\n/g, '<br>') : 'N/A';
+
+                        const scoreModal = document.getElementById('score-modal');
+                        if (scoreModal) scoreModal.classList.add('active');
+                    };
+                } else {
+                    metaScore.innerHTML = 'N/A';
+                    metaScore.onclick = null;
+                }
+            }
             
             const btnLink = document.getElementById('modal-btn-link');
             if (data.url) {
