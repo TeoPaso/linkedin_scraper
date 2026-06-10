@@ -245,11 +245,12 @@ Leggi attentamente il Profilo Candidato e cerca match nella Job Description per 
 IMPORTANTE: NON inventare o applicare punteggi (es. +15, +3, -5) se non sono scritti nel testo del profilo. Il tuo compito è solo leggere i punti dal profilo e sommarli.
 Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
 
-STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
-STEP 3 — TUO GIUDIZIO PERSONALE (SOLO TESTUALE, NESSUN PUNTEGGIO EXTRA)
-Ora esprimi il TUO giudizio personale sulla job in un breve paragrafo testuale.
-Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, coerenza del ruolo.
-ATTENZIONE: TI È STATA REVOCATA LA FACOLTÀ DI ASSEGNARE PUNTEGGI. Non puoi più aggiungere né sottrarre punti in base al tuo giudizio. Il punteggio extra in questo step è SEMPRE E SOLO +0. Il punteggio finale sarà ESATTAMENTE UGUALE al "Subtotale Profilo" calcolato nello Step 2 (salvo l'applicazione automatica dei Cap nello Step 4).
+STEP 3 — VALUTAZIONE DEI "FATTORI LATENTI" (da -20 a +20)
+Il tuo compito ora è influenzare il punteggio cogliendo dettagli che l'analisi a keyword non può cogliere.
+Valuta il "Vibe" della posizione, la qualità dei progetti, il grado di innovazione, il prestigio di aziende non menzionate nelle regole, eventuali red flags ("work hard play hard"), e la reale attrattività formativa.
+REGOLA FONDAMENTALE (AMNESIA SELETTIVA): In questo step, devi cancellare dalla tua memoria tutto ciò che è stato valutato nello Step 2 (es. Stage, Big 3, Smart Working). Il tuo giudizio e il punteggio che assegnerai devono basarsi SOLO E SOLTANTO sul resto del testo.
+Assegna un punteggio intero da -20 a +20 in base ai fattori latenti che hai individuato. Se l'annuncio non ha particolari pregi o difetti nascosti, assegna +0.
+Questo punteggio deve riflettere la tua capacità di leggere tra le righe come recruiter esperto.
 
 STEP 4 — PUNTEGGIO FINALE (CALCOLO MATEMATICO E CAPPING)
 1. Calcola il punteggio provvisorio: SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3) = SCORE PROVVISORIO.
@@ -274,8 +275,9 @@ Verifica la fascia:
   * [Nome fattore dal profilo]: motivazione (+X come da profilo)
   * [Nome fattore dal profilo]: motivazione (-Y come da profilo)
   * Subtotale profilo: 70 base + X - Y = ZZ
-  * 💡 Mio giudizio: [Scrivi qui la tua riflessione testuale di max 3 righe. NESSUN PUNTEGGIO EXTRA DA AGGIUNGERE. Scrivi solo il testo.]
-  * Punteggio finale: [Deve essere ESATTAMENTE UGUALE al "Subtotale profilo" calcolato sopra]
+  * 💡 Mio giudizio (Fattori Latenti): [Descrivi qui i dettagli latenti, il vibe e le sfumature che hai colto. NON MENZIONARE NULLA di ciò che appartiene allo Step 2 (es. non citare lo Stage se è un malus nel profilo).]
+  * Punteggio extra fattori latenti: [Da -20 a +20 in base ai SOLI fattori appena descritti]
+  * Punteggio finale: ZZ + Punteggio extra = XX
 - highlighted_description: RISCRIVI E PRESERVA INTEGRALMENTE TUTTO il contenuto della "Descrizione" originale. È ASSOLUTAMENTE VIETATO RIASSUMERE O OMETTERE PARTI DI TESTO. Se ci sono lunghi paragrafi, devi riportarli tutti per intero senza tagliare nulla. Migliorane SOLO la formattazione per la MASSIMA LEGGIBILITÀ: aggiungi la punteggiatura mancante, usa ESCLUSIVAMENTE il simbolo '•' per gli elenchi puntati e usa il grassetto (tag HTML <b> o <strong>) per i titoli delle sezioni. È FONDAMENTALE che ogni titoletto in grassetto (es. <b>Descrizione:</b>) sia PRECEDUTO da due "a capo" (\n\n) e SEGUITO da un "a capo" (\n) in modo che non sia mai attaccato al testo adiacente. Infine, usa il tag HTML <mark> per evidenziare i passaggi specifici della descrizione che ritieni possano interessare di più al candidato (basandoti sul suo profilo).
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
