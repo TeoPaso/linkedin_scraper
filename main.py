@@ -231,15 +231,16 @@ DESCRIZIONE: {job.get("descriptionText", "")}
 
 STEP 1 — HARD RULES & SBARRAMENTI
 Controlla scrupolosamente le categorie "Not interested in" nel Profilo Candidato (es. 🚫 ZERO, ⛔ BOCCIATURA).
-Devi agire come un automa inflessibile: se l'intera offerta di lavoro (incluso Titolo, Azienda, Location o Descrizione) contiene concetti o keyword vietate dalle regole del profilo (es. "Categorie protette", "L. 68/99", "Tirocinio", "Remote", ecc.), DEVI APPLICARE LA DIRETTIVA ALLA LETTERA.
+Devi agire come un automa inflessibile: se l'intera offerta di lavoro (incluso Titolo, Azienda, Location o Descrizione) contiene concetti o keyword vietate dalle regole del profilo (es. "Categorie protette", "L. 68/99", "Remote", ecc.), DEVI APPLICARE LA DIRETTIVA ALLA LETTERA.
 - Es. Se rientra in una categoria "ZERO", lo score finale DEVE essere 0 (ferma la valutazione).
 - Es. Se rientra in "BOCCIATURA", lo score finale non può superare il massimo indicato (es. 50).
-ATTENZIONE: È SEVERAMENTE VIETATO usare il tuo giudizio per ignorare una Hard Rule. Non puoi giustificare la violazione dicendo "non esclude il candidato". Il candidato NON HA legalmente o fisicamente i requisiti per tali regole. Scarta l'offerta se viola una regola.
+ATTENZIONE CRITICA ALLA LETTURA DELLE CATEGORIE: Controlla ESATTAMENTE sotto quale severity l'utente ha inserito una voce. Se "Stage" è inserito sotto "PENALITÀ (-10)", è SOLO un malus matematico da applicare allo Step 2, e NON è una "BOCCIATURA (max 50)". Non inventare "cap" o "bocciature" per voci che si trovano in categorie inferiori.
+ATTENZIONE: È SEVERAMENTE VIETATO usare il tuo giudizio per ignorare una Hard Rule (es. categorie ZERO). Scarta l'offerta senza esitazioni se viola quelle regole estreme.
 
 STEP 2 — CALCOLO DEI PUNTI DAL PROFILO (Base 70)
 Se la job non è stata scartata allo step 1, parti da una base di 70 punti.
 Leggi attentamente il Profilo Candidato e cerca match nella Job Description per TUTTE le preferenze indicate (es. "Interested in", seniority, contratto, skills).
-- Per ogni match positivo, aggiungi il punteggio ESATTO indicato nel profilo per quella categoria (es. +10, +5, +2).
+- Per ogni match positivo (es. BONUS), aggiungi il punteggio ESATTO indicato nel profilo.
 - Per ogni match negativo (es. MALUS, PENALITÀ), sottrai il punteggio ESATTO indicato nel profilo.
 IMPORTANTE: NON inventare o applicare punteggi (es. +15, +3, -5) se non sono scritti nel testo del profilo. Il tuo compito è solo leggere i punti dal profilo e sommarli.
 Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
