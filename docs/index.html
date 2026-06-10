@@ -2494,7 +2494,7 @@
                             descriptionText: desc
                         };
 
-                        const apiKey = getGeminiKey();
+                        const apiKey = localStorage.getItem('gemini_api_key');
                         if (!apiKey) {
                             alert("API Key di Gemini non configurata nelle impostazioni.");
                             return;
