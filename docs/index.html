@@ -913,6 +913,7 @@
         // DATA PLACEHOLDER
         // ==========================================
         let appData = {};
+        window.evalState = window.evalState || { active: false, text: '🔄 Valuta Selezionati', docs: new Set() };
 
         // ==========================================
         // MOCK DATA FOR LOCAL TESTING
@@ -2196,7 +2197,7 @@
                 }
 
                 return `
-            <tr class="job-row">
+            <tr id="job-row-${j._doc_id}" class="job-row ${window.evalState.docs.has(j._doc_id) ? 'evaluating-card' : ''}">
                 <td style="text-align: center;">
                     <input type="checkbox" class="job-checkbox" data-docid="${j._doc_id || ''}">
                 </td>
@@ -2289,7 +2290,7 @@
                         </select>
                     </div>
                     <button id="btn-clear-filters" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: var(--bg-hover); color: var(--text-light); border: 1px solid var(--border); border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Pulisci Filtri</button>
-                    <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: bold;">🔄 Valuta Selezionati</button>
+                    <button id="btn-eval-selected" class="admin-only ${window.currentUser ? '' : 'hidden-auth'}" style="height: 36px; display: flex; align-items: center; padding: 0 20px; background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: bold;" ${window.evalState.active ? 'disabled' : ''}>${window.evalState.active ? window.evalState.text : '🔄 Valuta Selezionati'}</button>
                 </div>
                 <div>
                     <span id="jobs-counter" class="metric" style="font-size: 1.2em;">${totalItems}</span> <span style="color: var(--text-muted); font-size: 0.9em;">offerte trovate</span>
@@ -2986,18 +2987,22 @@ Verifica la fascia:
                         let currentCount = 0;
                         const totalCount = checkedBoxes.length;
 
+                        window.evalState.active = true;
+
                         // Add evaluating class to all selected cards
                         checkedBoxes.forEach(cb => {
                             const dId = cb.getAttribute('data-docid');
                             if (dId) {
-                                const c = document.getElementById(`job-card-${dId}`);
+                                window.evalState.docs.add(dId);
+                                const c = document.getElementById(`job-row-${dId}`);
                                 if (c) c.classList.add('evaluating-card');
                             }
                         });
 
                         for (const cb of checkedBoxes) {
                             currentCount++;
-                            btnEvalSelected.textContent = `⏳ Valutazione in corso (${currentCount}/${totalCount})...`;
+                            window.evalState.text = `⏳ Valutazione in corso (${currentCount}/${totalCount})...`;
+                            btnEvalSelected.textContent = window.evalState.text;
                             const docId = cb.getAttribute('data-docid');
                             if (!docId) continue;
                             const job = Object.values(appData.job_store || {}).find(j => j._doc_id === docId);
@@ -3028,18 +3033,27 @@ Verifica la fascia:
                                     reasoning: `Errore HTTP API: ${evalErr.message}`
                                 });
                             } finally {
-                                if (card) card.classList.remove('evaluating-card');
+                                window.evalState.docs.delete(docId);
+                                const row = document.getElementById(`job-row-${docId}`);
+                                if (row) row.classList.remove('evaluating-card');
                             }
                             // Small delay to prevent hitting Gemini rate limits too aggressively
                             await new Promise(r => setTimeout(r, 2000));
                         }
+                        
+                        window.evalState.active = false;
+                        window.evalState.docs.clear();
                         showToast(`Valutazione completata per ${checkedBoxes.length} job!`);
                     } catch (err) {
                         console.error("Errore valutazione multipla:", err);
                         alert("Errore nell'impostare la valutazione: " + err.message);
                     } finally {
-                        btnEvalSelected.disabled = false;
-                        btnEvalSelected.textContent = '🔄 Valuta Selezionati';
+                        window.evalState.active = false;
+                        window.evalState.docs.clear();
+                        if (btnEvalSelected) {
+                            btnEvalSelected.disabled = false;
+                            btnEvalSelected.textContent = '🔄 Valuta Selezionati';
+                        }
                         if (selectAllCheckbox) selectAllCheckbox.checked = false;
                         document.querySelectorAll('.job-checkbox').forEach(cb => cb.checked = false);
                     }
