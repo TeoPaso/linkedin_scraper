@@ -520,17 +520,12 @@ def main():
 
     config = load_config("config.yaml")
 
-    # Carica il profilo dal cloud (Firestore), con fallback al file locale + migrazione automatica
+    # Carica il profilo dal cloud (Firestore)
     profile = db.load_profile_from_db()
     if profile:
         print("[*] Profilo caricato da Firestore.")
-    elif os.path.exists("my_profile.md"):
-        print("[*] Profilo non trovato su Firestore. Migrazione dal file locale...")
-        profile = load_profile("my_profile.md")
-        db.save_profile_to_db(profile)
-        print("[*] Profilo migrato con successo su Firestore.")
     else:
-        print("ERRORE: Profilo non trovato né su Firestore né in locale (my_profile.md).")
+        print("ERRORE: Profilo non trovato su Firestore.")
         sys.exit(1)
 
     # Salva la configurazione locale come "factory_config" per permettere il reset dalla dashboard
