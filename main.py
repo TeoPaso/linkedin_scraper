@@ -231,7 +231,7 @@ Descrizione: {job.get("descriptionText", "")}
 
 STEP 1 — HARD RULES & SBARRAMENTI
 Controlla scrupolosamente le categorie "Not interested in" nel Profilo Candidato (es. 🚫 ZERO, ⛔ BOCCIATURA).
-Se la job description viola una di queste regole, applica la direttiva indicata nel profilo per quella categoria:
+Se l'intera offerta di lavoro (incluso Titolo, Azienda, Location o Descrizione) viola una di queste regole, applica la direttiva indicata nel profilo per quella categoria:
 - Es. Se rientra in una categoria "ZERO", lo score finale è 0 (ferma la valutazione).
 - Es. Se rientra in "BOCCIATURA", lo score finale non può superare il massimo indicato (es. 50).
 ATTENZIONE: QUESTE REGOLI SONO INVIOLABILI. Non puoi ignorarle né applicare bonus extra per "salvare" un'offerta che viola una hard rule.
