@@ -47,9 +47,9 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           USE_VERTEX_AI: ${{ secrets.USE_VERTEX_AI }}
           VERTEX_LOCATION: ${{ secrets.VERTEX_LOCATION }}
-        run: python main.py
-
-
+        run: |
+          python main.py
+          python evaluate_pending_jobs.py
       
       # I dati di stato (json) non vengono più committati nel repo.
       # Tutto viene salvato su Firestore.
