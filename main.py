@@ -222,10 +222,10 @@ Profilo Candidato:
 {profile}
 {preferences_section}
 Offerta di Lavoro:
-Titolo: {job.get("title", "Unknown")}
-Azienda: {job.get("companyName", "Unknown")}
-Location: {job.get("location", "Unknown")}
-Descrizione: {job.get("descriptionText", "")}
+TITOLO DELL'OFFERTA (VERIFICA LE HARD RULES QUI DENTRO): {job.get("title", "Unknown")}
+AZIENDA: {job.get("companyName", "Unknown")}
+LOCATION: {job.get("location", "Unknown")}
+DESCRIZIONE: {job.get("descriptionText", "")}
 
 ═══ PROCESSO DI VALUTAZIONE ═══
 
