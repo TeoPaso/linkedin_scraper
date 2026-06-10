@@ -959,6 +959,10 @@
             }
         };
 
+        window.openManualEvalModal = function() {
+            document.getElementById('sandbox-modal').classList.add('active');
+        };
+
         window.toggleAuth = async function () {
             if (window.currentUser) {
                 await window.signOut(window.auth);
@@ -1109,6 +1113,12 @@
                         <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
                             ${window.currentUser ? '🔓 Logout' : '🔒 Login'}
                         </button>
+
+                        <span class="admin-only ${window.currentUser ? '' : 'hidden-auth'}">
+                            <button onclick="openManualEvalModal()" style="background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em; display: flex; align-items: center; gap: 5px;">
+                                ✍️ Sandbox
+                            </button>
+                        </span>
 
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85em; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);">
                             <div style="width: 8px; height: 8px; border-radius: 50%; background: ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))}; box-shadow: 0 0 8px ${botStatus === 'running' ? '#ffaa00' : (botStatus === 'pending' ? '#00ccff' : (botStatus === 'stopping' ? '#ff4444' : '#00ffcc'))};"></div>
@@ -2372,6 +2382,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- Sandbox Modal -->
+        <div class="modal-overlay" id="sandbox-modal">
+            <div class="modal-container" style="max-width: 700px; display: flex; flex-direction: column; max-height: 90vh;">
+                <div class="modal-header">
+                    <h3 style="margin: 0; color: var(--accent);">✍️ Valutazione Manuale (Sandbox)</h3>
+                    <button class="modal-close" id="btn-close-sandbox-modal">&times;</button>
+                </div>
+                <div class="modal-body" style="overflow-y: auto;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-light);">Titolo dell'offerta (Importante per le Hard Rules)</label>
+                        <input type="text" id="sandbox-title" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-light); font-size: 1em;" placeholder="es. Business Intelligence Analyst - Categorie Protette">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-light);">Azienda (Opzionale)</label>
+                        <input type="text" id="sandbox-company" style="width: 100%; box-sizing: border-box; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-light); font-size: 1em;" placeholder="es. SDG Group">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: var(--text-light);">Job Description</label>
+                        <textarea id="sandbox-desc" style="width: 100%; box-sizing: border-box; height: 200px; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-light); font-size: 0.9em; resize: vertical;" placeholder="Incolla qui l'intera descrizione..."></textarea>
+                    </div>
+                    <button id="btn-sandbox-eval" style="background: var(--accent); color: var(--bg-main); border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s; width: 100%; font-size: 1em;">
+                        🚀 Valuta al Volo
+                    </button>
+
+                    <div id="sandbox-result" style="margin-top: 20px; display: none; border-top: 1px solid var(--border); padding-top: 20px;">
+                        <h3 style="margin-top:0;">Risultato</h3>
+                        <div style="display: flex; gap: 10px; align-items: baseline; margin-bottom: 15px;">
+                            <span style="font-size: 2em; font-weight: bold; color: var(--accent);" id="sandbox-score-val">--</span>
+                            <span style="color: var(--text-muted);">/ 100</span>
+                        </div>
+                        <h4 style="margin-bottom: 10px; margin-top: 0;">Sintesi</h4>
+                        <div class="reasoning-box" id="sandbox-reasoning" style="margin-bottom: 20px;"></div>
+                        <h4 style="margin-bottom: 10px;">Dettaglio</h4>
+                        <div class="reasoning-box">
+                            <ul id="sandbox-score-list" style="margin: 0; padding-left: 20px;"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
         }
 
@@ -2394,6 +2445,90 @@
                 closeScoreBtn.addEventListener('click', () => scoreModal.classList.remove('active'));
                 scoreModal.addEventListener('click', (e) => {
                     if (e.target === scoreModal) scoreModal.classList.remove('active');
+                });
+            }
+
+            const sandboxModal = document.getElementById('sandbox-modal');
+            const closeSandboxBtn = document.getElementById('btn-close-sandbox-modal');
+            if (closeSandboxBtn && sandboxModal) {
+                closeSandboxBtn.addEventListener('click', () => sandboxModal.classList.remove('active'));
+                sandboxModal.addEventListener('click', (e) => {
+                    if (e.target === sandboxModal) sandboxModal.classList.remove('active');
+                });
+            }
+
+            const btnSandboxEval = document.getElementById('btn-sandbox-eval');
+            if (btnSandboxEval) {
+                btnSandboxEval.addEventListener('click', async () => {
+                    const title = document.getElementById('sandbox-title').value.trim();
+                    const company = document.getElementById('sandbox-company').value.trim();
+                    const desc = document.getElementById('sandbox-desc').value.trim();
+
+                    if (!desc) {
+                        alert("Devi almeno incollare la Job Description!");
+                        return;
+                    }
+
+                    btnSandboxEval.disabled = true;
+                    btnSandboxEval.textContent = '⏳ Valutazione in corso...';
+                    
+                    const resultDiv = document.getElementById('sandbox-result');
+                    resultDiv.style.display = 'none';
+
+                    try {
+                        const profileText = appData.profile || "";
+                        let liked_history = "";
+                        let disliked_history = "";
+                        Object.values(appData.job_store || {}).forEach(j => {
+                            if (j.liked === true) {
+                                liked_history += `- ${j.job_data?.title || ''} presso ${j.job_data?.companyName || ''}. (Snippet: ${(j.job_data?.descriptionText || '').substring(0, 300)}...)\n`;
+                            } else if (j.liked === false) {
+                                disliked_history += `- ${j.job_data?.title || ''} presso ${j.job_data?.companyName || ''}. (Snippet: ${(j.job_data?.descriptionText || '').substring(0, 300)}...)\n`;
+                            }
+                        });
+
+                        const fakeJob = {
+                            title: title || "Unknown",
+                            companyName: company || "Unknown",
+                            location: "Unknown",
+                            descriptionText: desc
+                        };
+
+                        const apiKey = getGeminiKey();
+                        if (!apiKey) {
+                            alert("API Key di Gemini non configurata nelle impostazioni.");
+                            return;
+                        }
+
+                        const evaluation = await evaluateJobWithGemini(fakeJob, profileText, liked_history, disliked_history, apiKey);
+                        
+                        document.getElementById('sandbox-score-val').textContent = evaluation.fit_score !== undefined ? evaluation.fit_score : '--';
+                        document.getElementById('sandbox-score-val').style.color = (evaluation.fit_score && evaluation.fit_score >= 80) ? 'var(--score-high)' : ((evaluation.fit_score && evaluation.fit_score >= 70) ? 'var(--score-ok)' : 'var(--score-low)');
+                        document.getElementById('sandbox-reasoning').innerHTML = `<p>${(evaluation.reasoning || '').replace(/\\n/g, '<br>')}</p>`;
+                        
+                        let scoreHtml = '';
+                        if (evaluation.fit_score_reasoning) {
+                            const lines = evaluation.fit_score_reasoning.split('\n');
+                            lines.forEach(line => {
+                                if (line.trim().startsWith('*')) {
+                                    scoreHtml += `<li>${line.substring(1).trim()}</li>`;
+                                } else if (line.trim().startsWith('-')) {
+                                    scoreHtml += `<li>${line.substring(1).trim()}</li>`;
+                                } else if (line.trim()) {
+                                    scoreHtml += `<li>${line.trim()}</li>`;
+                                }
+                            });
+                        }
+                        document.getElementById('sandbox-score-list').innerHTML = scoreHtml;
+                        resultDiv.style.display = 'block';
+
+                    } catch (err) {
+                        console.error(err);
+                        alert("Errore durante la valutazione manuale: " + err.message);
+                    } finally {
+                        btnSandboxEval.disabled = false;
+                        btnSandboxEval.textContent = '🚀 Valuta al Volo';
+                    }
                 });
             }
 
