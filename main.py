@@ -248,7 +248,8 @@ STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
 Ora esprimi il TUO giudizio personale sulla job, al di là dei criteri espliciti nel profilo.
 Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva. È ASSOLUTAMENTE VIETATO ASSEGNARE UN PUNTEGGIO FUORI DA QUESTO RANGE (es. +60 o -50 sono VIETATI).
 Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
-Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI.
+ATTENZIONE: È ASSOLUTAMENTE VIETATO penalizzare o premiare nuovamente fattori che sono GIÀ stati valutati nello STEP 2 tramite le regole del profilo (es. se lo stage ha già preso una penalità nello step 2, NON DEVI dargli un altro malus qui). Usa questo giudizio SOLO per elementi nuovi o sfumature non coperte dalle regole matematiche del profilo.
+Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI E DEL DIVIETO DI DOPPIO CONTEGGIO.
 
 STEP 4 — PUNTEGGIO FINALE (CALCOLO MATEMATICO E CAPPING)
 1. Calcola il punteggio provvisorio: SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3) = SCORE PROVVISORIO.
