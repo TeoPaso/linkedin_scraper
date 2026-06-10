@@ -2845,7 +2845,12 @@ Verifica la fascia:
                             }
                         });
 
+                        let currentCount = 0;
+                        const totalCount = checkedBoxes.length;
+
                         for (const cb of checkedBoxes) {
+                            currentCount++;
+                            btnEvalSelected.textContent = `⏳ Valutazione in corso (${currentCount}/${totalCount})...`;
                             const docId = cb.getAttribute('data-docid');
                             if (!docId) continue;
                             const job = Object.values(appData.job_store || {}).find(j => j._doc_id === docId);
