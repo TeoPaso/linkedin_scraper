@@ -195,7 +195,17 @@ def eval_pending_jobs(event: scheduler_fn.ScheduledEvent) -> None:
         print(f"  [{idx+1}/{len(jobs_to_evaluate)}] Valutazione in corso per: {title}")
         
         try:
-            evaluation = evaluate_job_with_gemini(job_data, profile, liked_history, disliked_history)
+            if not profile:
+                print(f"  [!] Salto valutazione di '{title}' perché il profilo non è presente su Firebase.")
+                evaluation = JobEvaluation(
+                    fit_score=0,
+                    reasoning="Errore: Profilo non trovato su Firebase. Impossibile effettuare la valutazione.",
+                    fit_score_reasoning="* [Errore Sistema]: Il profilo utente non è stato trovato su Firebase. Aggiungi il tuo profilo tramite la Dashboard per abilitare le valutazioni.",
+                    highlighted_description=job_data.get("descriptionText", ""),
+                    compensation=""
+                )
+            else:
+                evaluation = evaluate_job_with_gemini(job_data, profile, liked_history, disliked_history)
             
             # Update del documento
             doc.reference.set({
