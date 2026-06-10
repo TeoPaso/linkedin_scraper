@@ -805,7 +805,7 @@
                 padding: 15px;
             }
         }
-    </style>
+    .evaluating-card { opacity: 0.6; filter: grayscale(30%); background-color: #f8f9fa; transition: all 0.3s ease; } </style>
 
     <!-- Firebase JS SDK (v10 modular) -->
     <script type="module">
@@ -2986,6 +2986,15 @@ Verifica la fascia:
                         let currentCount = 0;
                         const totalCount = checkedBoxes.length;
 
+                        // Add evaluating class to all selected cards
+                        checkedBoxes.forEach(cb => {
+                            const dId = cb.getAttribute('data-docid');
+                            if (dId) {
+                                const c = document.getElementById(`job-card-${dId}`);
+                                if (c) c.classList.add('evaluating-card');
+                            }
+                        });
+
                         for (const cb of checkedBoxes) {
                             currentCount++;
                             btnEvalSelected.textContent = `⏳ Valutazione in corso (${currentCount}/${totalCount})...`;
@@ -3018,6 +3027,8 @@ Verifica la fascia:
                                     needs_evaluation: window.deleteField(),
                                     reasoning: `Errore HTTP API: ${evalErr.message}`
                                 });
+                            } finally {
+                                if (card) card.classList.remove('evaluating-card');
                             }
                             // Small delay to prevent hitting Gemini rate limits too aggressively
                             await new Promise(r => setTimeout(r, 2000));
