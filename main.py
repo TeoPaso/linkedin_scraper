@@ -246,11 +246,16 @@ IMPORTANTE: NON inventare o applicare punteggi (es. +15, +3, -5) se non sono scr
 Calcola il subtotale: base 70 + bonus - malus = SUBTOTALE PROFILO.
 
 STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
+STEP 3 — TUO GIUDIZIO PERSONALE (da -20 a +20)
 Ora esprimi il TUO giudizio personale sulla job, al di là dei criteri espliciti nel profilo.
 Assegna un punteggio intero compreso tra -20 e +20 basato sulla tua analisi complessiva. È ASSOLUTAMENTE VIETATO ASSEGNARE UN PUNTEGGIO FUORI DA QUESTO RANGE (es. +60 o -50 sono VIETATI).
 Considera fattori come: red flag nascoste nella JD, tono dell'annuncio, opportunità di crescita, qualità dell'azienda, potenziale formativo, coerenza del ruolo, segnali positivi o negativi non catturati dai criteri del profilo.
-REGOLA INVIOLABILE SUI DOPPI PUNTEGGI: Puoi assegnare un malus o un bonus (giudizio da -20 a +20) SOLO ED ESCLUSIVAMENTE per valutare elementi, pregi o difetti che NON sono già stati premiati o penalizzati nello Step 2. Ad esempio, se l'offerta è uno stage (e ha già preso la penalità nello Step 2) o è in una Big 3 (e ha già preso il bonus), TI È SEVERAMENTE VIETATO usare di nuovo la scusa dello stage o della Big 3 per assegnare ulteriori malus o bonus extra qui (es. vietato dire "aggiungo -20 perché lo stage è riduttivo" o "aggiungo +10 perché l'azienda è top"). Se non ci sono pregi o difetti NUOVI rispetto a quelli già considerati nello Step 2, il tuo giudizio deve essere rigorosamente neutro (0).
-Questo punteggio deve riflettere la tua opinione indipendente come recruiter esperto, MA NEL RISPETTO DEI LIMITI MATEMATICI E DEL DIVIETO DI DOPPIA PENALIZZAZIONE.
+
+REGOLA INVIOLABILE SUI DOPPI PUNTEGGI: Per evitare allucinazioni in cui penalizzi due volte lo stesso difetto (es. stage) o premi due volte lo stesso pregio (es. Big 3), DOVRAI OBBLIGATORIAMENTE eseguire questo ragionamento a step nel tuo output (nella sezione "Mio giudizio (Analisi Doppioni)"):
+1) Elenca i FATTORI NUOVI che vuoi valutare (che non siano già nello Step 2).
+2) Rispondi alla domanda: "Questi fattori sono già stati valutati nello Step 2?". Se la risposta è Sì, il tuo punteggio extra per quel fattore DEVE essere 0.
+3) Assegna il punteggio extra SOLO se il fattore è veramente nuovo.
+DIVIETO ASSOLUTO DI FORZATURA MATEMATICA: Non usare MAI lo Step 3 per forzare il punteggio a raggiungere un "cap" o una soglia che ritieni corretta (es. "aggiungo -15 per portarlo a 50"). L'applicazione dei cap avviene SOLO ed esclusivamente in automatico nello Step 4.
 
 STEP 4 — PUNTEGGIO FINALE (CALCOLO MATEMATICO E CAPPING)
 1. Calcola il punteggio provvisorio: SUBTOTALE PROFILO (step 2) + TUO GIUDIZIO (step 3) = SCORE PROVVISORIO.
@@ -275,8 +280,11 @@ Verifica la fascia:
   * [Nome fattore dal profilo]: motivazione (+X come da profilo)
   * [Nome fattore dal profilo]: motivazione (-Y come da profilo)
   * Subtotale profilo: 70 base + X - Y = ZZ
-  * 💡 Mio giudizio: [spiegazione sintetica di cosa ti ha convinto o preoccupato] (+/-N)
-  * Punteggio finale: ZZ + N = XX
+  * 💡 Mio giudizio (Analisi Doppioni):
+    - Fattori considerati per il giudizio extra: [elenca qui i fattori. ES: Prestigio del brand non previsto dalle regole]
+    - Erano già nelle regole dello Step 2?: [Sì/No. Se la risposta è Sì, non puoi valutarli qui. Fermati.]
+    - Punteggio extra applicato: [Da -20 a +20. Se la risposta sopra era Sì, DEVE ESSERE +0]
+  * Punteggio finale: ZZ + Punteggio extra = XX
 - highlighted_description: RISCRIVI E PRESERVA INTEGRALMENTE TUTTO il contenuto della "Descrizione" originale. È ASSOLUTAMENTE VIETATO RIASSUMERE O OMETTERE PARTI DI TESTO. Se ci sono lunghi paragrafi, devi riportarli tutti per intero senza tagliare nulla. Migliorane SOLO la formattazione per la MASSIMA LEGGIBILITÀ: aggiungi la punteggiatura mancante, usa ESCLUSIVAMENTE il simbolo '•' per gli elenchi puntati e usa il grassetto (tag HTML <b> o <strong>) per i titoli delle sezioni. È FONDAMENTALE che ogni titoletto in grassetto (es. <b>Descrizione:</b>) sia PRECEDUTO da due "a capo" (\n\n) e SEGUITO da un "a capo" (\n) in modo che non sia mai attaccato al testo adiacente. Infine, usa il tag HTML <mark> per evidenziare i passaggi specifici della descrizione che ritieni possano interessare di più al candidato (basandoti sul suo profilo).
 - compensation: se la JD contiene info su stipendio (RAL, compensation, hourly rate), estraile. Altrimenti lascia vuoto.
 """
