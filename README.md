@@ -145,19 +145,49 @@ Una volta configurato il tutto, puoi avviare gli script:
 
 ---
 
-## 8. Automazione Quotidiana con GitHub Actions
+## 8. Automazione Quotidiana (Zero Local Setup)
 
-Il file `.github/workflows/daily_scrape.yml` (se presente) è già configurabile per l'esecuzione automatica sui server di GitHub.
+Se hai un setup locale (ad esempio per una terza persona) e vuoi migrarlo interamente nel cloud affinché giri da solo senza dover tenere acceso il PC, segui esattamente questi 4 passaggi:
 
-Per attivarlo sul tuo repository GitHub:
+### A. Creare un Repository Dedicato
+1. Crea un account GitHub (se la persona non lo ha).
+2. Crea un nuovo repository (anche privato).
+3. Dal terminale locale, dove hai il codice, spingi il codice sul nuovo repository:
+   ```bash
+   git remote set-url origin https://github.com/NOME_UTENTE/NOME_REPO.git
+   git push -u origin main
+   ```
+
+### B. Inserire le API Key (Secrets)
+Tutte le credenziali `.env` locali devono essere salvate al sicuro su GitHub.
 1. Vai su GitHub: **Settings -> Secrets and variables -> Actions**.
-2. Clicca su **New repository secret** e crea un segreto per ciascuna delle variabili del tuo `.env`:
+2. Clicca su **New repository secret** e crea un segreto per ciascuna variabile:
    * `APIFY_API_TOKEN_1`, `APIFY_API_TOKEN_2`, ecc.
    * `GEMINI_API_KEY`
-   * `TAVILY_API_KEY`
-   * `EMAIL_SENDER`
-   * `EMAIL_PASSWORD`
-   * `EMAIL_RECIPIENT`
-   * `FIREBASE_SERVICE_ACCOUNT_JSON` (incolla qui l'intero contenuto del file JSON scaricato da Firebase).
-3. L'action si attiverà automaticamente secondo lo schedule previsto, oppure può essere avviata manualmente dalla sezione **Actions**.
+   * `EMAIL_SENDER`, `EMAIL_PASSWORD`, `EMAIL_RECIPIENT`
+   * `FIREBASE_SERVICE_ACCOUNT_JSON` (incolla qui l'intero contenuto del file JSON scaricato da Firebase, in una singola riga).
+
+### C. Pubblicare la Dashboard (GitHub Pages)
+1. In `docs/index.html` assicurati che il `firebaseConfig` punti al progetto Firebase corretto.
+2. Vai su GitHub: **Settings -> Pages**.
+3. Sotto "Build and deployment", scegli **Deploy from a branch**.
+4. Scegli il branch `main` e la cartella `/docs`, poi salva.
+5. In un paio di minuti la dashboard sarà raggiungibile a `https://nome_utente.github.io/nome_repo/`.
+
+### D. Trigger Quotidiano (cron-job.org)
+Il cron interno di GitHub spesso ritarda. Per spaccare il minuto usiamo il trigger `repository_dispatch`.
+1. Da GitHub, genera un **Personal Access Token (Classic)** (*Settings -> Developer settings -> Personal access tokens*) abilitando lo scope `repo`.
+2. Crea un account gratuito su [cron-job.org](https://cron-job.org/) e crea un nuovo "Cronjob".
+3. **URL:** `https://api.github.com/repos/NOME_UTENTE/NOME_REPO/dispatches`
+4. **Metodo HTTP:** `POST`
+5. Abilita la sezione HTTP Headers e aggiungine due:
+   * `Accept` : `application/vnd.github.v3+json`
+   * `Authorization` : `Bearer <IL_TOKEN_GITHUB_CREATO_AL_PUNTO_1>`
+6. Abilita la sezione HTTP Body e scrivi esattamente:
+   ```json
+   {"event_type": "trigger-daily-scrape"}
+   ```
+7. Imposta l'orario a cui far girare lo script (es. ogni giorno alle 8:00) e salva.
+
+A questo punto la cartella locale può essere tranquillamente cancellata. L'intero bot è automatizzato nel Cloud!
 
