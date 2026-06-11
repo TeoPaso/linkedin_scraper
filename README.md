@@ -1,6 +1,14 @@
 # LinkedIn Job Scraper, Matcher & Email Reporter
 
-Benvenuto! Questo progetto è un sistema avanzato di automazione per la ricerca di lavoro su LinkedIn. Utilizza l'Intelligenza Artificiale (Google Gemini) per generare chiavi di ricerca dinamiche basate sul tuo profilo, effettua lo scraping dei job post tramite Apify distribuendo il carico su più account, valuta il "fit score" di ogni offerta in base alle tue esperienze e ti invia un report via email. Salva inoltre tutto lo storico su un database cloud Firebase Firestore, ed è interamente gestibile da una comoda Dashboard web.
+Benvenuto! Questo progetto è un sistema avanzato di automazione per la ricerca di lavoro su LinkedIn. Utilizza l'Intelligenza Artificiale (Google Gemini) per generare chiavi di ricerca dinamiche basate sul tuo profilo, effettua lo scraping dei job post tramite Apify distribuendo il carico su più account, valuta il "fit score" di ogni offerta in base alle tue esperienze e ti invia un report via email. Salva inoltre tutto lo storico su un database cloud Firebase Firestore.
+
+> 🚀 **SEI UN UTENTE FINALE? (NON SERVE INSTALLARE NULLA!)**
+> Se vuoi solo utilizzare il bot e consultare le offerte, **NON devi scaricare né installare nulla sul tuo computer**. 
+> L'intero sistema gira automaticamente ogni giorno sui server di GitHub (tramite GitHub Actions). 
+> **Tutto ciò che devi fare è visitare la [Dashboard Web](#) (il link ti verrà fornito dall'amministratore), fare login e gestire il tuo profilo da lì.**
+
+> 🛠 **SEI UNO SVILUPPATORE/AMMINISTRATORE?**
+> Se vuoi fare il setup iniziale del progetto, configurare Firebase, o far girare lo script dal tuo computer, segui le istruzioni tecniche qui sotto.
 
 ---
 

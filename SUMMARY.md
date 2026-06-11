@@ -2,6 +2,9 @@
 
 Questo progetto è un'automazione avanzata che analizza il tuo profilo, delega all'Intelligenza Artificiale (Google Gemini) la creazione autonoma delle migliori ricerche di lavoro su LinkedIn, estrae le offerte tramite Apify, le valuta rigorosamente, le categorizza e salva tutto in modo persistente e sicuro su un database in cloud (Firebase Firestore). Il tutto è governabile da una Dashboard web.
 
+> 🚀 **NOTA PER GLI UTENTI: NON SERVE INSTALLARE NULLA LOCALMENTE.**
+> Il sistema funziona in modo autonomo via GitHub Actions. Per consultare le offerte e modificare il tuo profilo ti basta accedere alla Dashboard Web online dal tuo browser. Le istruzioni tecniche di seguito servono solo per il setup iniziale o per gli sviluppatori.
+
 ## Componenti del Sistema
 
 1. **Il tuo Profilo**: Il cuore dell'applicazione. Contiene le tue esperienze, studi e interessi. Viene salvato su Firestore e gestito tramite la Dashboard. Gemini lo legge per capire *chi sei* e formulare chiavi di ricerca mirate (Job Titles) e per valutare le offerte.
