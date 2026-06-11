@@ -1,4 +1,7 @@
 # config.yaml
+# ⚠️ ATTENZIONE: Questo file locale agisce solo come 'factory fallback' per la prima esecuzione.
+# L'automazione utilizza la configurazione salvata su Firebase Firestore. 
+# Qualsiasi modifica futura deve essere effettuata direttamente dalla Dashboard Web.
 # I parametri di ricerca vengono generati dinamicamente da Gemini in base al profilo.
 
 # Configurazione Pool Apify (Bilanciamento Account)

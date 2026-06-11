@@ -1,3 +1,7 @@
+> ⚠️ **ATTENZIONE:** Questo file locale NON viene più letto dall'automazione. 
+> Per modificare il tuo profilo, utilizza la **Dashboard Web** che salverà le modifiche sul Database Cloud (Firestore). 
+> Questo file è mantenuto qui solo come backup o template offline.
+
 # Matteo Pasini
 
 ## Summary
