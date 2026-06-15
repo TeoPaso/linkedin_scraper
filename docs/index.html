@@ -2074,12 +2074,14 @@
                 if (j.category) uniqueCategories.add(j.category);
 
                 // Determine UI score type for filtering
-                let scoreType = 'non-valutato';
-                if (j.fit_score !== null && typeof j.fit_score !== 'undefined') {
+                let scoreType = '';
+                if (typeof j.fit_score === 'number') {
                     if (j.fit_score >= 90) scoreType = 'golden';
                     else if (j.fit_score >= 80) scoreType = 'tiera';
                     else if (j.fit_score >= 70) scoreType = 'tierb';
                     else scoreType = 'scartato';
+                } else {
+                    scoreType = 'na';
                 }
 
                 let likedType = '';
@@ -2276,6 +2278,7 @@
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tiera') ? 'active' : ''}" data-score="tiera" title="Tier A" style="background: ${state.filters.scores && state.filters.scores.includes('tiera') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tiera') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">⭐</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tierb') ? 'active' : ''}" data-score="tierb" title="Tier B" style="background: ${state.filters.scores && state.filters.scores.includes('tierb') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tierb') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">✓</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('scartato') ? 'active' : ''}" data-score="scartato" title="Scartato" style="background: ${state.filters.scores && state.filters.scores.includes('scartato') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('scartato') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">❌</div>
+                        <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('na') ? 'active' : ''}" data-score="na" title="N/A (Senza Score)" style="grid-column: 1 / -1; background: ${state.filters.scores && state.filters.scores.includes('na') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('na') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; margin-top: 2px;">❔ N/A</div>
                         <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px;">
                             <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap;" title="Nascondi offerte con score a 0 spaccato">🚫 No 0</div>
                             <div class="score-only-zero ${state.filters.onlyZero ? 'active' : ''}" style="background: ${state.filters.onlyZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.onlyZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap;" title="Mostra solo offerte con score a 0 spaccato">✅ Only 0</div>
