@@ -991,25 +991,21 @@
                 // Inizializza appData se non esiste
                 if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
 
-                // 1. Ascolto in tempo reale dei Jobs (usiamo docChanges per efficienza)
-                window.onSnapshot(window.collection(window.db, "jobs"), (snapshot) => {
+                // 1. Caricamento una-tantum dei Jobs (getDocs invece di onSnapshot)
+                try {
+                    const jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
                     let job_store = appData.job_store || {};
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === "added" || change.type === "modified") {
-                            const data = change.doc.data();
-                            const key = data.url || change.doc.id;
-                            data._doc_id = change.doc.id;
-                            job_store[key] = data;
-                        }
-                        if (change.type === "removed") {
-                            const data = change.doc.data();
-                            const key = data.url || change.doc.id;
-                            delete job_store[key];
-                        }
+                    jobsSnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const key = data.url || doc.id;
+                        data._doc_id = doc.id;
+                        job_store[key] = data;
                     });
                     appData.job_store = job_store;
                     debouncedRender();
-                }, (error) => console.error("Jobs sync error:", error));
+                } catch (error) {
+                    console.error("Jobs sync error:", error);
+                }
 
                 // 2. Ascolto in tempo reale della Search Memory
                 window.onSnapshot(window.collection(window.db, "search_memory"), (snapshot) => {
@@ -1136,6 +1132,9 @@
                                 </button>
                             `}
                         </span>
+                        <button onclick="loadDataFromFirestore()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em; display: flex; align-items: center; gap: 5px;">
+                            🔄 Aggiorna Dati
+                        </button>
                     </div>
                 </nav>
                 <div id="view-content">
@@ -2127,6 +2126,7 @@
                     if (state.filters.applied === 'not-applied' && item.j.applied === true) return false;
                 }
                 if (state.filters.excludeZero && item.j.fit_score === 0) return false;
+                if (state.filters.onlyZero && item.j.fit_score !== 0) return false;
                 return true;
             });
 
@@ -2210,14 +2210,14 @@
                         ${j.needs_evaluation ? '<div style="font-size: 0.8em; color: var(--score-ok); margin-top: 5px;">⏳ In corso...</div>' : ''}
                     </div>
                 </td>
-                <td>
-                    <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="${titleStyle}" title="Mostra descrizione">
+                <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;">
+                    <a href="javascript:void(0)" class="btn-desc" data-target="${descId}" style="${titleStyle} display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="Mostra descrizione">
                         ${titleText}
                     </a>
                 </td>
-                <td>
+                <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 0;">
                     ${item.website ? `<a href="${item.website}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dotted var(--text-muted); font-weight: bold;">${escapeHtml(item.company)}</a>` : escapeHtml(item.company)}
-                    <br><span style="font-size: 0.8em; color: var(--text-muted);">${item.employees ? item.employees + ' emp.' : ''}</span>
+                    <span style="font-size: 0.8em; color: var(--text-muted); margin-left: 5px;">${item.employees ? item.employees + ' emp.' : ''}</span>
                 </td>
             </tr>
         `;
@@ -2272,7 +2272,10 @@
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tiera') ? 'active' : ''}" data-score="tiera" title="Tier A" style="background: ${state.filters.scores && state.filters.scores.includes('tiera') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tiera') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">⭐</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tierb') ? 'active' : ''}" data-score="tierb" title="Tier B" style="background: ${state.filters.scores && state.filters.scores.includes('tierb') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tierb') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">✓</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('scartato') ? 'active' : ''}" data-score="scartato" title="Scartato" style="background: ${state.filters.scores && state.filters.scores.includes('scartato') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('scartato') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">❌</div>
-                        <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="grid-column: 1 / -1; background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; margin-top: 2px;" title="Nascondi offerte con score a 0 spaccato">🚫 No Score 0</div>
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px;">
+                            <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;" title="Nascondi offerte con score a 0 spaccato">🚫 No 0</div>
+                            <div class="score-only-zero ${state.filters.onlyZero ? 'active' : ''}" style="background: ${state.filters.onlyZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.onlyZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;" title="Mostra solo offerte con score a 0 spaccato">✅ Only 0</div>
+                        </div>
                     </div>
                 </div>
 
@@ -2299,14 +2302,14 @@
             
         </div>
         <div class="card table-responsive">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em; table-layout: fixed;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="width: 40px; text-align:center;"><input type="checkbox" id="selectAllJobs"></th>
-                        <th class="sortable" data-sort="date" style="cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="score" style="cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="date" style="width: 100px; cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="score" style="width: 80px; cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
-                        <th class="sortable" data-sort="company" style="cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="company" style="width: 250px; cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                     </tr>
                 </thead>
                 <tbody id="job-table-body">
@@ -2746,6 +2749,18 @@
                 btnExcludeZero.addEventListener('click', () => {
                     if (!appData.uiState) return;
                     appData.uiState.filters.excludeZero = !appData.uiState.filters.excludeZero;
+                    if (appData.uiState.filters.excludeZero) appData.uiState.filters.onlyZero = false;
+                    appData.uiState.page = 1;
+                    render();
+                });
+            }
+
+            const btnOnlyZero = document.querySelector('.score-only-zero');
+            if (btnOnlyZero) {
+                btnOnlyZero.addEventListener('click', () => {
+                    if (!appData.uiState) return;
+                    appData.uiState.filters.onlyZero = !appData.uiState.filters.onlyZero;
+                    if (appData.uiState.filters.onlyZero) appData.uiState.filters.excludeZero = false;
                     appData.uiState.page = 1;
                     render();
                 });
@@ -3026,6 +3041,18 @@ Verifica la fascia:
                                     compensation: evaluation.compensation || "",
                                     needs_evaluation: window.deleteField()
                                 });
+                                // Aggiornamento locale
+                                for(let key in appData.job_store) {
+                                    if(appData.job_store[key]._doc_id === docId) {
+                                        appData.job_store[key].fit_score = evaluation.fit_score || 0;
+                                        appData.job_store[key].reasoning = evaluation.reasoning || "";
+                                        appData.job_store[key].fit_score_reasoning = evaluation.fit_score_reasoning || "";
+                                        appData.job_store[key].highlighted_description = evaluation.highlighted_description || "";
+                                        appData.job_store[key].compensation = evaluation.compensation || "";
+                                        delete appData.job_store[key].needs_evaluation;
+                                        break;
+                                    }
+                                }
                             } catch (evalErr) {
                                 console.error(`Errore valutazione job ${docId}:`, evalErr);
                                 await window.updateDoc(window.doc(window.db, "jobs", docId), {
@@ -3071,6 +3098,13 @@ Verifica la fascia:
                     if (isCurrentlyActive) newLikedValue = null;
                     try {
                         await window.updateDoc(window.doc(window.db, "jobs", docId), { liked: newLikedValue });
+                        // Aggiornamento locale
+                        for(let key in appData.job_store) {
+                            if(appData.job_store[key]._doc_id === docId) {
+                                appData.job_store[key].liked = newLikedValue;
+                                break;
+                            }
+                        }
                         if (newLikedValue === true) {
                             modalBtnLike.setAttribute('data-current', 'true');
                             modalBtnLike.style.backgroundColor = '#2e7d32';
@@ -3109,6 +3143,13 @@ Verifica la fascia:
                     const isCurrentlyApplied = modalBtnApplied.getAttribute('data-applied') === 'true';
                     try {
                         await window.updateDoc(window.doc(window.db, "jobs", docId), { applied: !isCurrentlyApplied });
+                        // Aggiornamento locale
+                        for(let key in appData.job_store) {
+                            if(appData.job_store[key]._doc_id === docId) {
+                                appData.job_store[key].applied = !isCurrentlyApplied;
+                                break;
+                            }
+                        }
                         modalBtnApplied.setAttribute('data-applied', !isCurrentlyApplied ? 'true' : 'false');
                         modalBtnApplied.style.backgroundColor = !isCurrentlyApplied ? '#2e7d32' : '#555';
                         modalBtnApplied.textContent = !isCurrentlyApplied ? 'Applicato ✓' : 'Non applicato';

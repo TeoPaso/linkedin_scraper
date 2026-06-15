@@ -51,18 +51,22 @@ def get_memory_id(entry: dict) -> str:
     return hashlib.sha1(base_str.encode("utf-8")).hexdigest()
 
 
-def load_job_store() -> dict:
-    """Legge tutti i job da Firestore e restituisce un dizionario {url: data}."""
-    job_store = {}
-    docs = db.collection("jobs").stream()
-    for doc in docs:
+def load_known_urls() -> set:
+    """Legge l'indice degli URL noti da Firestore."""
+    doc = db.collection("app_state").document("url_index").get()
+    if doc.exists:
         data = doc.to_dict()
-        url = data.get("url")
-        if url:
-            clean_url = normalize_linkedin_url(url)
-            data["url"] = clean_url  # Aggiorna il payload
-            job_store[clean_url] = data
-    return job_store
+        return set(data.get("urls", []))
+    return set()
+
+
+def save_known_urls(urls: list):
+    """Aggiunge in batch nuovi URL all'indice."""
+    if not urls:
+        return
+    db.collection("app_state").document("url_index").set(
+        {"urls": firestore.ArrayUnion(urls)}, merge=True
+    )
 
 
 def save_single_job(url: str, data: dict):
@@ -75,18 +79,17 @@ def save_single_job(url: str, data: dict):
         payload["applied"] = False
     doc_ref.set(payload, merge=True)
 
-def save_job_store(job_store: dict):
-    """Esegue un upsert di ogni job modificato. In batch."""
+
+def save_jobs_batch(jobs_dict: dict):
+    """Esegue un upsert dei job passati nel dizionario. In batch."""
+    if not jobs_dict:
+        return
     batch = db.batch()
     count = 0
-
-    # Per non inviare scritture inutili, se necessario potremmo implementare un controllo.
-    # Usando Firestore .set(merge=True) ci garantiamo che non sovrascriva `applied` se l'utente l'ha cliccato nel frattempo.
-    for url, data in job_store.items():
+    for url, data in jobs_dict.items():
         doc_id = get_job_id(url)
         doc_ref = db.collection("jobs").document(doc_id)
 
-        # Assicuriamoci che l'url sia dentro i dati e applicato di default se nuovo
         payload = data.copy()
         payload["url"] = url
         if "applied" not in payload:
@@ -95,7 +98,6 @@ def save_job_store(job_store: dict):
         batch.set(doc_ref, payload, merge=True)
         count += 1
 
-        # Firestore batch supports up to 500 operations
         if count >= 450:
             batch.commit()
             batch = db.batch()
@@ -103,6 +105,18 @@ def save_job_store(job_store: dict):
 
     if count > 0:
         batch.commit()
+
+
+def get_liked_jobs() -> list:
+    """Recupera i job apprezzati."""
+    docs = db.collection("jobs").where("liked", "==", True).stream()
+    return [doc.to_dict() for doc in docs]
+
+
+def get_disliked_jobs() -> list:
+    """Recupera i job scartati."""
+    docs = db.collection("jobs").where("liked", "==", False).stream()
+    return [doc.to_dict() for doc in docs]
 
 
 def load_search_memory() -> list:

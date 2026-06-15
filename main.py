@@ -297,9 +297,9 @@ Verifica la fascia:
         print(f"[!] ERRORE durante la valutazione con Gemini: {e}")
         return JobEvaluation(fit_score=0, reasoning=f"Errore di valutazione: {str(e)}")
 
-def process_and_evaluate_job(url: str, job_store: dict, profile: str, liked_history: str, disliked_history: str):
+def process_and_evaluate_job(url: str, current_run_jobs: dict, profile: str, liked_history: str, disliked_history: str):
     """Esegue la valutazione in background e salva su db."""
-    data = job_store.get(url)
+    data = current_run_jobs.get(url)
     if not data or data.get("fit_score") is not None:
         return
     
@@ -562,7 +562,8 @@ def main():
 def _run_scraper(config, profile):
     """Corpo principale dello scraping, estratto per poter essere wrappato in try/finally."""
     search_memory = db.load_search_memory()
-    job_store = db.load_job_store()
+    known_urls = db.load_known_urls()
+    current_run_jobs = {}
     job_categories = db.load_job_categories()
     cycle_state = db.load_cycle_state()
     apify_usage = db.load_apify_usage()
@@ -616,18 +617,18 @@ def _run_scraper(config, profile):
         )
 
     print("[*] Recupero storico valutazioni per personalizzare i risultati...")
-    liked_jobs = [data for url, data in job_store.items() if data.get("liked") is True]
-    disliked_jobs = [data for url, data in job_store.items() if data.get("liked") is False]
+    liked_jobs = db.get_liked_jobs()
+    disliked_jobs = db.get_disliked_jobs()
 
     liked_history = ""
-    for j in sorted(liked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[:10]:
+    for j in liked_jobs:
         t = j.get("job_data", {}).get("title", "")
         c = j.get("job_data", {}).get("companyName", "")
         d = j.get("job_data", {}).get("descriptionText", "")[:300]
         liked_history += f"- {t} presso {c}. (Snippet: {d}...)\n"
 
     disliked_history = ""
-    for j in sorted(disliked_jobs, key=lambda x: x.get("timestamp", ""), reverse=True)[:10]:
+    for j in disliked_jobs:
         t = j.get("job_data", {}).get("title", "")
         c = j.get("job_data", {}).get("companyName", "")
         d = j.get("job_data", {}).get("descriptionText", "")[:300]
@@ -742,7 +743,7 @@ def _run_scraper(config, profile):
             if len(top_titles) < 5 and title not in top_titles:
                 top_titles.append(title)
 
-            if job_url not in job_store:
+            if job_url not in known_urls:
                 if db.is_stop_requested():
                     break
                 
@@ -755,12 +756,13 @@ def _run_scraper(config, profile):
                     "execution_id": execution_id,
                     "keyword": keyword,
                 }
-                job_store[job_url] = new_data
+                known_urls.add(job_url)
+                current_run_jobs[job_url] = new_data
                 
                 # Invia il lavoro alla coda per la valutazione in background
                 executor.submit(
                     process_and_evaluate_job, 
-                    job_url, job_store, profile, liked_history, disliked_history
+                    job_url, current_run_jobs, profile, liked_history, disliked_history
                 )
                 
                 new_jobs_count += 1
@@ -801,7 +803,7 @@ def _run_scraper(config, profile):
             kw = mem_entry.get("keyword")
 
             scores = []
-            for url, data in job_store.items():
+            for url, data in current_run_jobs.items():
                 if (
                     data.get("execution_id") == execution_id
                     and data.get("keyword") == kw
@@ -820,7 +822,7 @@ def _run_scraper(config, profile):
     print("\n[*] Categorizzazione dei lavori non categorizzati...")
     jobs_to_categorize = {
         url: data["job_data"]
-        for url, data in job_store.items()
+        for url, data in current_run_jobs.items()
         if data.get("category") is None
     }
 
@@ -867,12 +869,12 @@ def _run_scraper(config, profile):
         }
 
         for url, category in job_labels_total.items():
-            if url in job_store:
+            if url in current_run_jobs:
                 normalized_cat = category.lower() if category else None
                 if normalized_cat in label_mapping:
-                    job_store[url]["category"] = label_mapping[normalized_cat]
+                    current_run_jobs[url]["category"] = label_mapping[normalized_cat]
                 else:
-                    job_store[url]["category"] = category
+                    current_run_jobs[url]["category"] = category
 
         # Popola/aggiorna le associazioni job_urls all'interno delle job_categories (utili per l'UI)
         for i, cat in enumerate(job_categories):
@@ -884,10 +886,12 @@ def _run_scraper(config, profile):
                 }
                 cat = job_categories[i]
 
-            cat["job_urls"] = []
-            for url, data in job_store.items():
+            if "job_urls" not in cat:
+                cat["job_urls"] = []
+            for url, data in current_run_jobs.items():
                 if data.get("category") == cat["label"]:
-                    cat["job_urls"].append(url)
+                    if url not in cat["job_urls"]:
+                        cat["job_urls"].append(url)
 
         print(
             f"  [-] Trovate/assegnate categorie. Nuove categorie aggiunte: {len(new_cats_total)}"
@@ -896,7 +900,8 @@ def _run_scraper(config, profile):
         print("  [-] Nessun lavoro da categorizzare.")
 
     db.save_search_memory(search_memory)
-    db.save_job_store(job_store)
+    db.save_jobs_batch(current_run_jobs)
+    db.save_known_urls(list(current_run_jobs.keys()))
     db.save_job_categories(job_categories)
 
     print("\n[*] Dati salvati con successo. Invio report via email...")
@@ -906,7 +911,7 @@ def _run_scraper(config, profile):
 
     today_prefix = execution_id.split("T")[0]
 
-    for url, data in job_store.items():
+    for url, data in current_run_jobs.items():
         # Include jobs scraped today
         if data.get("first_seen", "").startswith(today_prefix) or data.get(
             "execution_id", ""
@@ -940,7 +945,7 @@ def _run_scraper(config, profile):
                 max_new_unique = mem.get("jobs_new_unique", 0)
                 best_keyword = mem.get("keyword", "N/A")
 
-    for url, data in job_store.items():
+    for url, data in current_run_jobs.items():
         if data.get("first_seen", "").startswith(today_prefix) or data.get(
             "execution_id", ""
         ).startswith(today_prefix):
@@ -975,7 +980,14 @@ if __name__ == "__main__":
         """Categorizza i job già in DB che non hanno ancora una categoria."""
         load_dotenv()
         print("[*] Controllo job non categorizzati nel database...")
-        job_store = db.load_job_store()
+        # Stream solo i job che non hanno categoria
+        docs = db.db.collection("jobs").where("category", "==", None).stream()
+        job_store = {}
+        for doc in docs:
+            data = doc.to_dict()
+            if data.get("url"):
+                job_store[data.get("url")] = data
+                
         job_categories = db.load_job_categories()
 
         jobs_to_categorize = {
@@ -1034,12 +1046,14 @@ if __name__ == "__main__":
             if isinstance(cat, str):
                 job_categories[i] = {"label": cat, "description": "Legacy category", "job_urls": []}
                 cat = job_categories[i]
-            cat["job_urls"] = []
+            if "job_urls" not in cat:
+                cat["job_urls"] = []
             for url, data in job_store.items():
                 if data.get("category") == cat["label"]:
-                    cat["job_urls"].append(url)
+                    if url not in cat["job_urls"]:
+                        cat["job_urls"].append(url)
 
-        db.save_job_store(job_store)
+        db.save_jobs_batch(job_store)
         db.save_job_categories(job_categories)
         print(f"  [-] Categorizzazione completata! Nuove categorie: {len(new_cats_total)}")
 
