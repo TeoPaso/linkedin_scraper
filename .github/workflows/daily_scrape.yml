@@ -2,8 +2,8 @@ name: Daily LinkedIn Job Scraper
 
 on:
   # Trigger tramite Webhook esterno (es. cron-job.org) per esecuzione all'orario spaccato
-  repository_dispatch:
-    types: [trigger-daily-scrape]
+  # repository_dispatch:
+  #   types: [trigger-daily-scrape]
   
   # Permette di lanciare il workflow manualmente dall'interfaccia di GitHub se necessario
   workflow_dispatch:
