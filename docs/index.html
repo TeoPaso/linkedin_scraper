@@ -2242,23 +2242,21 @@
                     </div>
 
                     <div>
+                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Candidatura</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 38px;">
+                            <div class="applied-btn ${state.filters.applied === 'applied' ? 'active' : ''}" data-applied="applied" title="Candidato" style="background: ${state.filters.applied === 'applied' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.applied === 'applied' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">✔️</div>
+                            <div class="applied-btn ${state.filters.applied === 'not-applied' ? 'active' : ''}" data-applied="not-applied" title="Non candidato" style="background: ${state.filters.applied === 'not-applied' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.applied === 'not-applied' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">⭕</div>
+                        </div>
+                    </div>
+
+                    <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Job Title</label>
                         <input type="text" id="filter-title" placeholder="Cerca titolo..." value="${state.filters.title || ''}" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; box-sizing: border-box; height: 38px;" />
                     </div>
 
                     <div>
-                        <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted);">Candidatura</label>
-                        <select id="filter-applied" style="padding: 8px 10px; border-radius: 6px; background: #2c2c2c; color: #fff; border: 1px solid var(--border); width: 100%; height: 38px;">
-                            <option value="" ${state.filters.applied === '' ? 'selected' : ''}>Tutte</option>
-                            <option value="applied" ${state.filters.applied === 'applied' ? 'selected' : ''}>Candidato ✓</option>
-                            <option value="not-applied" ${state.filters.applied === 'not-applied' ? 'selected' : ''}>Non candidato</option>
-                        </select>
-                    </div>
-
-                    <div>
                         <label style="display:block; margin-bottom: 5px; font-size: 0.9em; color: var(--text-muted); text-align: center;">Preferenza</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; height: 38px;">
-                            <div class="pref-btn ${state.filters.liked === '' ? 'active' : ''}" data-pref="" title="Tutte" style="background: ${state.filters.liked === '' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === '' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">Tutte</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 38px;">
                             <div class="pref-btn ${state.filters.liked === 'liked' ? 'active' : ''}" data-pref="liked" title="Liked" style="background: ${state.filters.liked === 'liked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'liked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👍</div>
                             <div class="pref-btn ${state.filters.liked === 'disliked' ? 'active' : ''}" data-pref="disliked" title="Disliked" style="background: ${state.filters.liked === 'disliked' ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.liked === 'disliked' ? 'var(--accent)' : 'var(--border)'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 1.2em; transition: all 0.2s;">👎</div>
                         </div>
@@ -2273,8 +2271,8 @@
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('tierb') ? 'active' : ''}" data-score="tierb" title="Tier B" style="background: ${state.filters.scores && state.filters.scores.includes('tierb') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('tierb') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">✓</div>
                         <div class="score-quadrant ${state.filters.scores && state.filters.scores.includes('scartato') ? 'active' : ''}" data-score="scartato" title="Scartato" style="background: ${state.filters.scores && state.filters.scores.includes('scartato') ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.scores && state.filters.scores.includes('scartato') ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 38px; font-size: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;">❌</div>
                         <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px;">
-                            <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;" title="Nascondi offerte con score a 0 spaccato">🚫 No 0</div>
-                            <div class="score-only-zero ${state.filters.onlyZero ? 'active' : ''}" style="background: ${state.filters.onlyZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.onlyZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s;" title="Mostra solo offerte con score a 0 spaccato">✅ Only 0</div>
+                            <div class="score-exclude-zero ${state.filters.excludeZero ? 'active' : ''}" style="background: ${state.filters.excludeZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.excludeZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap;" title="Nascondi offerte con score a 0 spaccato">🚫 No 0</div>
+                            <div class="score-only-zero ${state.filters.onlyZero ? 'active' : ''}" style="background: ${state.filters.onlyZero ? 'rgba(0,255,204,0.2)' : '#2c2c2c'}; border: 1px solid ${state.filters.onlyZero ? 'var(--accent)' : 'var(--border)'}; border-radius: 8px; height: 32px; font-size: 0.9em; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: all 0.2s; white-space: nowrap;" title="Mostra solo offerte con score a 0 spaccato">✅ Only 0</div>
                         </div>
                     </div>
                 </div>
@@ -2306,7 +2304,7 @@
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="width: 40px; text-align:center;"><input type="checkbox" id="selectAllJobs"></th>
-                        <th class="sortable" data-sort="date" style="width: 100px; cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
+                        <th class="sortable" data-sort="date" style="width: 75px; cursor: pointer;">Date Seen ${state.sortCol === 'date' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="score" style="width: 80px; cursor: pointer; text-align: center;">Score ${state.sortCol === 'score' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="title" style="cursor: pointer;">Titolo ${state.sortCol === 'title' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
                         <th class="sortable" data-sort="company" style="width: 250px; cursor: pointer;">Azienda ${state.sortCol === 'company' ? (state.sortDir === 'asc' ? '▲' : '▼') : ''}</th>
@@ -2693,13 +2691,11 @@
             const updateFilters = () => {
                 if (!appData.uiState) return;
                 const fTitle = document.getElementById('filter-title');
-                const fApplied = document.getElementById('filter-applied');
                 const fCompany = document.getElementById('filter-company');
                 const fLimit = document.getElementById('filter-limit');
 
                 if (fCompany) appData.uiState.filters.company = fCompany.value;
                 if (fTitle) appData.uiState.filters.title = fTitle.value;
-                if (fApplied) appData.uiState.filters.applied = fApplied.value;
 
                 if (fLimit) appData.uiState.limit = parseInt(fLimit.value) || 10;
 
@@ -2707,7 +2703,7 @@
                 render();
             };
 
-            ['filter-limit', 'filter-company', 'filter-title', 'filter-applied'].forEach(id => {
+            ['filter-limit', 'filter-company', 'filter-title'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     el.addEventListener('change', updateFilters);
@@ -2722,7 +2718,26 @@
             document.querySelectorAll('.pref-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (!appData.uiState) return;
-                    appData.uiState.filters.liked = btn.getAttribute('data-pref');
+                    const pref = btn.getAttribute('data-pref');
+                    if (appData.uiState.filters.liked === pref) {
+                        appData.uiState.filters.liked = '';
+                    } else {
+                        appData.uiState.filters.liked = pref;
+                    }
+                    appData.uiState.page = 1;
+                    render();
+                });
+            });
+
+            document.querySelectorAll('.applied-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!appData.uiState) return;
+                    const applied = btn.getAttribute('data-applied');
+                    if (appData.uiState.filters.applied === applied) {
+                        appData.uiState.filters.applied = '';
+                    } else {
+                        appData.uiState.filters.applied = applied;
+                    }
                     appData.uiState.page = 1;
                     render();
                 });
