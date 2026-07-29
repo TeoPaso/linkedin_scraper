@@ -46,7 +46,25 @@ def load_profile(path: str) -> str:
 
 
 
-def get_gemini_client():
+def get_gemini_api_key(config=None) -> str:
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key
+    if config:
+        key = config.get("evaluation", {}).get("gemini_api_key") or config.get("gemini_api_key")
+        if key:
+            return key
+    try:
+        cfg = db.load_config_from_db()
+        key = cfg.get("evaluation", {}).get("gemini_api_key") or cfg.get("gemini_api_key")
+        if key:
+            return key
+    except Exception:
+        pass
+    return ""
+
+
+def get_gemini_client(config=None):
     use_vertex = os.environ.get("USE_VERTEX_AI", "false").lower() == "true"
     if use_vertex:
         sa_json_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
@@ -67,21 +85,16 @@ def get_gemini_client():
         else:
             raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON mancante per l'autenticazione a Vertex AI")
     else:
-        gemini_key = os.environ.get("GEMINI_API_KEY")
+        gemini_key = get_gemini_api_key(config)
         if not gemini_key:
-            raise ValueError("GEMINI_API_KEY mancante.")
+            raise ValueError("GEMINI_API_KEY mancante sia nelle variabili d'ambiente che nella configurazione Firestore.")
         return genai.Client(api_key=gemini_key)
 
 
 def generate_single_search_query(
     profile: str, config: dict, search_memory: list
 ) -> dict:
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not gemini_key:
-        print("ERRORE: Variabile d'ambiente GEMINI_API_KEY non impostata.")
-        sys.exit(1)
-
-    client = genai.Client(api_key=gemini_key)
+    client = get_gemini_client(config)
 
     memory_summary = ""
     if search_memory:
@@ -204,8 +217,7 @@ def evaluate_job_with_gemini(
     job: dict, profile: str, liked_history: str = "", disliked_history: str = ""
 ) -> JobEvaluation:
     """Valuta il fit tra l'offerta di lavoro e il profilo del candidato usando Gemini."""
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    client = genai.Client(api_key=gemini_key)
+    client = get_gemini_client()
 
     preferences_section = ""
     if liked_history or disliked_history:
@@ -325,8 +337,7 @@ def categorize_jobs_with_gemini(
     if not uncategorized_jobs:
         return {"job_labels": {}, "new_categories": []}
 
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    client = genai.Client(api_key=gemini_key)
+    client = get_gemini_client()
 
     jobs_text = ""
     for i, (url, job) in enumerate(uncategorized_jobs.items()):

@@ -84,7 +84,7 @@ APIFY_API_TOKEN_1=il_tuo_token_apify_qui
 APIFY_API_TOKEN_2=... (fino a 7)
 
 GEMINI_API_KEY=la_tua_chiave_gemini_qui
-TAVILY_API_KEY=la_tua_chiave_tavily_qui
+
 
 EMAIL_SENDER=tua_email_mittente@gmail.com
 EMAIL_PASSWORD=tua_app_password_senza_spazi
@@ -97,7 +97,6 @@ FIREBASE_SERVICE_ACCOUNT_JSON={"type": "service_account", "project_id": "...", .
 * **Apify (`APIFY_API_TOKEN_X`):** Crea uno o più account gratuiti su [Apify](https://apify.com/) ed estrai i loro token. L'automazione bilancia il carico e tiene traccia dei budget residui autonomamente.
 * **Google Gemini (`GEMINI_API_KEY`):** Richiedi una chiave API gratuita accedendo a [Google AI Studio](https://aistudio.google.com/).
 * **Firebase (`FIREBASE_SERVICE_ACCOUNT_JSON`):** Apri il file `.json` che hai scaricato al passaggio precedente, copia l'intero contenuto e incollalo **su una singola riga** (senza a capo) come valore.
-* **Tavily (`TAVILY_API_KEY`):** *(Opzionale)* Necessario solo se utilizzi lo scouting di startup (`startup_outreach.py`). Registrati su [Tavily](https://tavily.com/).
 * **Configurazione Email (SMTP):** Genera una Password per App (App Passwords) da Google se usi Gmail (Impostazioni di Sicurezza -> Verifica in 2 Passaggi -> App Passwords).
 
 ---
@@ -137,11 +136,6 @@ Una volta configurato il tutto, puoi avviare gli script:
   python main.py
   ```
   *(Al termine dell'esecuzione riceverai un'email con il riassunto ed i dettagli saranno visibili nella Dashboard).*
-
-* **Per avviare lo scouting e l'outreach delle Startup (usa `startup_outreach.py`):**
-  ```bash
-  python startup_outreach.py
-  ```
 
 ---
 

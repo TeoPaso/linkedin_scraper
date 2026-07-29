@@ -899,8 +899,14 @@
             </div>
             <div style="margin-bottom:20px;">
                 <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Password</label>
-                <input type="password" id="login-password"
-                    style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+                <div style="position:relative;">
+                    <input type="password" id="login-password"
+                        style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px 40px 10px 10px; border-radius:6px; box-sizing:border-box;">
+                    <button type="button" id="toggle-pw-btn" onclick="togglePasswordVisibility()" title="Mostra/Nascondi password"
+                        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:1.2em; padding:0; line-height:1;">
+                        😉
+                    </button>
+                </div>
             </div>
             <div id="login-error" style="color:#ff4444; font-size:0.85em; margin-bottom:15px; display:none;"></div>
             <div style="display:flex; gap:10px;">
@@ -937,6 +943,10 @@
         let currentQuery = '';
         let keywordFilterMode = 'top5'; // 'all', 'useful', 'top5'
 
+        window.getGeminiApiKey = function () {
+            return (appData && appData.config && appData.config.evaluation && appData.config.evaluation.gemini_api_key) || localStorage.getItem('gemini_api_key') || '';
+        };
+
         window.changeKeywordFilter = function (val) {
             keywordFilterMode = val;
             render();
@@ -950,6 +960,20 @@
         window.setView = function (view) {
             currentView = view;
             render();
+        };
+
+        window.togglePasswordVisibility = function () {
+            const input = document.getElementById('login-password');
+            const btn = document.getElementById('toggle-pw-btn');
+            if (input && btn) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    btn.textContent = '👁️';
+                } else {
+                    input.type = 'password';
+                    btn.textContent = '😉';
+                }
+            }
         };
 
         window.doLogin = async function () {
@@ -1113,9 +1137,12 @@
                         <div class="nav-link ${currentView === 'settings' ? 'active' : ''}" onclick="setView('settings')">⚙️ Configurazione</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 20px;">
-                        <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
-                            ${window.currentUser ? '🔓 Logout' : '🔒 Login'}
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${window.currentUser ? `<span style="font-size: 0.85em; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">👤 ${window.currentUser.email || 'Utente'}</span>` : ''}
+                            <button id="auth-btn" onclick="toggleAuth()" style="background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em;">
+                                ${window.currentUser ? '🔓 Logout' : '🔒 Login'}
+                            </button>
+                        </div>
 
                         <span class="admin-only ${window.currentUser ? '' : 'hidden-auth'}">
                             <button onclick="openManualEvalModal()" style="background: rgba(0,255,204,0.1); color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.9em; display: flex; align-items: center; gap: 5px;">
@@ -1231,11 +1258,8 @@
                     core_keywords: (appData.config && appData.config.scraper) ? (appData.config.scraper.core_keywords || []) : []
                 },
                 evaluation: {
-                    min_fit_score: parseInt(document.getElementById('cfg-min-fit').value)
-                },
-                outreach: {
-                    run_discovery: document.getElementById('cfg-run-discovery').checked,
-                    min_signals: parseInt(document.getElementById('cfg-min-signals').value)
+                    min_fit_score: parseInt(document.getElementById('cfg-min-fit').value),
+                    gemini_api_key: geminiKey
                 },
                 email: {
                     send_email: document.getElementById('cfg-send-email').checked
@@ -1392,7 +1416,6 @@
             const pref = cfg.preferences || {};
             const scrap = cfg.scraper || {};
             const eval_ = cfg.evaluation || {};
-            const out = cfg.outreach || {};
             const em = cfg.email || {};
 
             let apifyUsageHtml = '';
@@ -1464,7 +1487,7 @@
                             ${accountsHtml}
                             <hr style="border-top: 1px dashed rgba(0,204,255,0.3); margin: 20px 0;">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
-                                <span>Totale Rete Pool (7 Account):</span>
+                                <span>Totale Rete Pool (${accounts.length} Account):</span>
                                 <div style="font-family: monospace; font-size: 1.1em; color: #00ccff;">
                                     ${totalJobs} / ${maxBudgetJobs} jobs 
                                     <span style="color: var(--text-light); margin-left: 15px;">$${totalCost} / $${totalBudget}</span>
@@ -1483,9 +1506,25 @@
                         </div>
                     </div>
                 `;
-            }
+            const sessionCardHtml = `
+                <div class="card" style="border-left: 4px solid #ff007f; margin-bottom: 30px;">
+                    <h2 style="color: #ff007f; margin-bottom: 10px;">🔐 Account Dashboard & Sessione</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,0,127,0.05); padding: 15px 20px; border-radius: 8px; border: 1px solid rgba(255,0,127,0.2); flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-size: 0.95em; color: var(--text-light);">Account attualmente collegato:</div>
+                            <div style="font-size: 1.1em; font-weight: bold; color: var(--accent); margin-top: 4px;">👤 ${window.currentUser ? (window.currentUser.email || 'Utente collegato') : 'Nessun account'}</div>
+                        </div>
+                        <div>
+                            <button onclick="toggleAuth()" style="background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.2s;">
+                                🔓 Disconnetti (Logout)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             return `
+                ${sessionCardHtml}
                 ${apifyUsageHtml}
                 <div class="card" style="border-left: 4px solid var(--accent);">
                     <h2 style="color: var(--accent); margin-bottom: 10px;">Configurazione Scraper</h2>
@@ -1594,29 +1633,14 @@
                                         <button onclick="addKeyword()" style="background: var(--accent); color: var(--bg-main); border: none; font-size: 1.2em; width: 45px;">+</button>
                                     </div>
                                 </div>
-                                <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
-                                <h3>🚀 Outreach</h3>
-                                <div class="form-group">
-                                    <div class="toggle-group" style="margin-bottom: 10px;">
-                                        <span>Startup Discovery</span>
-                                        <label class="switch">
-                                            <input type="checkbox" id="cfg-run-discovery" ${out.run_discovery ? 'checked' : ''}>
-                                            <span class="slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Min Signals (Outreach)</label>
-                                    <input type="number" id="cfg-min-signals" value="${out.min_signals || 3}">
-                                </div>
                             </div>
 
                             <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
                             <h3>🤖 Gemini API</h3>
                             <div class="form-group">
                                 <label>Gemini API Key</label>
-                                <p style="color: var(--text-muted); font-size: 0.8em; margin-bottom: 8px;">Chiave per valutare le job direttamente dal browser. (Viene salvata solo in locale)</p>
-                                <input type="password" id="cfg-gemini-api-key" placeholder="AIzaSy..." style="font-family: monospace;" value="${localStorage.getItem('gemini_api_key') || ''}">
+                                <p style="color: var(--text-muted); font-size: 0.8em; margin-bottom: 8px;">Chiave per valutare i job (condivisa nel database Firestore tra tutti gli account).</p>
+                                <input type="password" id="cfg-gemini-api-key" placeholder="AIzaSy..." style="font-family: monospace;" value="${window.getGeminiApiKey()}">
                             </div>
 
                             <hr style="border-top: 1px dashed var(--border); margin: 25px 0;">
@@ -2504,7 +2528,7 @@
                             descriptionText: desc
                         };
 
-                        const apiKey = localStorage.getItem('gemini_api_key');
+                        const apiKey = window.getGeminiApiKey();
                         if (!apiKey) {
                             alert("API Key di Gemini non configurata nelle impostazioni.");
                             return;
@@ -2992,7 +3016,7 @@ Verifica la fascia:
             const btnEvalSelected = document.getElementById('btn-eval-selected');
             if (btnEvalSelected) {
                 btnEvalSelected.addEventListener('click', async () => {
-                    const apiKey = localStorage.getItem('gemini_api_key');
+                    const apiKey = window.getGeminiApiKey();
                     if (!apiKey) {
                         alert("API Key di Gemini non trovata! Inseriscila nella sezione Configurazione prima di valutare.");
                         return;

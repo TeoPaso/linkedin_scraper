@@ -31,7 +31,7 @@ Copia il file `.env.example` in `.env` nella directory principale e compila i ca
 
 ### 3. Configurazione via Dashboard
 - **Profilo e Limiti Operativi**: Non è più necessario modificare file locali. Accedi alla tua Dashboard connessa al progetto Firebase, e usa le sezioni apposite per aggiornare il tuo CV, i tuoi interessi, o i parametri di scraping (numero di offerte target, soglie, ecc.).
-- **Startup Outreach**: Lo script `startup_outreach.py` utilizza Tavily e Gemini per trovare e qualificare startup attive, generando cover letter personalizzate. Anche in questo caso fa affidamento al profilo caricato su DB.
+
 
 ### 4. Esecuzione
 Avvia lo script principal in locale o tramite action:
