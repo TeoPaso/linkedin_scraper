@@ -1186,6 +1186,7 @@
             }
 
             if (modal) modal.style.display = 'none';
+            try {
             app.innerHTML = `
                 <nav>
                     <div class="nav-links">
@@ -1243,6 +1244,18 @@
                 attachDashboardEvents();
             } else {
                 attachSettingsEvents();
+            }
+            } catch (renderErr) {
+                console.error("Render error:", renderErr);
+                app.innerHTML = `
+                    <div style="text-align:center; padding: 50px;">
+                        <h2 style="color: var(--accent);">Dashboard</h2>
+                        <p style="color: var(--score-bad);">Errore di rendering: ${renderErr.message}</p>
+                        <pre style="color: #ff8888; text-align:left; max-width:600px; margin:20px auto; font-size:0.8em; overflow:auto; background:#1a1a1a; padding:15px; border-radius:8px;">${renderErr.stack || renderErr}</pre>
+                        <button onclick="loadDataFromFirestore()" style="background:var(--accent); color:var(--bg-main); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px;">🔄 Riprova</button>
+                        <button onclick="toggleAuth()" style="background:transparent; color:var(--accent); border:1px solid var(--accent); padding:10px 20px; border-radius:6px; cursor:pointer; margin-top:10px; margin-left:10px;">🔓 Logout</button>
+                    </div>
+                `;
             }
         }
 
