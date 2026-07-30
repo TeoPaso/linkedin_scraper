@@ -903,20 +903,10 @@
         onAuthStateChanged(auth, (user) => {
             const wasLoggedOut = !window.currentUser;
             window.currentUser = user;
-            const authBtn = document.getElementById('auth-btn');
-            if (authBtn) {
-                authBtn.textContent = user ? '🔓 Logout' : '🔒 Login';
-            }
-            // Mostra/nascondi i controlli admin
-            document.querySelectorAll('.admin-only').forEach(el => {
-                if (user) {
-                    el.classList.remove('hidden-auth');
-                } else {
-                    el.classList.add('hidden-auth');
-                }
-            });
 
+            const modal = document.getElementById('login-modal');
             if (user) {
+                if (modal) modal.style.display = 'none';
                 if (wasLoggedOut && typeof loadDataFromFirestore === 'function') {
                     loadDataFromFirestore();
                 } else if (typeof render === 'function') {
@@ -926,9 +916,22 @@
                 if (typeof render === 'function') {
                     render();
                 }
-                const modal = document.getElementById('login-modal');
                 if (modal) modal.style.display = 'flex';
             }
+
+            const authBtn = document.getElementById('auth-btn');
+            if (authBtn) {
+                authBtn.textContent = user ? '🔓 Logout' : '🔒 Login';
+            }
+
+            // Mostra/nascondi i controlli admin
+            document.querySelectorAll('.admin-only').forEach(el => {
+                if (user) {
+                    el.classList.remove('hidden-auth');
+                } else {
+                    el.classList.add('hidden-auth');
+                }
+            });
         });
     </script>
 
@@ -1037,11 +1040,13 @@
 
         async function loadDataFromFirestore() {
             const appDiv = document.getElementById('app');
-            appDiv.innerHTML = '<div style="text-align:center; padding: 50px;"><h2 style="color: var(--accent);">Connessione al database in tempo reale...</h2></div>';
+            if (!appDiv) return;
 
-            try {
-                // Inizializza appData se non esiste
-                if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
+            // Inizializza appData se non esiste
+            if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
+
+            // Renderizza subito l'interfaccia utente
+            if (typeof render === 'function') render();
 
                 // 1. Caricamento una-tantum dei Jobs (getDocs invece di onSnapshot)
                 try {
@@ -1141,6 +1146,7 @@
         // ==========================================
         function render() {
             const app = document.getElementById('app');
+            if (!app) return;
             if (!window.currentUser) {
                 app.innerHTML = `
                     <div style="display:flex; height: 100vh; align-items:center; justify-content:center; flex-direction:column;">
