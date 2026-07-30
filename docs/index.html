@@ -872,10 +872,16 @@
             }
 
             try {
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                window.currentUser = userCred.user;
                 const modal = document.getElementById('login-modal');
                 if (modal) modal.style.display = 'none';
                 if (errorEl) errorEl.style.display = 'none';
+                if (typeof loadDataFromFirestore === 'function') {
+                    loadDataFromFirestore();
+                } else if (typeof render === 'function') {
+                    render();
+                }
             } catch (err) {
                 console.error("Errore Login Firebase:", err);
                 let msg = 'Credenziali errate.';
