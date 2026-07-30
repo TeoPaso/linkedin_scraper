@@ -1103,9 +1103,13 @@
             if (typeof render === 'function') render();
 
             try {
-                // 1. Caricamento una-tantum dei Jobs dell'utente
+                // 1. Caricamento una-tantum dei Jobs dell'utente (con fallback alla collezione storica root)
                 try {
-                    const jobsSnapshot = await window.getDocs(getUserCol("jobs"));
+                    let jobsSnapshot = await window.getDocs(getUserCol("jobs"));
+                    if (jobsSnapshot.empty && window.currentUser && window.currentUser.uid) {
+                        // Fallback su collezione root storica se l'utente non ha ancora job privati
+                        jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
+                    }
                     let job_store = {};
                     jobsSnapshot.forEach((doc) => {
                         const data = doc.data();
@@ -1119,10 +1123,17 @@
                     console.error("Jobs sync error:", error);
                 }
 
-                // 2. Ascolto in tempo reale della Search Memory dell'utente
-                const unsub1 = window.onSnapshot(getUserCol("search_memory"), (snapshot) => {
+                // 2. Ascolto in tempo reale della Search Memory dell'utente (con fallback)
+                const unsub1 = window.onSnapshot(getUserCol("search_memory"), async (snapshot) => {
                     let memory = [];
-                    snapshot.forEach(doc => memory.push(doc.data()));
+                    if (snapshot.empty && window.currentUser && window.currentUser.uid) {
+                        try {
+                            const rootSnap = await window.getDocs(window.collection(window.db, "search_memory"));
+                            rootSnap.forEach(doc => memory.push(doc.data()));
+                        } catch(e){}
+                    } else {
+                        snapshot.forEach(doc => memory.push(doc.data()));
+                    }
                     memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
                     appData.search_memory = memory;
 
@@ -1133,10 +1144,17 @@
                 });
                 window._activeUnsubscribes.push(unsub1);
 
-                // 3. Ascolto in tempo reale delle Categorie dell'utente
-                const unsub2 = window.onSnapshot(getUserCol("job_categories"), (snapshot) => {
+                // 3. Ascolto in tempo reale delle Categorie dell'utente (con fallback)
+                const unsub2 = window.onSnapshot(getUserCol("job_categories"), async (snapshot) => {
                     let cats = [];
-                    snapshot.forEach(doc => cats.push(doc.data()));
+                    if (snapshot.empty && window.currentUser && window.currentUser.uid) {
+                        try {
+                            const rootSnap = await window.getDocs(window.collection(window.db, "job_categories"));
+                            rootSnap.forEach(doc => cats.push(doc.data()));
+                        } catch(e){}
+                    } else {
+                        snapshot.forEach(doc => cats.push(doc.data()));
+                    }
                     appData.job_categories = cats;
                     debouncedRender();
                 });
@@ -1165,12 +1183,21 @@
                 });
                 window._activeUnsubscribes.push(unsub4);
 
-                // 6. Ascolto in tempo reale del Profilo candidato dell'utente
-                const unsub5 = window.onSnapshot(getUserDoc("profile"), (doc) => {
+                // 6. Ascolto in tempo reale del Profilo candidato dell'utente (con fallback su root)
+                const unsub5 = window.onSnapshot(getUserDoc("profile"), async (doc) => {
                     if (doc.exists()) {
                         appData.profile = doc.data().content || '';
                     } else {
-                        appData.profile = '';
+                        try {
+                            const rootProf = await window.getDoc(window.doc(window.db, "app_state", "profile"));
+                            if (rootProf.exists()) {
+                                appData.profile = rootProf.data().content || '';
+                            } else {
+                                appData.profile = '';
+                            }
+                        } catch(e) {
+                            appData.profile = '';
+                        }
                     }
                 });
                 window._activeUnsubscribes.push(unsub5);

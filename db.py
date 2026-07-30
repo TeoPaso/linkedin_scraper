@@ -69,6 +69,10 @@ def load_known_urls(user_id: str = None) -> set:
     if doc.exists:
         data = doc.to_dict()
         return set(data.get("urls", []))
+    if user_id:
+        root_doc = db.collection("app_state").document("url_index").get()
+        if root_doc.exists:
+            return set(root_doc.to_dict().get("urls", []))
     return set()
 
 
@@ -122,20 +126,27 @@ def save_jobs_batch(jobs_dict: dict, user_id: str = None):
 
 def get_liked_jobs(user_id: str = None) -> list:
     """Recupera i job apprezzati per un utente."""
-    docs = get_user_col("jobs", user_id).where("liked", "==", True).stream()
+    docs = list(get_user_col("jobs", user_id).where("liked", "==", True).stream())
+    if not docs and user_id:
+        docs = list(db.collection("jobs").where("liked", "==", True).stream())
     return [doc.to_dict() for doc in docs]
 
 
 def get_disliked_jobs(user_id: str = None) -> list:
     """Recupera i job scartati per un utente."""
-    docs = get_user_col("jobs", user_id).where("liked", "==", False).stream()
+    docs = list(get_user_col("jobs", user_id).where("liked", "==", False).stream())
+    if not docs and user_id:
+        docs = list(db.collection("jobs").where("liked", "==", False).stream())
     return [doc.to_dict() for doc in docs]
 
 
 def load_search_memory(user_id: str = None) -> list:
     """Legge da search_memory dell'utente, ordinata per timestamp."""
     memory = []
-    docs = get_user_col("search_memory", user_id).stream()
+    docs = list(get_user_col("search_memory", user_id).stream())
+    if not docs and user_id:
+        docs = list(db.collection("search_memory").stream())
+
     for doc in docs:
         memory.append(doc.to_dict())
 
@@ -166,7 +177,10 @@ def save_search_memory(memory: list, user_id: str = None):
 def load_job_categories(user_id: str = None) -> list:
     """Legge job_categories per l'utente."""
     categories = []
-    docs = get_user_col("job_categories", user_id).stream()
+    docs = list(get_user_col("job_categories", user_id).stream())
+    if not docs and user_id:
+        docs = list(db.collection("job_categories").stream())
+
     for doc in docs:
         categories.append(doc.to_dict())
     return categories
@@ -196,6 +210,10 @@ def load_cycle_state(user_id: str = None) -> dict:
     doc = get_user_app_state_doc("keyword_cycle", user_id).get()
     if doc.exists:
         return doc.to_dict()
+    if user_id:
+        root_doc = db.collection("app_state").document("keyword_cycle").get()
+        if root_doc.exists:
+            return root_doc.to_dict()
     return {"cycle_index": 0, "keyword_list": []}
 
 
@@ -306,10 +324,14 @@ def set_trigger(status, execution_id=None, stop=False, current_query=None, user_
 
 
 def load_profile_from_db(user_id: str = None) -> str:
-    """Legge il profilo del candidato dell'utente da Firestore."""
+    """Legge il profilo del candidato dell'utente da Firestore (con fallback su root)."""
     doc = get_user_app_state_doc("profile", user_id).get()
     if doc.exists:
         return doc.to_dict().get("content", "")
+    if user_id:
+        root_doc = db.collection("app_state").document("profile").get()
+        if root_doc.exists:
+            return root_doc.to_dict().get("content", "")
     return ""
 
 
