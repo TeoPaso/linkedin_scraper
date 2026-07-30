@@ -1171,16 +1171,21 @@
         function render() {
             const app = document.getElementById('app');
             if (!app) return;
+            const modal = document.getElementById('login-modal');
+
             if (!window.currentUser) {
+                if (modal) modal.style.display = 'flex';
                 app.innerHTML = `
                     <div style="display:flex; height: 100vh; align-items:center; justify-content:center; flex-direction:column;">
                         <h2 style="color:var(--accent);">Area Riservata</h2>
-                        <p style="color:var(--text-muted);">Devi effettuare il login per visualizzare la dashboard.</p>
-                        <button onclick="toggleAuth()" style="background:var(--accent); color:var(--bg-main); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px;">Vai al Login</button>
+                        <p style="color:var(--text-muted);">Inserisci le tue credenziali nel modulo per accedere alla dashboard.</p>
+                        <button onclick="toggleAuth()" style="background:var(--accent); color:var(--bg-main); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px;">🔒 Apri Login</button>
                     </div>
                 `;
                 return;
             }
+
+            if (modal) modal.style.display = 'none';
             app.innerHTML = `
                 <nav>
                     <div class="nav-links">
