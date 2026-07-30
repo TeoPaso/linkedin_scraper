@@ -892,31 +892,29 @@
         <div
             style="background:#1c1c1c; border:1px solid #333; border-radius:8px; padding:40px; width:100%; max-width:380px;">
             <h3 style="color:#00ffcc; margin-top:0;">Login</h3>
-            <form onsubmit="doLogin(event); return false;">
-                <div style="margin-bottom:15px;">
-                    <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Email</label>
-                    <input type="email" id="login-email" required
-                        style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+            <div style="margin-bottom:15px;">
+                <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Email</label>
+                <input type="email" id="login-email" onkeydown="if(event.key==='Enter') doLogin()"
+                    style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px; border-radius:6px; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:20px;">
+                <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Password</label>
+                <div style="position:relative;">
+                    <input type="password" id="login-password" onkeydown="if(event.key==='Enter') doLogin()"
+                        style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px 45px 10px 10px; border-radius:6px; box-sizing:border-box;">
+                    <button type="button" id="toggle-pw-btn" onclick="togglePasswordVisibility(event)" title="Mostra/Nascondi password"
+                        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:1.2em; padding:4px; line-height:1; z-index:10; user-select:none;">
+                        😉
+                    </button>
                 </div>
-                <div style="margin-bottom:20px;">
-                    <label style="display:block; color:#888; font-size:0.9em; margin-bottom:6px;">Password</label>
-                    <div style="position:relative;">
-                        <input type="password" id="login-password" required
-                            style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px 45px 10px 10px; border-radius:6px; box-sizing:border-box;">
-                        <button type="button" id="toggle-pw-btn" onclick="togglePasswordVisibility(event)" title="Mostra/Nascondi password"
-                            style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:1.2em; padding:4px; line-height:1; z-index:10; user-select:none;">
-                            😉
-                        </button>
-                    </div>
-                </div>
-                <div id="login-error" style="color:#ff4444; font-size:0.85em; margin-bottom:15px; display:none; word-break:break-word;"></div>
-                <div style="display:flex; gap:10px;">
-                    <button type="submit" id="login-submit-btn"
-                        style="flex:1; background:#00ffcc; color:#0f0f0f; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Accedi</button>
-                    <button type="button" onclick="document.getElementById('login-modal').style.display='none'"
-                        style="background:transparent; color:#888; border:1px solid #333; padding:10px 15px; border-radius:6px; cursor:pointer;">Annulla</button>
-                </div>
-            </form>
+            </div>
+            <div id="login-error" style="color:#ff4444; font-size:0.85em; margin-bottom:15px; display:none; word-break:break-word;"></div>
+            <div style="display:flex; gap:10px;">
+                <button type="button" id="login-submit-btn" onclick="doLogin()"
+                    style="flex:1; background:#00ffcc; color:#0f0f0f; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">Accedi</button>
+                <button type="button" onclick="document.getElementById('login-modal').style.display='none'"
+                    style="background:transparent; color:#888; border:1px solid #333; padding:10px 15px; border-radius:6px; cursor:pointer;">Annulla</button>
+            </div>
         </div>
     </div>
 
@@ -990,6 +988,12 @@
             const password = passwordInput ? passwordInput.value : '';
             const errorEl = document.getElementById('login-error');
             
+            if (!window.auth || !window.signInWithEmailAndPassword) {
+                errorEl.textContent = 'Inizializzazione Firebase in corso... Riprova tra qualche secondo.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
             if (!email || !password) {
                 errorEl.textContent = 'Inserisci sia email che password.';
                 errorEl.style.display = 'block';
