@@ -940,7 +940,7 @@
 
     <!-- Login Modal -->
     <div id="login-modal"
-        style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+        style="display:flex; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
         <div
             style="background:#1c1c1c; border:1px solid #333; border-radius:8px; padding:40px; width:100%; max-width:380px;">
             <h3 style="color:#00ffcc; margin-top:0;">Login</h3>
@@ -970,7 +970,13 @@
         </div>
     </div>
 
-    <div id="app"></div>
+    <div id="app">
+        <div style="display:flex; height: 100vh; align-items:center; justify-content:center; flex-direction:column;">
+            <h2 style="color:var(--accent);">Area Riservata</h2>
+            <p style="color:var(--text-muted);">Devi effettuare il login per visualizzare la dashboard.</p>
+            <button onclick="toggleAuth()" style="background:var(--accent); color:var(--bg-main); border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px;">Vai al Login</button>
+        </div>
+    </div>
 
     <script>
         // ==========================================
