@@ -901,13 +901,12 @@
 
         // Aggiorna la navbar quando cambia lo stato auth
         onAuthStateChanged(auth, (user) => {
-            const wasLoggedOut = !window.currentUser;
             window.currentUser = user;
 
             const modal = document.getElementById('login-modal');
             if (user) {
                 if (modal) modal.style.display = 'none';
-                if (wasLoggedOut && typeof loadDataFromFirestore === 'function') {
+                if (typeof loadDataFromFirestore === 'function') {
                     loadDataFromFirestore();
                 } else if (typeof render === 'function') {
                     render();
@@ -1131,13 +1130,26 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Wait slightly for module import to complete, or use interval to check window.db
-            const checkDb = setInterval(() => {
-                if (window.db && window.auth) {
-                    clearInterval(checkDb);
-                    // L'aggiornamento avverrà tramite onAuthStateChanged
-                }
-            }, 100);
+            // Esegui subito render per popolare la UI
+            if (typeof render === 'function') {
+                render();
+            }
+
+            // Se l'utente è autenticato, avvia il caricamento dati
+            if (window.currentUser && typeof loadDataFromFirestore === 'function') {
+                loadDataFromFirestore();
+            } else {
+                const checkDb = setInterval(() => {
+                    if (window.db && window.auth) {
+                        clearInterval(checkDb);
+                        if (window.currentUser && typeof loadDataFromFirestore === 'function') {
+                            loadDataFromFirestore();
+                        } else if (typeof render === 'function') {
+                            render();
+                        }
+                    }
+                }, 100);
+            }
         });
 
 
