@@ -910,33 +910,49 @@
             window.currentUser = user;
 
             const modal = document.getElementById('login-modal');
-            if (user) {
-                if (modal) modal.style.display = 'none';
-                if (typeof loadDataFromFirestore === 'function') {
-                    loadDataFromFirestore();
-                } else if (typeof render === 'function') {
-                    render();
-                }
-            } else {
-                if (typeof render === 'function') {
-                    render();
-                }
-                if (modal) modal.style.display = 'flex';
-            }
 
-            const authBtn = document.getElementById('auth-btn');
-            if (authBtn) {
-                authBtn.textContent = user ? '🔓 Logout' : '🔒 Login';
-            }
-
-            // Mostra/nascondi i controlli admin
-            document.querySelectorAll('.admin-only').forEach(el => {
+            function applyAuthState() {
                 if (user) {
-                    el.classList.remove('hidden-auth');
+                    if (modal) modal.style.display = 'none';
+                    if (typeof loadDataFromFirestore === 'function') {
+                        loadDataFromFirestore();
+                    } else if (typeof render === 'function') {
+                        render();
+                    }
                 } else {
-                    el.classList.add('hidden-auth');
+                    if (typeof render === 'function') {
+                        render();
+                    }
+                    if (modal) modal.style.display = 'flex';
                 }
-            });
+
+                const authBtn = document.getElementById('auth-btn');
+                if (authBtn) {
+                    authBtn.textContent = user ? '🔓 Logout' : '🔒 Login';
+                }
+
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    if (user) {
+                        el.classList.remove('hidden-auth');
+                    } else {
+                        el.classList.add('hidden-auth');
+                    }
+                });
+            }
+
+            // Se le funzioni sono già definite, esegui subito
+            if (typeof render === 'function') {
+                applyAuthState();
+            } else {
+                // Il modulo è stato caricato prima dello script classico.
+                // Aspetta che render() sia disponibile.
+                const waitForRender = setInterval(() => {
+                    if (typeof render === 'function') {
+                        clearInterval(waitForRender);
+                        applyAuthState();
+                    }
+                }, 50);
+            }
         });
     </script>
 
@@ -1142,26 +1158,10 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Esegui subito render per popolare la UI
-            if (typeof render === 'function') {
-                render();
-            }
-
-            // Se l'utente è autenticato, avvia il caricamento dati
-            if (window.currentUser && typeof loadDataFromFirestore === 'function') {
-                loadDataFromFirestore();
-            } else {
-                const checkDb = setInterval(() => {
-                    if (window.db && window.auth) {
-                        clearInterval(checkDb);
-                        if (window.currentUser && typeof loadDataFromFirestore === 'function') {
-                            loadDataFromFirestore();
-                        } else if (typeof render === 'function') {
-                            render();
-                        }
-                    }
-                }, 100);
-            }
+            // Non chiamare render() qui - lasciamo che onAuthStateChanged gestisca tutto.
+            // Il login modal è già visibile (display:flex nell'HTML) come fallback.
+            // L'HTML statico di #app mostra già "Area Riservata" come fallback.
+            // Quando Firebase si carica, onAuthStateChanged chiamerà render() o loadDataFromFirestore().
         });
 
 
