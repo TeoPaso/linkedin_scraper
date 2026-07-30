@@ -1059,6 +1059,7 @@
             // Renderizza subito l'interfaccia utente
             if (typeof render === 'function') render();
 
+            try {
                 // 1. Caricamento una-tantum dei Jobs (getDocs invece di onSnapshot)
                 try {
                     const jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
@@ -1133,7 +1134,6 @@
                         }
                     }
                 });
-
 
             } catch (e) {
                 console.error(e);
