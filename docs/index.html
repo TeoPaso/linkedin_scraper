@@ -849,6 +849,56 @@
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signOut = signOut;
 
+        window.doLogin = async function (e) {
+            if (e) e.preventDefault();
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            const email = (emailInput ? emailInput.value : '').trim();
+            const password = passwordInput ? passwordInput.value : '';
+            const errorEl = document.getElementById('login-error');
+            const loginBtn = document.getElementById('login-submit-btn');
+
+            if (!email || !password) {
+                if (errorEl) {
+                    errorEl.textContent = 'Inserisci sia email che password.';
+                    errorEl.style.display = 'block';
+                }
+                return;
+            }
+
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Autenticazione...';
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                const modal = document.getElementById('login-modal');
+                if (modal) modal.style.display = 'none';
+                if (errorEl) errorEl.style.display = 'none';
+            } catch (err) {
+                console.error("Errore Login Firebase:", err);
+                let msg = 'Credenziali errate.';
+                if (err.code === 'auth/user-not-found') msg = 'Utente non trovato su Firebase.';
+                else if (err.code === 'auth/wrong-password') msg = 'Password errata.';
+                else if (err.code === 'auth/invalid-credential') msg = 'Credenziali non valide (email o password errate).';
+                else if (err.code === 'auth/invalid-email') msg = 'Formato email non valido.';
+                else if (err.code === 'auth/user-disabled') msg = 'Questo account è stato disabilitato.';
+                else if (err.code === 'auth/too-many-requests') msg = 'Troppi tentativi falliti. Riprova più tardi.';
+                else if (err.message) msg = err.message;
+
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.style.display = 'block';
+                }
+            } finally {
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Accedi';
+                }
+            }
+        };
+
         // Aggiorna la navbar quando cambia lo stato auth
         onAuthStateChanged(auth, (user) => {
             const wasLoggedOut = !window.currentUser;
@@ -902,7 +952,7 @@
                 <div style="position:relative;">
                     <input type="password" id="login-password" onkeydown="if(event.key==='Enter') doLogin()"
                         style="width:100%; background:#2c2c2c; border:1px solid #333; color:#fff; padding:10px 45px 10px 10px; border-radius:6px; box-sizing:border-box;">
-                    <button type="button" id="toggle-pw-btn" onclick="togglePasswordVisibility(event)" title="Mostra/Nascondi password"
+                    <button type="button" id="toggle-pw-btn" onclick="const p=document.getElementById('login-password'); if(p){ const isPw=p.type==='password'; p.type=isPw?'text':'password'; this.textContent=isPw?'👁️':'😉'; }" title="Mostra/Nascondi password"
                         style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#888; cursor:pointer; font-size:1.2em; padding:4px; line-height:1; z-index:10; user-select:none;">
                         😉
                     </button>
@@ -960,76 +1010,6 @@
         window.setView = function (view) {
             currentView = view;
             render();
-        };
-
-        window.togglePasswordVisibility = function (e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            const input = document.getElementById('login-password');
-            const btn = document.getElementById('toggle-pw-btn');
-            if (input && btn) {
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    btn.textContent = '👁️';
-                } else {
-                    input.type = 'password';
-                    btn.textContent = '😉';
-                }
-            }
-        };
-
-        window.doLogin = async function (e) {
-            if (e) e.preventDefault();
-            const emailInput = document.getElementById('login-email');
-            const passwordInput = document.getElementById('login-password');
-            const email = (emailInput ? emailInput.value : '').trim();
-            const password = passwordInput ? passwordInput.value : '';
-            const errorEl = document.getElementById('login-error');
-            
-            if (!window.auth || !window.signInWithEmailAndPassword) {
-                errorEl.textContent = 'Inizializzazione Firebase in corso... Riprova tra qualche secondo.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            if (!email || !password) {
-                errorEl.textContent = 'Inserisci sia email che password.';
-                errorEl.style.display = 'block';
-                return;
-            }
-
-            const loginBtn = document.getElementById('login-submit-btn');
-            if (loginBtn) {
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'Autenticazione...';
-            }
-
-            try {
-                await window.signInWithEmailAndPassword(window.auth, email, password);
-                document.getElementById('login-modal').style.display = 'none';
-                errorEl.style.display = 'none';
-                render();
-            } catch (err) {
-                console.error("Errore Login Firebase:", err);
-                let msg = 'Credenziali errate.';
-                if (err.code === 'auth/user-not-found') msg = 'Utente non trovato su Firebase.';
-                else if (err.code === 'auth/wrong-password') msg = 'Password errata.';
-                else if (err.code === 'auth/invalid-credential') msg = 'Credenziali non valide (email o password errati).';
-                else if (err.code === 'auth/invalid-email') msg = 'Formato email non valido.';
-                else if (err.code === 'auth/user-disabled') msg = 'Questo account è stato disabilitato.';
-                else if (err.code === 'auth/too-many-requests') msg = 'Troppi tentativi falliti. Riprova più tardi.';
-                else if (err.message) msg = err.message;
-
-                errorEl.textContent = msg;
-                errorEl.style.display = 'block';
-            } finally {
-                if (loginBtn) {
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Accedi';
-                }
-            }
         };
 
         window.openManualEvalModal = function() {
