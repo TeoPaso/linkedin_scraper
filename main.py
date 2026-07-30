@@ -515,7 +515,6 @@ def send_email_report(matched_jobs: list, metrics: dict, config: dict, apify_usa
     except Exception as e:
         print(f"[!] ERRORE durante l'invio dell'email: {e}")
 
-
 def deep_merge(base: dict, update: dict) -> dict:
     """Esegue un merge ricorsivo di due dizionari."""
     for key, value in update.items():
@@ -526,7 +525,7 @@ def deep_merge(base: dict, update: dict) -> dict:
     return base
 
 
-def main():
+def main(user_id=None):
     load_dotenv()
 
     if not os.path.exists("config.yaml"):
@@ -535,48 +534,50 @@ def main():
 
     config = load_config("config.yaml")
 
-    # Carica il profilo dal cloud (Firestore)
-    profile = db.load_profile_from_db()
-    if profile:
-        print("[*] Profilo caricato da Firestore.")
-    else:
+    # Carica il profilo dal cloud (Firestore per l'utente)
+    profile = db.load_profile_from_db(user_id=user_id)
+    if not profile and user_id:
+        print(f"[*] Nessun profilo personalizzato per l'utente {user_id}. Tentativo fall-back profilo generale...")
+        profile = db.load_profile_from_db(user_id=None)
+
+    if not profile:
         print("ERRORE: Profilo non trovato su Firestore.")
         sys.exit(1)
 
     # Salva la configurazione locale come "factory_config" per permettere il reset dalla dashboard
     try:
-        db.db.collection("app_state").document("factory_config").set(config)
+        db.db.collection("app_state").document(f"factory_config_{user_id or 'default'}").set(config)
     except Exception as e:
         print(f"[!] Errore durante il salvataggio della factory_config: {e}")
 
     # Carica la configurazione dal DB e fai il merge con quella locale
     print("[*] Controllo configurazione cloud su Firestore...")
-    cloud_config = db.load_config_from_db()
+    cloud_config = db.load_config_from_db(user_id=user_id)
     if cloud_config:
         print("[*] Configurazione cloud rilevata. Applicazione merge...")
         config = deep_merge(config, cloud_config)
     else:
         print("[*] Nessuna configurazione cloud trovata. Sincronizzazione locale -> cloud...")
-        db.save_config_to_db(config)
+        db.save_config_to_db(config, user_id=user_id)
 
     # Inizializza stato trigger
-    db.set_trigger("running", stop=False)
+    db.set_trigger("running", stop=False, user_id=user_id)
 
     try:
-        _run_scraper(config, profile)
+        _run_scraper(config, profile, user_id=user_id)
     finally:
         # SEMPRE resettare a idle, anche in caso di crash
-        db.set_trigger("idle", stop=False)
-        print("[*] Stato bot resettato a IDLE.")
+        db.set_trigger("idle", stop=False, user_id=user_id)
+        print(f"[*] Stato bot per utente {user_id or 'root'} resettato a IDLE.")
 
 
-def _run_scraper(config, profile):
+def _run_scraper(config, profile, user_id=None):
     """Corpo principale dello scraping, estratto per poter essere wrappato in try/finally."""
-    search_memory = db.load_search_memory()
-    known_urls = db.load_known_urls()
+    search_memory = db.load_search_memory(user_id=user_id)
+    known_urls = db.load_known_urls(user_id=user_id)
     current_run_jobs = {}
-    job_categories = db.load_job_categories()
-    cycle_state = db.load_cycle_state()
+    job_categories = db.load_job_categories(user_id=user_id)
+    cycle_state = db.load_cycle_state(user_id=user_id)
     apify_usage = db.load_apify_usage()
 
     execution_id = datetime.now(timezone.utc).isoformat()
@@ -628,8 +629,8 @@ def _run_scraper(config, profile):
         )
 
     print("[*] Recupero storico valutazioni per personalizzare i risultati...")
-    liked_jobs = db.get_liked_jobs()
-    disliked_jobs = db.get_disliked_jobs()
+    liked_jobs = db.get_liked_jobs(user_id=user_id)
+    disliked_jobs = db.get_disliked_jobs(user_id=user_id)
 
     liked_history = ""
     for j in liked_jobs:
@@ -800,7 +801,7 @@ def _run_scraper(config, profile):
     # Salva lo stato del ciclo per la prossima run
     cycle_state["cycle_index"] = cycle_index
     cycle_state["keyword_list"] = all_discovered_keywords
-    db.save_cycle_state(cycle_state)
+    db.save_cycle_state(cycle_state, user_id=user_id)
 
     print("\n[*] Attendo il completamento delle valutazioni in background...")
     executor.shutdown(wait=True)
@@ -828,7 +829,7 @@ def _run_scraper(config, profile):
             else:
                 mem_entry["avg_fit_score"] = 0
 
-    db.save_search_memory(search_memory)
+    db.save_search_memory(search_memory, user_id=user_id)
 
     print("\n[*] Categorizzazione dei lavori non categorizzati...")
     jobs_to_categorize = {
@@ -910,10 +911,10 @@ def _run_scraper(config, profile):
     else:
         print("  [-] Nessun lavoro da categorizzare.")
 
-    db.save_search_memory(search_memory)
-    db.save_jobs_batch(current_run_jobs)
-    db.save_known_urls(list(current_run_jobs.keys()))
-    db.save_job_categories(job_categories)
+    db.save_search_memory(search_memory, user_id=user_id)
+    db.save_jobs_batch(current_run_jobs, user_id=user_id)
+    db.save_known_urls(list(current_run_jobs.keys()), user_id=user_id)
+    db.save_job_categories(job_categories, user_id=user_id)
 
     print("\n[*] Dati salvati con successo. Invio report via email...")
 
@@ -1068,21 +1069,27 @@ if __name__ == "__main__":
         db.save_job_categories(job_categories)
         print(f"  [-] Categorizzazione completata! Nuove categorie: {len(new_cats_total)}")
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--listen", action="store_true", help="Resta in attesa di un trigger dalla dashboard")
+    parser.add_argument("--user", type=str, default=None, help="ID utente per cui eseguire lo scraping")
+    args = parser.parse_args()
+
     if args.listen:
         print("[*] Modalità ASCOLTO attiva. In attesa di trigger dalla dashboard...")
-        categorize_existing()
-        db.set_trigger("idle")
+        db.set_trigger("idle", user_id=args.user)
         while True:
-            trigger = db.get_trigger()
+            trigger = db.get_trigger(user_id=args.user)
             if trigger and trigger.get("status") == "pending":
-                print("[!] Trigger ricevuto! Avvio ricerca...")
+                target_user = trigger.get("_user_id") or args.user
+                print(f"[!] Trigger ricevuto per utente: {target_user or 'root'}! Avvio ricerca...")
                 try:
-                    main()
+                    main(user_id=target_user)
                 except Exception as e:
                     print(f"[!] Errore durante l'esecuzione: {e}")
                 finally:
-                    db.set_trigger("idle", stop=False)
+                    db.set_trigger("idle", stop=False, user_id=target_user)
                 print("\n[*] Ricerca completata. In attesa del prossimo trigger...")
             time.sleep(5)
     else:
-        main()
+        main(user_id=args.user)

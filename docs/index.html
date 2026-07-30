@@ -1065,21 +1065,48 @@
             }, 50);
         }
 
+        function getUserCol(colName) {
+            if (window.currentUser && window.currentUser.uid) {
+                return window.collection(window.db, "users", window.currentUser.uid, colName);
+            }
+            return window.collection(window.db, colName);
+        }
+
+        function getUserDoc(docName) {
+            if (window.currentUser && window.currentUser.uid) {
+                return window.doc(window.db, "users", window.currentUser.uid, "app_state", docName);
+            }
+            return window.doc(window.db, "app_state", docName);
+        }
+
+        function getUserJobDoc(docId) {
+            if (window.currentUser && window.currentUser.uid) {
+                return window.doc(window.db, "users", window.currentUser.uid, "jobs", docId);
+            }
+            return window.doc(window.db, "jobs", docId);
+        }
+
         async function loadDataFromFirestore() {
             const appDiv = document.getElementById('app');
             if (!appDiv) return;
 
-            // Inizializza appData se non esiste
-            if (!appData) appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: {}, apify_usage: {}, uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
+            // Inizializza appData se non esiste e resetta i dati dell'utente precedente
+            appData = { execution_id: "N/A", job_store: {}, search_memory: [], job_categories: [], config: appData ? (appData.config || {}) : {}, apify_usage: appData ? (appData.apify_usage || {}) : {}, profile: '', uiState: { page: 1, limit: 10, sortCol: "date", sortDir: "desc", filters: { date: [], keyword: "", category: "", score: "", liked: "" } } };
 
-            // Renderizza subito l'interfaccia utente
+            // Cancella eventuali ascoltatori in tempo reale attivi del vecchio utente
+            if (window._activeUnsubscribes) {
+                window._activeUnsubscribes.forEach(unsub => { try { unsub(); } catch(e){} });
+            }
+            window._activeUnsubscribes = [];
+
+            // Renderizza subito l'interfaccia utente pulita
             if (typeof render === 'function') render();
 
             try {
-                // 1. Caricamento una-tantum dei Jobs (getDocs invece di onSnapshot)
+                // 1. Caricamento una-tantum dei Jobs dell'utente
                 try {
-                    const jobsSnapshot = await window.getDocs(window.collection(window.db, "jobs"));
-                    let job_store = appData.job_store || {};
+                    const jobsSnapshot = await window.getDocs(getUserCol("jobs"));
+                    let job_store = {};
                     jobsSnapshot.forEach((doc) => {
                         const data = doc.data();
                         const key = data.url || doc.id;
@@ -1092,8 +1119,8 @@
                     console.error("Jobs sync error:", error);
                 }
 
-                // 2. Ascolto in tempo reale della Search Memory
-                window.onSnapshot(window.collection(window.db, "search_memory"), (snapshot) => {
+                // 2. Ascolto in tempo reale della Search Memory dell'utente
+                const unsub1 = window.onSnapshot(getUserCol("search_memory"), (snapshot) => {
                     let memory = [];
                     snapshot.forEach(doc => memory.push(doc.data()));
                     memory.sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
@@ -1104,45 +1131,52 @@
                     }
                     debouncedRender();
                 });
+                window._activeUnsubscribes.push(unsub1);
 
-                // 3. Ascolto in tempo reale delle Categorie
-                window.onSnapshot(window.collection(window.db, "job_categories"), (snapshot) => {
+                // 3. Ascolto in tempo reale delle Categorie dell'utente
+                const unsub2 = window.onSnapshot(getUserCol("job_categories"), (snapshot) => {
                     let cats = [];
                     snapshot.forEach(doc => cats.push(doc.data()));
                     appData.job_categories = cats;
                     debouncedRender();
                 });
+                window._activeUnsubscribes.push(unsub2);
 
-                // 4. Ascolto in tempo reale della Configurazione
-                window.onSnapshot(window.doc(window.db, "app_state", "config"), (doc) => {
+                // 4. Ascolto in tempo reale della Configurazione Condivisa (API Keys, etc)
+                const unsub3 = window.onSnapshot(window.doc(window.db, "app_state", "config"), (doc) => {
                     if (doc.exists()) {
                         appData.config = doc.data();
                         debouncedRender();
                     }
                 });
+                window._activeUnsubscribes.push(unsub3);
 
-                // 5. Ascolto in tempo reale del Trigger (Stato Scraper)
-                window.onSnapshot(window.doc(window.db, "app_state", "trigger"), (doc) => {
+                // 5. Ascolto in tempo reale del Trigger (Stato Scraper) dell'utente
+                const unsub4 = window.onSnapshot(getUserDoc("trigger"), (doc) => {
                     if (doc.exists()) {
                         const data = doc.data();
                         botStatus = data.status || 'idle';
                         currentQuery = data.current_query || '';
-                        debouncedRender();
+                    } else {
+                        botStatus = 'idle';
+                        currentQuery = '';
                     }
+                    debouncedRender();
                 });
+                window._activeUnsubscribes.push(unsub4);
 
-                // 6. Ascolto in tempo reale del Profilo candidato
-                window.onSnapshot(window.doc(window.db, "app_state", "profile"), (doc) => {
+                // 6. Ascolto in tempo reale del Profilo candidato dell'utente
+                const unsub5 = window.onSnapshot(getUserDoc("profile"), (doc) => {
                     if (doc.exists()) {
                         appData.profile = doc.data().content || '';
                     } else {
                         appData.profile = '';
                     }
-                    // Non fare render qui per evitare di resettare il textarea mentre si edita
                 });
+                window._activeUnsubscribes.push(unsub5);
 
-                // 7. Ascolto in tempo reale dell'utilizzo Apify
-                window.onSnapshot(window.doc(window.db, "app_state", "apify_usage"), (doc) => {
+                // 7. Ascolto in tempo reale dell'utilizzo Apify Condiviso (Pool)
+                const unsub6 = window.onSnapshot(window.doc(window.db, "app_state", "apify_usage"), (doc) => {
                     if (doc.exists()) {
                         appData.apify_usage = doc.data() || {};
                         if (currentView === 'settings') {
@@ -1150,6 +1184,7 @@
                         }
                     }
                 });
+                window._activeUnsubscribes.push(unsub6);
 
             } catch (e) {
                 console.error(e);
@@ -1362,7 +1397,7 @@
             const content = window.profileEditor ? window.profileEditor.getMarkdown() : (appData.profile || '');
 
             try {
-                await window.setDoc(window.doc(window.db, "app_state", "profile"), {
+                await window.setDoc(getUserDoc("profile"), {
                     content: content,
                     updated_at: window.serverTimestamp()
                 });
@@ -1446,7 +1481,7 @@
                 }
 
                 // 2. Aggiorna stato su Firestore
-                await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
+                await window.setDoc(getUserDoc("trigger"), {
                     status: 'pending',
                     current_query: 'Workflow GitHub Actions avviato...',
                     timestamp: window.serverTimestamp()
@@ -1465,7 +1500,7 @@
             if (!window.currentUser) { window.toggleAuth(); return; }
             if (!confirm("Sei sicuro di voler fermare la ricerca in corso?")) return;
             try {
-                await window.setDoc(window.doc(window.db, "app_state", "trigger"), {
+                await window.setDoc(getUserDoc("trigger"), {
                     status: 'stopping',
                     stop: true,
                     timestamp: window.serverTimestamp()
@@ -3151,7 +3186,7 @@ Verifica la fascia:
 
                             try {
                                 const evaluation = await evaluateJobWithGemini(jobDataToEval, profileText, liked_history, disliked_history, apiKey);
-                                await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                                await window.updateDoc(getUserJobDoc(docId), {
                                     fit_score: evaluation.fit_score || 0,
                                     reasoning: evaluation.reasoning || "",
                                     fit_score_reasoning: evaluation.fit_score_reasoning || "",
@@ -3173,7 +3208,7 @@ Verifica la fascia:
                                 }
                             } catch (evalErr) {
                                 console.error(`Errore valutazione job ${docId}:`, evalErr);
-                                await window.updateDoc(window.doc(window.db, "jobs", docId), {
+                                await window.updateDoc(getUserJobDoc(docId), {
                                     needs_evaluation: window.deleteField(),
                                     reasoning: `Errore HTTP API: ${evalErr.message}`
                                 });
@@ -3215,7 +3250,7 @@ Verifica la fascia:
                     let newLikedValue = isLikeBtn ? true : false;
                     if (isCurrentlyActive) newLikedValue = null;
                     try {
-                        await window.updateDoc(window.doc(window.db, "jobs", docId), { liked: newLikedValue });
+                        await window.updateDoc(getUserJobDoc(docId), { liked: newLikedValue });
                         // Aggiornamento locale
                         for(let key in appData.job_store) {
                             if(appData.job_store[key]._doc_id === docId) {
@@ -3260,7 +3295,7 @@ Verifica la fascia:
                     if (!docId) return;
                     const isCurrentlyApplied = modalBtnApplied.getAttribute('data-applied') === 'true';
                     try {
-                        await window.updateDoc(window.doc(window.db, "jobs", docId), { applied: !isCurrentlyApplied });
+                        await window.updateDoc(getUserJobDoc(docId), { applied: !isCurrentlyApplied });
                         // Aggiornamento locale
                         for(let key in appData.job_store) {
                             if(appData.job_store[key]._doc_id === docId) {

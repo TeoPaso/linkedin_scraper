@@ -51,28 +51,40 @@ def get_memory_id(entry: dict) -> str:
     return hashlib.sha1(base_str.encode("utf-8")).hexdigest()
 
 
-def load_known_urls() -> set:
+def get_user_col(collection_name: str, user_id: str = None):
+    if user_id:
+        return db.collection("users").document(user_id).collection(collection_name)
+    return db.collection(collection_name)
+
+
+def get_user_app_state_doc(doc_name: str, user_id: str = None):
+    if user_id:
+        return db.collection("users").document(user_id).collection("app_state").document(doc_name)
+    return db.collection("app_state").document(doc_name)
+
+
+def load_known_urls(user_id: str = None) -> set:
     """Legge l'indice degli URL noti da Firestore."""
-    doc = db.collection("app_state").document("url_index").get()
+    doc = get_user_app_state_doc("url_index", user_id).get()
     if doc.exists:
         data = doc.to_dict()
         return set(data.get("urls", []))
     return set()
 
 
-def save_known_urls(urls: list):
+def save_known_urls(urls: list, user_id: str = None):
     """Aggiunge in batch nuovi URL all'indice."""
     if not urls:
         return
-    db.collection("app_state").document("url_index").set(
+    get_user_app_state_doc("url_index", user_id).set(
         {"urls": firestore.ArrayUnion(urls)}, merge=True
     )
 
 
-def save_single_job(url: str, data: dict):
-    """Esegue l'upsert di un singolo job, utile per i thread in background."""
+def save_single_job(url: str, data: dict, user_id: str = None):
+    """Esegue l'upsert di un singolo job per uno specifico utente."""
     doc_id = get_job_id(url)
-    doc_ref = db.collection("jobs").document(doc_id)
+    doc_ref = get_user_col("jobs", user_id).document(doc_id)
     payload = data.copy()
     payload["url"] = url
     if "applied" not in payload:
@@ -80,15 +92,16 @@ def save_single_job(url: str, data: dict):
     doc_ref.set(payload, merge=True)
 
 
-def save_jobs_batch(jobs_dict: dict):
-    """Esegue un upsert dei job passati nel dizionario. In batch."""
+def save_jobs_batch(jobs_dict: dict, user_id: str = None):
+    """Esegue un upsert dei job passati nel dizionario per uno specifico utente."""
     if not jobs_dict:
         return
     batch = db.batch()
     count = 0
+    col_ref = get_user_col("jobs", user_id)
     for url, data in jobs_dict.items():
         doc_id = get_job_id(url)
-        doc_ref = db.collection("jobs").document(doc_id)
+        doc_ref = col_ref.document(doc_id)
 
         payload = data.copy()
         payload["url"] = url
@@ -107,24 +120,22 @@ def save_jobs_batch(jobs_dict: dict):
         batch.commit()
 
 
-def get_liked_jobs() -> list:
-    """Recupera i job apprezzati."""
-    docs = db.collection("jobs").where("liked", "==", True).stream()
+def get_liked_jobs(user_id: str = None) -> list:
+    """Recupera i job apprezzati per un utente."""
+    docs = get_user_col("jobs", user_id).where("liked", "==", True).stream()
     return [doc.to_dict() for doc in docs]
 
 
-def get_disliked_jobs() -> list:
-    """Recupera i job scartati."""
-    docs = db.collection("jobs").where("liked", "==", False).stream()
+def get_disliked_jobs(user_id: str = None) -> list:
+    """Recupera i job scartati per un utente."""
+    docs = get_user_col("jobs", user_id).where("liked", "==", False).stream()
     return [doc.to_dict() for doc in docs]
 
 
-def load_search_memory() -> list:
-    """Legge da search_memory, ordinata per timestamp."""
+def load_search_memory(user_id: str = None) -> list:
+    """Legge da search_memory dell'utente, ordinata per timestamp."""
     memory = []
-    # Attenzione: Firestore richiede un indice per ordinare lato server se query complesse.
-    # Qui facciamo stream totale e ordiniamo in python per semplicità.
-    docs = db.collection("search_memory").stream()
+    docs = get_user_col("search_memory", user_id).stream()
     for doc in docs:
         memory.append(doc.to_dict())
 
@@ -133,13 +144,14 @@ def load_search_memory() -> list:
     return memory
 
 
-def save_search_memory(memory: list):
-    """Upsert su search_memory basato su execution_id+keyword."""
+def save_search_memory(memory: list, user_id: str = None):
+    """Upsert su search_memory dell'utente basato su execution_id+keyword."""
     batch = db.batch()
     count = 0
+    col_ref = get_user_col("search_memory", user_id)
     for entry in memory:
         doc_id = get_memory_id(entry)
-        doc_ref = db.collection("search_memory").document(doc_id)
+        doc_ref = col_ref.document(doc_id)
         batch.set(doc_ref, entry, merge=True)
         count += 1
         if count >= 450:
@@ -151,23 +163,24 @@ def save_search_memory(memory: list):
         batch.commit()
 
 
-def load_job_categories() -> list:
-    """Legge job_categories."""
+def load_job_categories(user_id: str = None) -> list:
+    """Legge job_categories per l'utente."""
     categories = []
-    docs = db.collection("job_categories").stream()
+    docs = get_user_col("job_categories", user_id).stream()
     for doc in docs:
         categories.append(doc.to_dict())
     return categories
 
 
-def save_job_categories(categories: list):
-    """Upsert su job_categories usando lo slug della label."""
+def save_job_categories(categories: list, user_id: str = None):
+    """Upsert su job_categories per l'utente usando lo slug della label."""
     batch = db.batch()
     count = 0
+    col_ref = get_user_col("job_categories", user_id)
     for cat in categories:
         if isinstance(cat, dict) and "label" in cat:
             doc_id = get_category_id(cat["label"])
-            doc_ref = db.collection("job_categories").document(doc_id)
+            doc_ref = col_ref.document(doc_id)
             batch.set(doc_ref, cat, merge=True)
             count += 1
             if count >= 450:
@@ -178,21 +191,21 @@ def save_job_categories(categories: list):
         batch.commit()
 
 
-def load_cycle_state() -> dict:
-    """Legge lo stato del ciclo round-robin delle keyword da Firestore."""
-    doc = db.collection("app_state").document("keyword_cycle").get()
+def load_cycle_state(user_id: str = None) -> dict:
+    """Legge lo stato del ciclo round-robin delle keyword dell'utente."""
+    doc = get_user_app_state_doc("keyword_cycle", user_id).get()
     if doc.exists:
         return doc.to_dict()
     return {"cycle_index": 0, "keyword_list": []}
 
 
-def save_cycle_state(state: dict):
-    """Salva lo stato del ciclo round-robin delle keyword su Firestore."""
-    db.collection("app_state").document("keyword_cycle").set(state)
+def save_cycle_state(state: dict, user_id: str = None):
+    """Salva lo stato del ciclo round-robin delle keyword per l'utente."""
+    get_user_app_state_doc("keyword_cycle", user_id).set(state)
 
 
 def load_config_from_db() -> dict:
-    """Legge la configurazione da Firestore."""
+    """Legge la configurazione condivisa da Firestore."""
     doc = db.collection("app_state").document("config").get()
     if doc.exists:
         return doc.to_dict()
@@ -200,12 +213,12 @@ def load_config_from_db() -> dict:
 
 
 def save_config_to_db(config: dict):
-    """Salva la configurazione su Firestore."""
+    """Salva la configurazione condivisa su Firestore."""
     db.collection("app_state").document("config").set(config)
 
 
 def load_apify_usage() -> dict:
-    """Legge lo stato di utilizzo degli account Apify da Firestore."""
+    """Legge lo stato di utilizzo condiviso degli account Apify da Firestore."""
     doc = db.collection("app_state").document("apify_usage").get()
     if doc.exists:
         return doc.to_dict()
@@ -248,14 +261,37 @@ def save_apify_usage(usage: dict):
     db.collection("app_state").document("apify_usage").set(usage)
 
 
-def get_trigger():
+def get_trigger(user_id: str = None):
     """Controlla se c'è un trigger per avviare la ricerca."""
-    doc = db.collection("app_state").document("trigger").get()
-    if doc.exists:
-        return doc.to_dict()
+    if user_id:
+        doc = get_user_app_state_doc("trigger", user_id).get()
+        if doc.exists:
+            data = doc.to_dict()
+            data["_user_id"] = user_id
+            return data
+        return None
+
+    # Controlla prima il trigger root
+    root_doc = db.collection("app_state").document("trigger").get()
+    if root_doc.exists:
+        data = root_doc.to_dict()
+        if data.get("status") in ["pending", "running"]:
+            data["_user_id"] = None
+            return data
+
+    # Se il root non ha trigger attivi, scansiona le subcollection utenti
+    users = db.collection("users").stream()
+    for u in users:
+        t_doc = db.collection("users").document(u.id).collection("app_state").document("trigger").get()
+        if t_doc.exists:
+            data = t_doc.to_dict()
+            if data.get("status") in ["pending", "running"]:
+                data["_user_id"] = u.id
+                return data
     return None
 
-def set_trigger(status, execution_id=None, stop=False, current_query=None):
+
+def set_trigger(status, execution_id=None, stop=False, current_query=None, user_id: str = None):
     """Imposta lo stato del trigger (es. 'pending', 'running', 'idle')."""
     data = {
         "status": status,
@@ -266,27 +302,28 @@ def set_trigger(status, execution_id=None, stop=False, current_query=None):
         data["execution_id"] = execution_id
     if current_query:
         data["current_query"] = current_query
-    db.collection("app_state").document("trigger").set(data)
+    get_user_app_state_doc("trigger", user_id).set(data)
 
-def load_profile_from_db() -> str:
-    """Legge il profilo del candidato da Firestore."""
-    doc = db.collection("app_state").document("profile").get()
+
+def load_profile_from_db(user_id: str = None) -> str:
+    """Legge il profilo del candidato dell'utente da Firestore."""
+    doc = get_user_app_state_doc("profile", user_id).get()
     if doc.exists:
         return doc.to_dict().get("content", "")
     return ""
 
 
-def save_profile_to_db(content: str):
-    """Salva il profilo del candidato su Firestore."""
-    db.collection("app_state").document("profile").set({
+def save_profile_to_db(content: str, user_id: str = None):
+    """Salva il profilo del candidato dell'utente su Firestore."""
+    get_user_app_state_doc("profile", user_id).set({
         "content": content,
         "updated_at": firestore.SERVER_TIMESTAMP
     })
 
 
-def is_stop_requested():
-    """Controlla se è stato richiesto lo stop della ricerca."""
-    doc = db.collection("app_state").document("trigger").get()
+def is_stop_requested(user_id: str = None):
+    """Controlla se è stato richiesto lo stop della ricerca per l'utente."""
+    doc = get_user_app_state_doc("trigger", user_id).get()
     if doc.exists:
         data = doc.to_dict()
         return data.get("stop") is True
